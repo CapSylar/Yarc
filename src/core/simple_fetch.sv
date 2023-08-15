@@ -1,0 +1,91 @@
+// cpu fetch module, interfaces with the simple simulation memories
+
+module simple_fetch
+(
+    input clk_i,
+    input rstn_i,
+
+    // CPU <-> fetch interface
+
+    output logic valid_o, // a valid instruction is presented
+    output [31:0] instr_o, // the instruction, only valid when valid_o = 1
+    output [31:0] pc_o, // program counter of the instruction presented to the cpu
+
+    input stall_i, // is the cpu stalled ?
+
+    // used on a jump
+    input [31:0] pc_i,
+    input new_pc_i,
+
+    // fetch <-> memory interface
+
+    output logic read_o,
+    output [31:0] raddr_o,
+    input [31:0] rdata_i
+);
+
+logic [31:0] pc, pc_r;
+logic [31:0] pc_d;
+
+assign raddr_o = pc_r;
+assign instr_o = rdata_i;
+assign pc_o = pc_d;
+
+// prefetch state machine
+
+enum logic [1:0] {INIT, NEW_PC, CONT_PC} state, state_r;
+
+always_comb
+begin : pfetch_sm
+    state = state_r;
+    read_o = 0;
+    valid_o = 0;
+    pc = pc_r;
+    
+    unique case (state)
+        INIT:
+        begin
+            state = NEW_PC;
+        end
+
+        CONT_PC:
+        begin
+            read_o = 1;
+            valid_o = 1;
+
+            if (new_pc_i)
+            begin
+                pc = pc_i;
+                state = NEW_PC;
+            end
+            else if (!stall_i)
+                pc = pc + 4;
+        end
+
+        NEW_PC:
+        begin
+            read_o = 1;
+            valid_o = 0;
+            pc = pc + 4;
+            state = CONT_PC;
+        end
+    endcase
+end
+
+always_ff @(posedge clk_i, negedge rstn_i)
+begin
+    if (!rstn_i)
+    begin
+        state_r <= INIT;
+        pc_r <= 0;
+        pc_d <= 0;
+    end
+    else
+    begin
+        state_r <= state;
+        pc_r <= pc;
+        pc_d <= pc_r;
+    end
+end
+
+endmodule :simple_fetch

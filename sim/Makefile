@@ -6,16 +6,20 @@ TOPMOD  := tb
 TOPMOD_FILE := $(TOPMOD).sv
 VERILATOR_ARGS = -cc --build -j 0 --timing
 VINC = /usr/share/verilator/include
-SRC_PATH := ../src
+INCLUDE_PATH := -y ../src -y ../src/core
 SIMPROG := tb
 SIMFILE := $(SIMPROG).cpp
 VDIRFB  := ./obj_dir
 
-DEFINES := +define+DOUBLE_COUNTING
+# simulation definitions
+MEMFILE := ""
+
+
+DEFINES := +define+MEMFILE=\"$(MEMFILE)\"
 
 #verilator arguments
 VERILATOR=verilator
-VFLAGS= -cc --exe --timing --trace $(DEFINES) -y $(SRC_PATH)
+VFLAGS= -cc --exe --timing --trace-fst $(DEFINES) $(INCLUDE_PATH)
 
 sim:
 	$(VERILATOR) $(VFLAGS) $(TOPMOD_FILE) $(SIMFILE)

@@ -4,7 +4,7 @@ logic clk;
 logic rstn;
 
 // dut
-top top_i (.clk_i(clk), .rstn_i(rstn));
+top top_i (.clk_i(clk));
 
 // drive clock
 initial
@@ -20,12 +20,6 @@ end
 
 initial
 begin
-    rstn = 1;    
-    repeat(2) @(posedge clk);
-    rstn = 0;
-    @(posedge clk);
-    rstn = 1;
-
     repeat(1000) @(posedge clk);
 
     $finish;

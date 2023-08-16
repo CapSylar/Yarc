@@ -28,8 +28,15 @@ logic [31:0] pc, pc_r;
 logic [31:0] pc_d;
 
 assign raddr_o = pc_r;
-assign instr_o = rdata_i;
 assign pc_o = pc_d;
+
+always @(posedge clk_i, negedge rstn_i)
+begin
+    if (!rstn_i)
+        instr_o <= 0;
+    else
+        instr_o <= rdata_i;    
+end
 
 // prefetch state machine
 
@@ -66,8 +73,10 @@ begin : pfetch_sm
         begin
             read_o = 1;
             valid_o = 0;
-            pc = pc + 4;
             state = CONT_PC;
+
+            if (!stall_i)
+                pc = pc + 4;
         end
     endcase
 end

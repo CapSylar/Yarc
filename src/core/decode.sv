@@ -1,17 +1,15 @@
 // decode module
 // takes instructions in, splits them into control signals
-`include "defines.svh"
 
 module decode
-#(parameter ADDR_WIDTH = 5)
 (
     input clk_i,
     input rstn_i,
 
     // register file <-> decode module
     // read port
-    output [31:0] rs1_addr_o,
-    output [31:0] rs2_addr_o,
+    output [4:0] rs1_addr_o,
+    output [4:0] rs2_addr_o,
     input [31:0] rs1_data_i,
     input [31:0] rs2_data_i,
 
@@ -161,6 +159,11 @@ begin : main_decode
             write_rd = 1;
         end
 
+        // TODO: handle illegal opcode
+        default:
+        begin
+
+        end
     endcase
 end
 
@@ -170,7 +173,7 @@ always_comb
 begin : alu_decode
     alu_oper = ALU_ADD;
 
-    case(opcode_alu_t'(func3))
+    case(opcode)
         LOAD, STORE, AUIPC:
         begin
             alu_oper = ALU_ADD;
@@ -200,10 +203,16 @@ begin : alu_decode
             else
                 alu_oper = alu_oper_t'({1'b0,func3});
         end
+
+        default: // no need to handle anything here, already handled illegal opcodes above
+        begin end
     endcase
 end
 
-// pipeline registers
+// pipeline registers and outputs
+
+assign rs1_addr_o = rs1;
+assign rs2_addr_o = rs2;
 
 always_ff @(posedge clk_i, negedge rstn_i)
 begin : id_ex_pip

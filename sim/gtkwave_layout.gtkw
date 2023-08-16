@@ -1,0 +1,45 @@
+[*]
+[*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
+[*] Wed Aug 16 06:07:19 2023
+[*]
+[dumpfile] "/home/robin/workdir/yarc/sim/logs/vlt_dump.fst"
+[dumpfile_mtime] "Wed Aug 16 06:04:26 2023"
+[dumpfile_size] 26200
+[savefile] "/home/robin/workdir/yarc/sim/gtkwave_layout.gtkw"
+[timestart] 1
+[size] 1920 986
+[pos] -1 -1
+*-5.400000 74 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[treeopen] TOP.tb.
+[treeopen] TOP.tb.top_i.
+[sst_width] 209
+[signals_width] 293
+[sst_expanded] 1
+[sst_vpaned_height] 291
+@28
+TOP.tb.top_i.simple_fetch_i.clk_i
+@29
+TOP.tb.top_i.simple_fetch_i.rstn_i
+@22
+TOP.tb.top_i.simple_fetch_i.instr_o[31:0]
+@28
+TOP.tb.top_i.simple_fetch_i.new_pc_i
+@22
+TOP.tb.top_i.simple_fetch_i.pc[31:0]
+TOP.tb.top_i.simple_fetch_i.pc_d[31:0]
+TOP.tb.top_i.simple_fetch_i.pc_i[31:0]
+TOP.tb.top_i.simple_fetch_i.pc_o[31:0]
+TOP.tb.top_i.simple_fetch_i.pc_r[31:0]
+TOP.tb.top_i.simple_fetch_i.raddr_o[31:0]
+TOP.tb.top_i.simple_fetch_i.rdata_i[31:0]
+@28
+TOP.tb.top_i.simple_fetch_i.read_o
+TOP.tb.top_i.simple_fetch_i.stall_i
+@100000028
+TOP.tb.top_i.simple_fetch_i.state[1:0]
+TOP.tb.top_i.simple_fetch_i.state_r[1:0]
+@28
+TOP.tb.top_i.simple_fetch_i.valid_o
+[pattern_trace] 1
+[pattern_trace] 0

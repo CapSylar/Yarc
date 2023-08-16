@@ -1,92 +1,49 @@
 module top
 (
-    input clk_i,
-    input rstn_i
+    input clk_i
 );
 
-logic read;
-logic [31:0] raddr;
-logic [31:0] rdata;
+logic rstn;
+logic imem_read;
+logic [31:0] imem_raddr;
+logic [31:0] imem_rdata;
 
-logic write;
-logic [29:0] waddr;
-logic [31:0] wdata;
-
-logic [31:0] new_pc, new_pc_t;
-logic is_new_pc, is_new_pc_t;
-
-logic stall;
-logic [31:0] pc;
-logic [31:0] instr;
-logic valid;
-
+// Instruction Memory
 sp_mem #(.MEMFILE(`MEMFILE)) sp_mem_i
 (
     .clk_i(clk_i),
-    .rstn_i(rstn_i),
+    .rstn_i(rstn),
 
-    .read_i(read),
-    .raddr_i(raddr[31:2]), // 4-byte addressable
-    .rdata_o(rdata),
+    .read_i(imem_read),
+    .raddr_i(imem_raddr[31:2]), // 4-byte addressable
+    .rdata_o(imem_rdata),
 
-    .write_i(write),
-    .waddr_i(waddr),
-    .wdata_i(wdata)
+    .write_i(0),
+    .waddr_i(0),
+    .wdata_i(0)
 );
 
-simple_fetch simple_fetch_i
+// Core Top
+core_top yarc_top
 (
     .clk_i(clk_i),
-    .rstn_i(rstn_i),
+    .rstn_i(rstn),
 
-    .valid_o(valid),
-    .instr_o(instr),
-    .pc_o(pc),
-
-    .stall_i(stall),
-
-    .pc_i(new_pc),
-    .new_pc_i(is_new_pc),
-
-    .read_o(read),
-    .raddr_o(raddr),
-    .rdata_i(rdata)
+    // Core <-> Imem interface
+    .imem_read_o(imem_read),
+    .imem_raddr_o(imem_raddr),
+    .imem_rdata_i(imem_rdata)
 );
-
-// temp variable driven directly
-
-always_ff @(posedge clk_i)
-begin
-    is_new_pc <= is_new_pc_t;
-    new_pc <= new_pc_t;
-end
 
 initial
 begin
-    write = 0;
-    waddr = 0;
-    wdata = 0;
-
-    is_new_pc_t = 0;
-    new_pc_t = 0;
-
-    stall = 1;
-
-    @(posedge valid);
-    
+    rstn = 1;
     repeat(2) @(posedge clk_i);
 
-    stall = 0;
+    rstn = 0;
+    repeat(2) @(posedge clk_i);
 
-    repeat(4) @(posedge clk_i);
-
-    is_new_pc_t = 1;
-    new_pc_t = 28;
-
-    @(posedge clk_i);
-
-    is_new_pc_t = 0;
-    new_pc_t = 0;
+    rstn = 1;
 end
 
 endmodule

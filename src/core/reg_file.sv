@@ -16,8 +16,8 @@ module reg_file
 
     // write port
     input write_i,
-    input [ADDR_WIDTH-1:0] rd_addr_i,
-    input [REG_SIZE-1:0] rd_data_i
+    input [ADDR_WIDTH-1:0] waddr_i,
+    input [REG_SIZE-1:0] wdata_i
 );
 
 // register file
@@ -36,7 +36,7 @@ begin
             regf[i] <= 0;
     end
     else if (write_i)
-        regf[rd_addr_i] <= rd_data_i;
+        regf[waddr_i] <= wdata_i;
 end
 
 endmodule : reg_file

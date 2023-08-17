@@ -63,6 +63,9 @@ logic [31:0] mem_wb_alu_result;
 logic [31:0] mem_wb_dmem_rdata;
 
 // Driven by the Wb stage
+logic regf_write;
+logic [4:0] regf_waddr;
+logic [31:0] regf_wdata;
 
 // Misc.
 logic if_id_stall;
@@ -104,9 +107,9 @@ reg_file reg_file_i
     .rs2_data_o(rs2_data),
 
     // write port
-    .write_i(),
-    .rd_addr_i(),
-    .rd_data_i()
+    .write_i(regf_write),
+    .waddr_i(regf_waddr),
+    .wdata_i(regf_wdata)
 );
 
 // Decode Stage
@@ -218,6 +221,26 @@ mem_rw mem_rw_i
     .rd_addr_o(mem_wb_rd_addr),
     .alu_result_o(mem_wb_alu_result),
     .dmem_rdata_o(mem_wb_dmem_rdata)
+);
+
+// Write-back Stage
+
+write_back write_back_i
+(
+    .clk_i(clk_i),
+    .rstn_i(rstn_i),
+
+    // from MEM/WB
+    .use_mem_i(mem_wb_use_mem),
+    .write_rd_i(mem_wb_write_rd),
+    .rd_addr_i(mem_wb_rd_addr),
+    .alu_result_i(mem_wb_alu_result),
+    .dmem_rdata_i(mem_wb_dmem_rdata),
+
+    // WB -> Register file
+    .regf_write_o(regf_write),
+    .regf_waddr_o(regf_waddr),
+    .regf_wdata_o(regf_wdata)
 );
 
 endmodule : core_top

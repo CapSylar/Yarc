@@ -17,7 +17,7 @@ module decode
     input [31:0] instr_i, // instruction
     input [31:0] pc_i, // pc of the instruction
 
-    // ID/EX pipeline registers ************************************************
+    // ID/EX pipeline registers
 
     // feedback into the pipeline register
     input stall_i, // keep the same content in the registers
@@ -38,7 +38,8 @@ module decode
 
     // for the WB stage
     output logic wb_use_mem_o,
-    output logic write_rd_o
+    output logic write_rd_o,
+    output logic [4:0] rd_addr_o
 );
 
 // extract the common fields from the instruction format
@@ -108,7 +109,9 @@ begin : main_decode
 
         JAL:
         begin
-            // TODO: is_imm = 1 ?
+            alu_oper1_src = OPER1_PC;
+            alu_oper2_src = OPER2_PC_INC;
+
             curr_imm = imm_j;
             write_rd = 1;
             bnj_oper = BNJ_JAL;
@@ -116,7 +119,9 @@ begin : main_decode
 
         JALR:
         begin
-            // TODO: is_imm = 1 ?
+            alu_oper1_src = OPER1_PC;
+            alu_oper2_src = OPER2_PC_INC;
+            
             curr_imm = imm_i;
             write_rd = 1;
             bnj_oper = BNJ_JALR;
@@ -174,7 +179,7 @@ begin : alu_decode
     alu_oper = ALU_ADD;
 
     case(opcode)
-        LOAD, STORE, AUIPC:
+        JAL, JALR, LOAD, STORE, AUIPC:
         begin
             alu_oper = ALU_ADD;
         end
@@ -231,6 +236,7 @@ begin : id_ex_pip
 
         wb_use_mem_o <= 0;
         write_rd_o <= 0;
+        rd_addr_o <= 0;
     end
     else if (!stall_i)
     begin
@@ -247,6 +253,7 @@ begin : id_ex_pip
 
         wb_use_mem_o <= wb_use_mem;
         write_rd_o <= write_rd;
+        rd_addr_o <= rd;
     end
 end
 

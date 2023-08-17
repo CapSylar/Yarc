@@ -43,10 +43,17 @@ alu_oper_t id_ex_alu_oper;
 mem_oper_t id_ex_mem_oper;
 logic id_ex_wb_use_mem;
 logic id_ex_write_rd;
+logic [4:0] id_ex_rd_addr;
 
 // Driven by the Ex stage
+logic [31:0] ex_mem_alu_result;
+logic [31:0] ex_mem_alu_oper2;
+mem_oper_t ex_mem_mem_oper;
+logic ex_mem_wb_use_mem;
+logic ex_mem_write_rd;
+logic [4:0] ex_mem_rd_addr;
 logic [31:0] new_pc;
-logic is_new_pc;
+logic load_pc;
 
 // Misc.
 logic if_id_stall;
@@ -65,7 +72,7 @@ simple_fetch simple_fetch_i
     .stall_i(if_id_stall),
 
     .pc_i(new_pc),
-    .new_pc_i(is_new_pc),
+    .new_pc_i(load_pc),
 
     // Imem interface
     .read_o(imem_read_o),
@@ -132,7 +139,52 @@ decode decode_i
 
     // for the WB stage
     .wb_use_mem_o(id_ex_wb_use_mem),
-    .write_rd_o(id_ex_write_rd)
+    .write_rd_o(id_ex_write_rd),
+    .rd_addr_o(id_ex_rd_addr)
+);
+
+// Execute Stage
+
+execute execute_i
+(
+    .clk_i(clk_i),
+    .rstn_i(rstn_i),
+
+    // from ID/EX
+    .pc_i(id_ex_pc),
+    .rs1_data_i(id_ex_rs1_data),
+    .rs2_data_i(id_ex_rs2_data),
+    .imm_i(id_ex_imm),
+    .alu_oper1_src_i(id_ex_alu_oper1_src),
+    .alu_oper2_src_i(id_ex_alu_oper2_src),
+    .alu_oper_i(id_ex_alu_oper),
+    .bnj_oper_i(id_ex_bnj_oper),
+
+    // forward to MEM stage
+    .mem_oper_i(id_ex_mem_oper),
+
+    // forward to the WB stage
+    .wb_use_mem_i(id_ex_wb_use_mem),
+    .write_rd_i(id_ex_write_rd),
+    .rd_addr_i(id_ex_rd_addr),
+
+    // EX/MEM pipeline registers
+    
+    // feedback into the pipeline register
+    .stall_i(), // keep the same content in the registers
+    .flush_i(), // zero the register contents
+
+    .alu_result_o(ex_mem_alu_result),
+    .alu_oper2_o(ex_mem_alu_oper2),
+    .mem_oper_o(ex_mem_mem_oper),
+    // for WB stage exclusively
+    .wb_use_mem_o(ex_mem_wb_use_mem),
+    .write_rd_o(ex_mem_write_rd),
+    .rd_addr_o(ex_mem_rd_addr),
+
+    // branches and jumps
+    .load_pc_o(load_pc),
+    .new_pc_o(new_pc)
 );
 
 endmodule : core_top

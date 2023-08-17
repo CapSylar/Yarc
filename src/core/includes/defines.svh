@@ -62,10 +62,11 @@ typedef enum logic [1:0]
     OPER1_PC
 } alu_oper1_src_t;
 
-typedef enum logic
+typedef enum logic [1:0]
 {
     OPER2_RS2,
-    OPER2_IMM
+    OPER2_IMM,
+    OPER2_PC_INC
 } alu_oper2_src_t;
 
 typedef enum logic [2:0]

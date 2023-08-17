@@ -55,6 +55,15 @@ logic [4:0] ex_mem_rd_addr;
 logic [31:0] new_pc;
 logic load_pc;
 
+// Driven by the Mem stage
+logic mem_wb_use_mem;
+logic mem_wb_write_rd;
+logic [4:0] mem_wb_rd_addr;
+logic [31:0] mem_wb_alu_result;
+logic [31:0] mem_wb_dmem_rdata;
+
+// Driven by the Wb stage
+
 // Misc.
 logic if_id_stall;
 
@@ -185,6 +194,30 @@ execute execute_i
     // branches and jumps
     .load_pc_o(load_pc),
     .new_pc_o(new_pc)
+);
+
+// Memory Stage
+
+mem_rw mem_rw_i
+(
+    .clk_i(clk_i),
+    .rstn_i(rstn_i),
+
+    // from EX/MEM
+    .alu_result_i(ex_mem_alu_result),
+    .alu_oper2_i(ex_mem_alu_oper2),
+    .mem_oper_i(ex_mem_mem_oper),
+    // for WB stage exclusively
+    .wb_use_mem_i(ex_mem_wb_use_mem),
+    .write_rd_i(ex_mem_write_rd),
+    .rd_addr_i(ex_mem_rd_addr),
+
+    // MEM/WB pipeline registers
+    .wb_use_mem_o(mem_wb_use_mem),
+    .write_rd_o(mem_wb_write_rd),
+    .rd_addr_o(mem_wb_rd_addr),
+    .alu_result_o(mem_wb_alu_result),
+    .dmem_rdata_o(mem_wb_dmem_rdata)
 );
 
 endmodule : core_top

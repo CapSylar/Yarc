@@ -206,6 +206,14 @@ mem_rw mem_rw_i
     .clk_i(clk_i),
     .rstn_i(rstn_i),
 
+    // Mem-rw <-> Data Memory
+    // read port
+    .rw_addr_o(),
+    .rdata_i(0),
+    // write port
+    .sel_byte_o(),
+    .wdata_o(),
+
     // from EX/MEM
     .alu_result_i(ex_mem_alu_result),
     .alu_oper2_i(ex_mem_alu_oper2),

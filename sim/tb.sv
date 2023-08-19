@@ -1,7 +1,6 @@
 module tb();
 
 logic clk;
-logic rstn;
 
 // dut
 top top_i (.clk_i(clk));

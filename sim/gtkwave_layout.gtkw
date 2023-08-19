@@ -1,45 +1,156 @@
 [*]
 [*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
-[*] Wed Aug 16 06:07:19 2023
+[*] Sat Aug 19 10:38:04 2023
 [*]
 [dumpfile] "/home/robin/workdir/yarc/sim/logs/vlt_dump.fst"
-[dumpfile_mtime] "Wed Aug 16 06:04:26 2023"
-[dumpfile_size] 26200
+[dumpfile_mtime] "Sat Aug 19 10:37:33 2023"
+[dumpfile_size] 65569
 [savefile] "/home/robin/workdir/yarc/sim/gtkwave_layout.gtkw"
-[timestart] 1
+[timestart] 37
 [size] 1920 986
 [pos] -1 -1
-*-5.400000 74 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-4.625934 82 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [treeopen] TOP.tb.
 [treeopen] TOP.tb.top_i.
-[sst_width] 209
-[signals_width] 293
+[treeopen] TOP.tb.top_i.yarc_top.
+[sst_width] 352
+[signals_width] 322
 [sst_expanded] 1
 [sst_vpaned_height] 291
 @28
-TOP.tb.top_i.simple_fetch_i.clk_i
-@29
-TOP.tb.top_i.simple_fetch_i.rstn_i
+TOP.tb.top_i.yarc_top.clk_i
+TOP.tb.top_i.yarc_top.rstn_i
+[color] 2
+TOP.tb.top_i.yarc_top.instr_valid
+@200
+-Instruction Fetch Stage
 @22
-TOP.tb.top_i.simple_fetch_i.instr_o[31:0]
+[color] 2
+TOP.tb.top_i.yarc_top.if_id_instr[31:0]
+[color] 2
+TOP.tb.top_i.yarc_top.if_id_pc[31:0]
 @28
-TOP.tb.top_i.simple_fetch_i.new_pc_i
+[color] 2
+TOP.tb.top_i.yarc_top.if_id_stall
 @22
-TOP.tb.top_i.simple_fetch_i.pc[31:0]
-TOP.tb.top_i.simple_fetch_i.pc_d[31:0]
-TOP.tb.top_i.simple_fetch_i.pc_i[31:0]
-TOP.tb.top_i.simple_fetch_i.pc_o[31:0]
-TOP.tb.top_i.simple_fetch_i.pc_r[31:0]
-TOP.tb.top_i.simple_fetch_i.raddr_o[31:0]
-TOP.tb.top_i.simple_fetch_i.rdata_i[31:0]
+[color] 2
+TOP.tb.top_i.yarc_top.new_pc[31:0]
 @28
-TOP.tb.top_i.simple_fetch_i.read_o
-TOP.tb.top_i.simple_fetch_i.stall_i
+[color] 2
+TOP.tb.top_i.yarc_top.load_pc
+@800200
+-Instruction Decode Stage
+@22
+TOP.tb.top_i.yarc_top.rs1_addr[4:0]
+TOP.tb.top_i.yarc_top.rs1_data[31:0]
+TOP.tb.top_i.yarc_top.rs2_addr[4:0]
+TOP.tb.top_i.yarc_top.rs2_data[31:0]
+[color] 2
+TOP.tb.top_i.yarc_top.id_ex_pc[31:0]
+[color] 2
+TOP.tb.top_i.yarc_top.id_ex_rs1_data[31:0]
+[color] 2
+TOP.tb.top_i.yarc_top.id_ex_rs2_data[31:0]
+[color] 2
+TOP.tb.top_i.yarc_top.id_ex_imm[31:0]
 @100000028
-TOP.tb.top_i.simple_fetch_i.state[1:0]
-TOP.tb.top_i.simple_fetch_i.state_r[1:0]
+[color] 2
+TOP.tb.top_i.yarc_top.id_ex_alu_oper1_src[1:0]
+[color] 2
+TOP.tb.top_i.yarc_top.id_ex_alu_oper2_src[1:0]
+[color] 2
+TOP.tb.top_i.yarc_top.id_ex_bnj_oper[1:0]
+[color] 2
+TOP.tb.top_i.yarc_top.id_ex_alu_oper[3:0]
+[color] 2
+TOP.tb.top_i.yarc_top.id_ex_mem_oper[3:0]
 @28
-TOP.tb.top_i.simple_fetch_i.valid_o
+[color] 2
+TOP.tb.top_i.yarc_top.id_ex_wb_use_mem
+[color] 2
+TOP.tb.top_i.yarc_top.id_ex_write_rd
+@22
+[color] 2
+TOP.tb.top_i.yarc_top.id_ex_rd_addr[4:0]
+@1000200
+-Instruction Decode Stage
+@c00200
+-Register File
+@22
+TOP.tb.top_i.yarc_top.reg_file_i.regf[0][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[1][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[2][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[3][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[4][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[5][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[6][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[7][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[8][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[9][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[10][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[11][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[12][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[13][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[14][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[15][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[16][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[17][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[18][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[19][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[20][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[21][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[22][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[23][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[24][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[25][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[26][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[27][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[28][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[29][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[30][31:0]
+TOP.tb.top_i.yarc_top.reg_file_i.regf[31][31:0]
+@1401200
+-Register File
+@200
+-Execute Stage
+@28
+TOP.tb.top_i.yarc_top.load_pc
+@22
+TOP.tb.top_i.yarc_top.new_pc[31:0]
+[color] 2
+TOP.tb.top_i.yarc_top.ex_mem_alu_result[31:0]
+[color] 2
+TOP.tb.top_i.yarc_top.ex_mem_alu_oper2[31:0]
+@100000028
+[color] 2
+TOP.tb.top_i.yarc_top.ex_mem_mem_oper[3:0]
+@28
+[color] 2
+TOP.tb.top_i.yarc_top.ex_mem_wb_use_mem
+[color] 2
+TOP.tb.top_i.yarc_top.ex_mem_write_rd
+@22
+[color] 2
+TOP.tb.top_i.yarc_top.ex_mem_rd_addr[4:0]
+@200
+-Write Mem Stage
+@28
+[color] 2
+TOP.tb.top_i.yarc_top.mem_wb_write_rd
+@22
+[color] 2
+TOP.tb.top_i.yarc_top.mem_wb_rd_addr[4:0]
+[color] 2
+TOP.tb.top_i.yarc_top.mem_wb_alu_result[31:0]
+[color] 2
+TOP.tb.top_i.yarc_top.mem_wb_dmem_rdata[31:0]
+@200
+-Write Back Stage
+@28
+TOP.tb.top_i.yarc_top.regf_write
+@22
+TOP.tb.top_i.yarc_top.regf_waddr[4:0]
+TOP.tb.top_i.yarc_top.regf_wdata[31:0]
 [pattern_trace] 1
 [pattern_trace] 0

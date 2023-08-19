@@ -26,7 +26,7 @@ module core_top
 // Signal definitions
 
 // Driven by the Fetch stage
-logic valid;
+logic instr_valid;
 logic [31:0] if_id_instr;
 logic [31:0] if_id_pc;
 
@@ -68,7 +68,7 @@ logic [4:0] regf_waddr;
 logic [31:0] regf_wdata;
 
 // Misc.
-logic if_id_stall;
+wire if_id_stall = 0;
 
 // Fetch Stage
 
@@ -77,7 +77,7 @@ simple_fetch simple_fetch_i
     .clk_i(clk_i),
     .rstn_i(rstn_i),
 
-    .valid_o(valid),
+    .valid_o(instr_valid),
     .instr_o(if_id_instr),
     .pc_o(if_id_pc),
 
@@ -133,8 +133,8 @@ decode decode_i
     // ID/EX pipeline registers ************************************************
 
     // feedback into the pipeline register
-    .stall_i(), // keep the same content in the registers
-    .flush_i(), // zero the register contents
+    .stall_i(0), // keep the same content in the registers
+    .flush_i(!instr_valid), // zero the register contents
 
     // for direct use by the EX stage
     .pc_o(id_ex_pc), // forwarded from IF/ID

@@ -35,7 +35,10 @@ begin
     if (!rstn_i)
         instr_o <= 0;
     else
-        instr_o <= rdata_i;    
+    begin
+        // instructions are stored as small-endian, flip 'em
+        instr_o <= {<<8 {rdata_i}};
+    end
 end
 
 // prefetch state machine

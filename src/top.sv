@@ -3,7 +3,7 @@ module top
     input clk_i
 );
 
-logic rstn;
+logic rstn, rstn_t;
 logic imem_read;
 logic [31:0] imem_raddr;
 logic [31:0] imem_rdata;
@@ -35,15 +35,20 @@ core_top yarc_top
     .imem_rdata_i(imem_rdata)
 );
 
+always_ff @(posedge clk_i)
+begin
+    rstn <= rstn_t;
+end
+
 initial
 begin
-    rstn = 1;
+    rstn_t = 1;
     repeat(2) @(posedge clk_i);
 
-    rstn = 0;
+    rstn_t = 0;
     repeat(2) @(posedge clk_i);
 
-    rstn = 1;
+    rstn_t = 1;
 end
 
 endmodule

@@ -21,11 +21,12 @@ DEFINES := +define+MEMFILE=\"$(MEMFILE)\"
 VERILATOR=verilator
 VFLAGS= -cc --exe --timing --trace-fst $(DEFINES) $(MODULES_PATH) $(INCLUDE_PATH)
 
-sim:
+compile_sim:
 	$(VERILATOR) $(VFLAGS) $(TOPMOD_FILE) $(SIMFILE)
 	$(MAKE) -j -C obj_dir -f V$(TOPMOD).mk
-	obj_dir/V$(TOPMOD) +trace
 
+run_sim:
+	obj_dir/V$(TOPMOD) +trace
 
 clean:
 	rm -rf $(VDIRFB)/ $(SIMPROG)

@@ -20,7 +20,16 @@ module core_top
     // Core <-> Imem interface
     output imem_read_o,
     output [31:0] imem_raddr_o,
-    input [31:0] imem_rdata_i
+    input [31:0] imem_rdata_i,
+
+    // Core <-> Dmem interface
+    output [31:0] dmem_addr_o,
+    // read port
+    output dmem_read_o,
+    input [31:0] dmem_rdata_i,
+    // write port
+    output [3:0] dmem_wsel_byte_o,
+    output [31:0] dmem_wdata_o
 );
 
 // Signal definitions
@@ -183,8 +192,8 @@ execute execute_i
     // EX/MEM pipeline registers
     
     // feedback into the pipeline register
-    .stall_i(), // keep the same content in the registers
-    .flush_i(), // zero the register contents
+    .stall_i(0), // keep the same content in the registers
+    .flush_i(0), // zero the register contents
 
     .alu_result_o(ex_mem_alu_result),
     .alu_oper2_o(ex_mem_alu_oper2),
@@ -208,11 +217,12 @@ mem_rw mem_rw_i
 
     // Mem-rw <-> Data Memory
     // read port
-    .rw_addr_o(),
-    .rdata_i(0),
+    .rw_addr_o(dmem_addr_o),
+    .read_o(dmem_read_o),
+    .rdata_i(dmem_rdata_i),
     // write port
-    .sel_byte_o(),
-    .wdata_o(),
+    .wsel_byte_o(dmem_wsel_byte_o),
+    .wdata_o(dmem_wdata_o),
 
     // from EX/MEM
     .alu_result_i(ex_mem_alu_result),

@@ -1,10 +1,10 @@
 [*]
 [*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
-[*] Sat Aug 19 10:38:04 2023
+[*] Sat Aug 19 18:34:49 2023
 [*]
 [dumpfile] "/home/robin/workdir/yarc/sim/logs/vlt_dump.fst"
-[dumpfile_mtime] "Sat Aug 19 10:37:33 2023"
-[dumpfile_size] 65569
+[dumpfile_mtime] "Sat Aug 19 18:30:34 2023"
+[dumpfile_size] 65843
 [savefile] "/home/robin/workdir/yarc/sim/gtkwave_layout.gtkw"
 [timestart] 37
 [size] 1920 986
@@ -21,10 +21,11 @@
 @28
 TOP.tb.top_i.yarc_top.clk_i
 TOP.tb.top_i.yarc_top.rstn_i
+@c00200
+-Instruction Fetch Stage
+@28
 [color] 2
 TOP.tb.top_i.yarc_top.instr_valid
-@200
--Instruction Fetch Stage
 @22
 [color] 2
 TOP.tb.top_i.yarc_top.if_id_instr[31:0]
@@ -39,7 +40,9 @@ TOP.tb.top_i.yarc_top.new_pc[31:0]
 @28
 [color] 2
 TOP.tb.top_i.yarc_top.load_pc
-@800200
+@1401200
+-Instruction Fetch Stage
+@c00200
 -Instruction Decode Stage
 @22
 TOP.tb.top_i.yarc_top.rs1_addr[4:0]
@@ -73,7 +76,7 @@ TOP.tb.top_i.yarc_top.id_ex_write_rd
 @22
 [color] 2
 TOP.tb.top_i.yarc_top.id_ex_rd_addr[4:0]
-@1000200
+@1401200
 -Instruction Decode Stage
 @c00200
 -Register File
@@ -112,7 +115,7 @@ TOP.tb.top_i.yarc_top.reg_file_i.regf[30][31:0]
 TOP.tb.top_i.yarc_top.reg_file_i.regf[31][31:0]
 @1401200
 -Register File
-@200
+@c00200
 -Execute Stage
 @28
 TOP.tb.top_i.yarc_top.load_pc
@@ -133,8 +136,10 @@ TOP.tb.top_i.yarc_top.ex_mem_write_rd
 @22
 [color] 2
 TOP.tb.top_i.yarc_top.ex_mem_rd_addr[4:0]
-@200
--Write Mem Stage
+@1401200
+-Execute Stage
+@c00200
+-RW Mem Stage
 @28
 [color] 2
 TOP.tb.top_i.yarc_top.mem_wb_write_rd
@@ -145,12 +150,16 @@ TOP.tb.top_i.yarc_top.mem_wb_rd_addr[4:0]
 TOP.tb.top_i.yarc_top.mem_wb_alu_result[31:0]
 [color] 2
 TOP.tb.top_i.yarc_top.mem_wb_dmem_rdata[31:0]
-@200
+@1401200
+-RW Mem Stage
+@c00200
 -Write Back Stage
 @28
 TOP.tb.top_i.yarc_top.regf_write
 @22
 TOP.tb.top_i.yarc_top.regf_waddr[4:0]
 TOP.tb.top_i.yarc_top.regf_wdata[31:0]
+@1401200
+-Write Back Stage
 [pattern_trace] 1
 [pattern_trace] 0

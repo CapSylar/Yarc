@@ -8,9 +8,10 @@ module mem_rw
     // Mem-rw <-> Data Memory
     // read port
     output [31:0] rw_addr_o,
+    output read_o,
     input [31:0] rdata_i,
     // write port
-    output [3:0] sel_byte_o,
+    output [3:0] wsel_byte_o,
     output [31:0] wdata_o,
 
     // from EX/MEM
@@ -35,20 +36,23 @@ module mem_rw
 wire [31:0] addr = rw_addr_o;
 wire [31:0] to_write = alu_oper2_i;
 logic [31:0] rdata;
-logic [3:0] sel_byte;
+logic [3:0] wsel_byte;
 logic [31:0] wdata;
+logic read;
 
 // handle loads and stores
 always_comb
 begin
     rdata = 0;
-    sel_byte = 0;
+    wsel_byte = 0;
     wdata = 0;
+    read = 0;
 
     case(mem_oper_i)
         // LOADS
         MEM_LB:
         begin
+            read = 1;
             // for (int i = 0 ; i < 4; ++i) Good, but ugly, keep it
             //     if (i[1:0] == addr[1:0])
             //         rdata = 32'(signed'(rdata_i[8*(i+1)-1 -:8]));
@@ -61,6 +65,7 @@ begin
         end
         MEM_LBU:
         begin
+            read = 1;
             case (addr[1:0])
                 2'b00: rdata = 32'(rdata_i[(8*1)-1 -:8]);
                 2'b01: rdata = 32'(rdata_i[(8*2)-1 -:8]);
@@ -70,6 +75,7 @@ begin
         end
         MEM_LH:
         begin
+            read = 1;
             case (addr[1])
                 1'b0: rdata = 32'(signed'(rdata_i[(16*1)-1 -:16]));
                 1'b1: rdata = 32'(signed'(rdata_i[(16*2)-1 -:16]));
@@ -78,6 +84,7 @@ begin
 
         MEM_LHU:
         begin
+            read = 1;
             case (addr[1])
                 1'b0: rdata = 32'(rdata_i[(16*1)-1 -:16]);
                 1'b1: rdata = 32'(rdata_i[(16*2)-1 -:16]);
@@ -85,25 +92,26 @@ begin
         end
         MEM_LW:
         begin
+            read = 1;
             rdata = rdata_i;
         end
 
         // STORES
         MEM_SB:
         begin
-            sel_byte = 4'b0001 << addr[1:0];
+            wsel_byte = 4'b0001 << addr[1:0];
             wdata = to_write << (addr[1:0] * 8);
         end
 
         MEM_SH:
         begin
-            sel_byte = 4'b0011 << (addr[1] * 2);
+            wsel_byte = 4'b0011 << (addr[1] * 2);
             wdata = to_write << (addr[1] * 16);
         end
 
         MEM_SW:
         begin
-            sel_byte = 4'b1111;
+            wsel_byte = 4'b1111;
             wdata = to_write;
         end
 
@@ -116,7 +124,8 @@ end
 
 assign rw_addr_o = (mem_oper_i != MEM_NOP) ? alu_result_i : 0;
 assign wdata_o = wdata;
-assign sel_byte_o = sel_byte;
+assign wsel_byte_o = wsel_byte;
+assign read_o = read;
 
 always_ff @(posedge clk_i, negedge rstn_i)
 begin

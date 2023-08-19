@@ -6,20 +6,21 @@ TOPMOD  := tb
 TOPMOD_FILE := $(TOPMOD).sv
 VERILATOR_ARGS = -cc --build -j 0 --timing
 VINC = /usr/share/verilator/include
-MODULES_PATH := -y ../src -y ../src/core
+MODULES_PATH := -y ../src -y ../src/core -y ../src/memories
 INCLUDE_PATH := -I../src/core/includes
 SIMPROG := tb
 SIMFILE := $(SIMPROG).cpp
 VDIRFB  := ./obj_dir
 
 # simulation definitions
-MEMFILE := ""
+IMEMFILE := ""
+DMEMFILE := ""
 
-DEFINES := +define+MEMFILE=\"$(MEMFILE)\"
-
+DEFINES := +define+IMEMFILE=\"$(IMEMFILE)\" +define+DMEMFILE=\"$(DMEMFILE)\"
+TRACING_OPTIONS := --trace-fst --trace-max-array 2048
 #verilator arguments
 VERILATOR=verilator
-VFLAGS= -cc --exe --timing --trace-fst $(DEFINES) $(MODULES_PATH) $(INCLUDE_PATH)
+VFLAGS= -cc --exe --timing $(TRACING_OPTIONS) $(DEFINES) $(MODULES_PATH) $(INCLUDE_PATH)
 
 compile_sim:
 	$(VERILATOR) $(VFLAGS) $(TOPMOD_FILE) $(SIMFILE)

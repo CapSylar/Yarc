@@ -1,6 +1,8 @@
 // decode module
 // takes instructions in, splits them into control signals
 
+`include "riscv_defines.svh"
+
 module decode
 (
     input clk_i,
@@ -8,8 +10,8 @@ module decode
 
     // register file <-> decode module
     // read port
-    output [4:0] rs1_addr_o,
-    output [4:0] rs2_addr_o,
+    output [4:0] regf_rs1_addr_o,
+    output [4:0] regf_rs2_addr_o,
     input [31:0] rs1_data_i,
     input [31:0] rs2_data_i,
 
@@ -39,7 +41,11 @@ module decode
     // for the WB stage
     output logic wb_use_mem_o,
     output logic write_rd_o,
-    output logic [4:0] rd_addr_o
+    output logic [4:0] rd_addr_o,
+
+    // used by the hazard/forwarding logic
+    output logic [4:0] rs1_addr_o,
+    output logic [4:0] rs2_addr_o
 );
 
 // extract the common fields from the instruction format
@@ -216,8 +222,8 @@ end
 
 // pipeline registers and outputs
 
-assign rs1_addr_o = rs1;
-assign rs2_addr_o = rs2;
+assign regf_rs1_addr_o = rs1;
+assign regf_rs2_addr_o = rs2;
 
 always_ff @(posedge clk_i, negedge rstn_i)
 begin : id_ex_pip
@@ -237,6 +243,9 @@ begin : id_ex_pip
         wb_use_mem_o <= 0;
         write_rd_o <= 0;
         rd_addr_o <= 0;
+
+        rs1_addr_o <= 0;
+        rs2_addr_o <= 0;
     end
     else if (!stall_i)
     begin
@@ -254,6 +263,9 @@ begin : id_ex_pip
         wb_use_mem_o <= wb_use_mem;
         write_rd_o <= write_rd;
         rd_addr_o <= rd;
+
+        rs1_addr_o <= rs1;
+        rs1_addr_o <= rs2;
     end
 end
 

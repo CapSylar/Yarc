@@ -1,5 +1,7 @@
 // mem_rw module
 
+`include "riscv_defines.svh"
+
 module mem_rw
 (
     input clk_i,

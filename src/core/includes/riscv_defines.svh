@@ -1,4 +1,7 @@
 
+ `ifndef RISCV_DEFINES_VH  // guard
+ `define RISCV_DEFINES_VH
+
 typedef enum logic [6:0]
 {
     LUI =       7'b0110111,
@@ -104,3 +107,5 @@ typedef enum logic [3:0]
 
     MEM_NOP = 4'b1111 // no operation
 } mem_oper_t;
+
+`endif //  RISCV_DEFINES_VH

@@ -10,7 +10,7 @@
                                                          |_|    
 */
 
-`include "defines.svh"
+`include "riscv_defines.svh"
 
 module core_top
 (
@@ -53,6 +53,8 @@ mem_oper_t id_ex_mem_oper;
 logic id_ex_wb_use_mem;
 logic id_ex_write_rd;
 logic [4:0] id_ex_rd_addr;
+logic [4:0] id_ex_rs1_addr;
+logic [4:0] id_ex_rs2_addr;
 
 // Driven by the Ex stage
 logic [31:0] ex_mem_alu_result;
@@ -75,6 +77,12 @@ logic [31:0] mem_wb_dmem_rdata;
 logic regf_write;
 logic [4:0] regf_waddr;
 logic [31:0] regf_wdata;
+
+// Driven by the Dependency detection unit
+logic forward_ex_mem_rs1;
+logic forward_ex_mem_rs2;
+logic forward_mem_wb_rs1;
+logic forward_mem_wb_rs2;
 
 // Misc.
 wire if_id_stall = 0;
@@ -130,8 +138,8 @@ decode decode_i
 
     // register file <-> decode module
     // read port
-    .rs1_addr_o(rs1_addr),
-    .rs2_addr_o(rs2_addr),
+    .regf_rs1_addr_o(rs1_addr),
+    .regf_rs2_addr_o(rs2_addr),
     .rs1_data_i(rs1_data),
     .rs2_data_i(rs2_data),
 
@@ -161,7 +169,11 @@ decode decode_i
     // for the WB stage
     .wb_use_mem_o(id_ex_wb_use_mem),
     .write_rd_o(id_ex_write_rd),
-    .rd_addr_o(id_ex_rd_addr)
+    .rd_addr_o(id_ex_rd_addr),
+
+    // used by the hazard/forwarding logic
+    .rs1_addr_o(id_ex_rs1_addr),
+    .rs2_addr_o(id_ex_rs2_addr)
 );
 
 // Execute Stage
@@ -259,6 +271,34 @@ write_back write_back_i
     .regf_write_o(regf_write),
     .regf_waddr_o(regf_waddr),
     .regf_wdata_o(regf_wdata)
+);
+
+// Dependency detection unit
+
+dep_detection dep_detection_i
+(
+    .clk_i(clk_i),
+    .rstn_i(rstn_i),
+
+    // ID/EX pipeline
+    .id_ex_rs1_addr_i(id_ex_rs1_addr),
+    .id_ex_rs2_addr_i(id_ex_rs2_addr),
+
+    // from EX/MEM
+    .ex_mem_rd_addr_i(ex_mem_rd_addr),
+    .ex_mem_write_rd_i(ex_mem_write_rd),
+    .ex_mem_wb_use_mem_i(ex_mem_wb_use_mem),
+
+    // from MEM/WB
+    .mem_wb_rd_addr_i(mem_wb_rd_addr),
+    .mem_wb_write_rd_i(mem_wb_write_rd),
+
+    // forward from EX/MEM stage
+    .forward_ex_mem_rs1_o(forward_ex_mem_rs1),
+    .forward_ex_mem_rs2_o(forward_ex_mem_rs2),
+    // forward from MEM/WB stage
+    .forward_mem_wb_rs1_o(forward_mem_wb_rs1),
+    .forward_mem_wb_rs2_o(forward_mem_wb_rs2)
 );
 
 endmodule : core_top

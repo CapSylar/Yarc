@@ -193,7 +193,7 @@ begin : alu_decode
         BRANCH:
         begin
             if (opcode_branch_t'(func3) == BNE)
-                alu_oper = ALU_SUB;
+                alu_oper = ALU_SNEQ;
             else if (opcode_branch_t'(func3) == BEQ)
                 alu_oper = ALU_SEQ;
             else

@@ -108,6 +108,7 @@ begin
         ALU_SUB: alu_result = operand1 - operand2;
 
         ALU_SEQ: alu_result = {31'd0, operand1 == operand2};
+        ALU_SNEQ: alu_result = {31'd0, operand1 != operand2};
 
         ALU_SLT: alu_result = {31'd0, $signed(operand1) < $signed(operand2)};
         ALU_SGE: alu_result = {31'd0, $signed(operand1) >= $signed(operand2)};

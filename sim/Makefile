@@ -30,7 +30,7 @@ run_sim:
 	obj_dir/V$(TOPMOD) +trace
 
 clean:
-	rm -rf $(VDIRFB)/ $(SIMPROG)
+	rm -rf $(VDIRFB)/
 
 ##
 ## Find all of the Verilog dependencies and submodules

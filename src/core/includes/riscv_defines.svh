@@ -41,6 +41,7 @@ typedef enum logic [3:0]
     ALU_SUB =   4'b1000,
 
     ALU_SEQ =   4'b1100,
+    ALU_SNEQ =  4'b1110,
 
     ALU_SLT =   4'b0010,
     ALU_SGE =   4'b1010,

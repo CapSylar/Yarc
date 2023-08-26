@@ -1,7 +1,7 @@
-// dependancy detection unit
-// TODO: document
+// dependancy and hazard detection unit
+// TODO: document functionality
 
-module dep_detection
+module dep_hzrd_detection
 (
     input clk_i,
     input rstn_i,
@@ -30,7 +30,17 @@ module dep_detection
     // forward from MEM/WB stage to EX stage
     output forward_mem_wb_rs1_o,
     output forward_mem_wb_rs2_o,
-    output [31:0] forward_mem_wb_data_o
+    output [31:0] forward_mem_wb_data_o,
+
+    input instr_valid_i,
+    input load_pc_i,
+
+    // hazard lines to ID/EX
+    output id_ex_flush_o,
+    output id_ex_stall_o,
+
+    // hazard lines to IF/EX
+    output if_id_stall_o
 );
 
 // forwarding to the EX stage happens when we are writing to a register that is sourced
@@ -88,4 +98,12 @@ assign forward_ex_mem_data_o = ex_mem_alu_result_i; // through here just for cle
 // 2- if the MEM stage hasn't loaded, forward the alu result
 assign forward_mem_wb_data_o = mem_wb_use_mem_i ? mem_wb_dmem_rdata_i : mem_wb_alu_result_i;
 
-endmodule: dep_detection
+// Hazard Section
+
+// For now, the cpu always predicts that the branch is not taken and continues
+// On a mispredict, flush the 2 instruction after the branch and continue from the new PC
+assign id_ex_flush_o = load_pc_i || !instr_valid_i;
+assign id_ex_stall_o = 0;
+assign if_id_stall_o = 0;
+
+endmodule: dep_hzrd_detection

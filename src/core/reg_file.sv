@@ -9,7 +9,7 @@
 
 module reg_file
 #(parameter ADDR_WIDTH = 5, parameter REG_SIZE = 32)
-(
+( 
     input clk_i,
     input rstn_i,
 

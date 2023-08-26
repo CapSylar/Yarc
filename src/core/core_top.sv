@@ -85,6 +85,8 @@ logic forward_mem_wb_rs1;
 logic forward_mem_wb_rs2;
 logic [31:0] forward_ex_mem_data;
 logic [31:0] forward_mem_wb_data;
+logic id_ex_flush;
+logic id_ex_stall;
 
 // Misc.
 wire if_id_stall = 0;
@@ -152,8 +154,8 @@ decode decode_i
     // ID/EX pipeline registers ************************************************
 
     // feedback into the pipeline register
-    .stall_i(0), // keep the same content in the registers
-    .flush_i(!instr_valid), // zero the register contents
+    .stall_i(id_ex_stall), // keep the same content in the registers
+    .flush_i(id_ex_flush), // zero the register contents
 
     // for direct use by the EX stage
     .pc_o(id_ex_pc), // forwarded from IF/ID
@@ -286,7 +288,7 @@ write_back write_back_i
 
 // Dependency detection unit
 
-dep_detection dep_detection_i
+dep_hzrd_detection dep_detection_i
 (
     .clk_i(clk_i),
     .rstn_i(rstn_i),
@@ -315,7 +317,17 @@ dep_detection dep_detection_i
     // forward from MEM/WB stage
     .forward_mem_wb_rs1_o(forward_mem_wb_rs1),
     .forward_mem_wb_rs2_o(forward_mem_wb_rs2),
-    .forward_mem_wb_data_o(forward_mem_wb_data)
+    .forward_mem_wb_data_o(forward_mem_wb_data),
+
+    .instr_valid_i(instr_valid),
+    .load_pc_i(load_pc),
+
+    // hazard lines to ID/EX
+    .id_ex_flush_o(id_ex_flush),
+    .id_ex_stall_o(id_ex_stall),
+
+    // hazard lines to IF/EX
+    .if_id_stall_o(if_id_stall)
 );
 
 endmodule : core_top

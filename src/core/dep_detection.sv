@@ -23,11 +23,11 @@ module dep_detection
     input [31:0] mem_wb_alu_result_i,
     input [31:0] mem_wb_dmem_rdata_i,
 
-    // forward from EX/MEM stage
+    // forward from EX/MEM stage to EX stage
     output forward_ex_mem_rs1_o,
     output forward_ex_mem_rs2_o,
     output [31:0] forward_ex_mem_data_o,
-    // forward from MEM/WB stage
+    // forward from MEM/WB stage to EX stage
     output forward_mem_wb_rs1_o,
     output forward_mem_wb_rs2_o,
     output [31:0] forward_mem_wb_data_o

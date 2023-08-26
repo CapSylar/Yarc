@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
-[*] Sat Aug 26 06:43:17 2023
+[*] Sat Aug 26 08:46:08 2023
 [*]
 [dumpfile] "/home/robin/workdir/yarc/sim/logs/vlt_dump.fst"
-[dumpfile_mtime] "Sat Aug 26 06:42:30 2023"
-[dumpfile_size] 35208
+[dumpfile_mtime] "Sat Aug 26 08:42:00 2023"
+[dumpfile_size] 37501
 [savefile] "/home/robin/workdir/yarc/sim/gtkwave_layout.gtkw"
-[timestart] 211
+[timestart] 27
 [size] 1920 986
 [pos] 0 0
-*-6.125934 78 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-4.625934 140 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [treeopen] TOP.tb.
 [treeopen] TOP.tb.top_i.
@@ -47,6 +47,7 @@ TOP.tb.top_i.yarc_top.load_pc
 @800200
 -Instruction Decode Stage
 @22
+TOP.tb.top_i.yarc_top.decode_i.instr_i[31:0]
 TOP.tb.top_i.yarc_top.rs1_addr[4:0]
 TOP.tb.top_i.yarc_top.rs1_data[31:0]
 TOP.tb.top_i.yarc_top.rs2_addr[4:0]
@@ -80,8 +81,11 @@ TOP.tb.top_i.yarc_top.id_ex_write_rd
 TOP.tb.top_i.yarc_top.id_ex_rd_addr[4:0]
 @1000200
 -Instruction Decode Stage
-@c00200
+@800200
 -Register File
+@28
+TOP.tb.top_i.yarc_top.reg_file_i.rs1_forward
+TOP.tb.top_i.yarc_top.reg_file_i.rs2_forward
 @22
 TOP.tb.top_i.yarc_top.reg_file_i.regf[0][31:0]
 TOP.tb.top_i.yarc_top.reg_file_i.regf[1][31:0]
@@ -115,10 +119,13 @@ TOP.tb.top_i.yarc_top.reg_file_i.regf[28][31:0]
 TOP.tb.top_i.yarc_top.reg_file_i.regf[29][31:0]
 TOP.tb.top_i.yarc_top.reg_file_i.regf[30][31:0]
 TOP.tb.top_i.yarc_top.reg_file_i.regf[31][31:0]
-@1401200
+@1000200
 -Register File
 @800200
 -Execute Stage
+@22
+TOP.tb.top_i.yarc_top.execute_i.operand1[31:0]
+TOP.tb.top_i.yarc_top.execute_i.operand2[31:0]
 @28
 TOP.tb.top_i.yarc_top.load_pc
 @22
@@ -159,23 +166,23 @@ TOP.tb.top_i.yarc_top.mem_wb_alu_result[31:0]
 TOP.tb.top_i.yarc_top.mem_wb_dmem_rdata[31:0]
 @1000200
 -RW Mem Stage
-@c00200
+@800201
 -Write Back Stage
-@28
+@29
 TOP.tb.top_i.yarc_top.regf_write
-@22
+@23
 TOP.tb.top_i.yarc_top.regf_waddr[4:0]
 TOP.tb.top_i.yarc_top.regf_wdata[31:0]
-@1401200
+@1000201
 -Write Back Stage
-@800201
+@800200
 -Forwarding
-@29
+@28
 TOP.tb.top_i.yarc_top.dep_detection_i.forward_ex_mem_rs1_o
 TOP.tb.top_i.yarc_top.dep_detection_i.forward_ex_mem_rs2_o
 TOP.tb.top_i.yarc_top.dep_detection_i.forward_mem_wb_rs1_o
 TOP.tb.top_i.yarc_top.dep_detection_i.forward_mem_wb_rs2_o
-@1000201
+@1000200
 -Forwarding
 [pattern_trace] 1
 [pattern_trace] 0

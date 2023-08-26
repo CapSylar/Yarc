@@ -83,6 +83,8 @@ logic forward_ex_mem_rs1;
 logic forward_ex_mem_rs2;
 logic forward_mem_wb_rs1;
 logic forward_mem_wb_rs2;
+logic [31:0] forward_ex_mem_data;
+logic [31:0] forward_mem_wb_data;
 
 // Misc.
 wire if_id_stall = 0;
@@ -217,7 +219,16 @@ execute execute_i
 
     // branches and jumps
     .load_pc_o(load_pc),
-    .new_pc_o(new_pc)
+    .new_pc_o(new_pc),
+
+    // from forwarding logic
+    .forward_ex_mem_rs1_i(forward_ex_mem_rs1),
+    .forward_ex_mem_rs2_i(forward_ex_mem_rs2),
+    .forward_ex_mem_data_i(forward_ex_mem_data),
+
+    .forward_mem_wb_rs1_i(forward_mem_wb_rs1),
+    .forward_mem_wb_rs2_i(forward_mem_wb_rs2),
+    .forward_mem_wb_data_i(forward_mem_wb_data)
 );
 
 // Memory Stage
@@ -288,17 +299,23 @@ dep_detection dep_detection_i
     .ex_mem_rd_addr_i(ex_mem_rd_addr),
     .ex_mem_write_rd_i(ex_mem_write_rd),
     .ex_mem_wb_use_mem_i(ex_mem_wb_use_mem),
+    .ex_mem_alu_result_i(ex_mem_alu_result),
 
     // from MEM/WB
     .mem_wb_rd_addr_i(mem_wb_rd_addr),
     .mem_wb_write_rd_i(mem_wb_write_rd),
+    .mem_wb_use_mem_i(mem_wb_use_mem),
+    .mem_wb_alu_result_i(mem_wb_alu_result),
+    .mem_wb_dmem_rdata_i(mem_wb_dmem_rdata),
 
     // forward from EX/MEM stage
     .forward_ex_mem_rs1_o(forward_ex_mem_rs1),
     .forward_ex_mem_rs2_o(forward_ex_mem_rs2),
+    .forward_ex_mem_data_o(forward_ex_mem_data),
     // forward from MEM/WB stage
     .forward_mem_wb_rs1_o(forward_mem_wb_rs1),
-    .forward_mem_wb_rs2_o(forward_mem_wb_rs2)
+    .forward_mem_wb_rs2_o(forward_mem_wb_rs2),
+    .forward_mem_wb_data_o(forward_mem_wb_data)
 );
 
 endmodule : core_top

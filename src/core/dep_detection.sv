@@ -14,17 +14,23 @@ module dep_detection
     input [4:0] ex_mem_rd_addr_i,
     input ex_mem_write_rd_i,
     input ex_mem_wb_use_mem_i,
+    input [31:0] ex_mem_alu_result_i,
 
     // from MEM/WB
     input [4:0] mem_wb_rd_addr_i,
     input mem_wb_write_rd_i,
+    input mem_wb_use_mem_i,
+    input [31:0] mem_wb_alu_result_i,
+    input [31:0] mem_wb_dmem_rdata_i,
 
     // forward from EX/MEM stage
     output forward_ex_mem_rs1_o,
     output forward_ex_mem_rs2_o,
+    output [31:0] forward_ex_mem_data_o,
     // forward from MEM/WB stage
     output forward_mem_wb_rs1_o,
-    output forward_mem_wb_rs2_o
+    output forward_mem_wb_rs2_o,
+    output [31:0] forward_mem_wb_data_o
 );
 
 // forwarding to the EX stage happens when we are writing to a register that is sourced
@@ -73,5 +79,13 @@ assign forward_ex_mem_rs1_o = forward_ex_mem_rs1;
 assign forward_ex_mem_rs2_o = forward_ex_mem_rs2;
 assign forward_mem_wb_rs1_o = forward_mem_wb_rs1;
 assign forward_mem_wb_rs2_o = forward_mem_wb_rs2;
+
+// data to be forwarded
+assign forward_ex_mem_data_o = ex_mem_alu_result_i; // through here just for cleanliness
+
+// 1- if the MEM stage loaded a value, we need this value to be forwarded not the alu result
+// the alu result has been used as the address to load from in this case
+// 2- if the MEM stage hasn't loaded, forward the alu result
+assign forward_mem_wb_data_o = mem_wb_use_mem_i ? mem_wb_dmem_rdata_i : mem_wb_alu_result_i;
 
 endmodule: dep_detection

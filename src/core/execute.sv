@@ -1,5 +1,7 @@
 // execute module
 
+`include "riscv_defines.svh"
+
 module execute
 (
     input clk_i,
@@ -39,7 +41,16 @@ module execute
 
     // branches and jumps
     output load_pc_o,
-    output [31:0] new_pc_o
+    output [31:0] new_pc_o,
+
+    // from forwarding logic
+    input forward_ex_mem_rs1_i,
+    input forward_ex_mem_rs2_i,
+    input [31:0] forward_ex_mem_data_i,
+
+    input forward_mem_wb_rs1_i,
+    input forward_mem_wb_rs2_i,
+    input [31:0] forward_mem_wb_data_i
 );
 
 logic [31:0] operand1, operand2;
@@ -49,7 +60,13 @@ always_comb
 begin
     case (alu_oper1_src_i)
         OPER1_RS1:
-            operand1 = rs1_data_i;
+            // any forwarding active ?
+            if (forward_ex_mem_rs1_i)
+                operand1 = forward_ex_mem_data_i;
+            else if (forward_mem_wb_rs1_i)
+                operand1 = forward_mem_wb_data_i;
+            else
+                operand1 = rs1_data_i;
         OPER1_PC:
             operand1 = pc_i;
         OPER1_ZERO:
@@ -64,7 +81,13 @@ always_comb
 begin
     case (alu_oper2_src_i)
         OPER2_RS2:
-            operand2 = rs2_data_i;
+            // any forwarding active ?
+            if (forward_ex_mem_rs2_i)
+                operand2 = forward_ex_mem_data_i;
+            else if (forward_mem_wb_rs2_i)
+                operand2 = forward_mem_wb_data_i;
+            else
+                operand2 = rs2_data_i;
         OPER2_IMM:
             operand2 = imm_i;
         OPER2_PC_INC:

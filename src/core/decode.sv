@@ -265,7 +265,7 @@ begin : id_ex_pip
         rd_addr_o <= rd;
 
         rs1_addr_o <= rs1;
-        rs1_addr_o <= rs2;
+        rs2_addr_o <= rs2;
     end
 end
 

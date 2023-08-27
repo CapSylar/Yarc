@@ -36,6 +36,8 @@ logic rs2_forward;
 logic [REG_SIZE-1:0] rs1_data;
 logic [REG_SIZE-1:0] rs2_data;
 
+wire write = write_i && (waddr_i != 0);
+
 // asynchronous read
 // TODO: check impact on timing
 always_comb
@@ -45,7 +47,7 @@ begin
     rs1_forward = 0;
     rs2_forward = 0;
 
-    if (write_i && (rs1_addr_i == waddr_i)) // internal forwarding
+    if (write && (rs1_addr_i == waddr_i)) // internal forwarding
     begin
         rs1_data = wdata_i;
         rs1_forward = 1;
@@ -53,7 +55,7 @@ begin
     else
         rs1_data = regf[rs1_addr_i];
 
-    if(write_i && (rs2_addr_i == waddr_i)) // internal forwarding
+    if(write && (rs2_addr_i == waddr_i)) // internal forwarding
     begin
         rs2_data = wdata_i;
         rs2_forward = 1;
@@ -70,7 +72,7 @@ begin
         for (int i = 0; i < 2**ADDR_WIDTH; ++i)
             regf[i] <= 0;
     end
-    else if (write_i)
+    else if (write && waddr_i != 0)
         regf[waddr_i] <= wdata_i;
 end
 

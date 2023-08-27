@@ -24,11 +24,11 @@ module simple_fetch
     input [31:0] rdata_i
 );
 
-logic [31:0] pc, pc_r;
-logic [31:0] pc_d;
+logic [31:0] pc;
+logic [31:0] pc_r;
 
-assign raddr_o = pc_r;
-assign pc_o = pc_d;
+assign raddr_o = pc;
+assign pc_o = pc_r;
 
 always @(posedge clk_i, negedge rstn_i)
 begin
@@ -78,8 +78,8 @@ begin : pfetch_sm
             valid_o = 0;
             state = CONT_PC;
 
-            if (!stall_i)
-                pc = pc + 4;
+            // if (!stall_i)
+            //     pc = pc + 4;
         end
     endcase
 end
@@ -90,13 +90,11 @@ begin
     begin
         state_r <= INIT;
         pc_r <= 0;
-        pc_d <= 0;
     end
     else
     begin
         state_r <= state;
         pc_r <= pc;
-        pc_d <= pc_r;
     end
 end
 

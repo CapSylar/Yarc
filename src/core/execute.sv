@@ -76,18 +76,26 @@ begin
     endcase
 end
 
+logic [31:0] rs2_data;
+
+// determine rs2 data
+always_comb
+begin
+     // any forwarding active ?
+    if (forward_ex_mem_rs2_i)
+        rs2_data = forward_ex_mem_data_i;
+    else if (forward_mem_wb_rs2_i)
+        rs2_data = forward_mem_wb_data_i;
+    else
+        rs2_data = rs2_data_i;
+end
+
 // determine operand2
 always_comb
 begin
     case (alu_oper2_src_i)
         OPER2_RS2:
-            // any forwarding active ?
-            if (forward_ex_mem_rs2_i)
-                operand2 = forward_ex_mem_data_i;
-            else if (forward_mem_wb_rs2_i)
-                operand2 = forward_mem_wb_data_i;
-            else
-                operand2 = rs2_data_i;
+            operand2 = rs2_data;
         OPER2_IMM:
             operand2 = imm_i;
         OPER2_PC_INC:
@@ -176,7 +184,7 @@ begin : ex_mem_pip
     else if (!stall_i)
     begin
         alu_result_o <= alu_result;
-        alu_oper2_o <= operand2;
+        alu_oper2_o <= rs2_data;
         mem_oper_o <= mem_oper_i;
 
         wb_use_mem_o <= wb_use_mem_i;

@@ -6,9 +6,16 @@ module dep_hzrd_detection
     input clk_i,
     input rstn_i,
 
+    // ID stage
+    input [4:0] id_rs1_addr_i,
+    input [4:0] id_rs2_addr_i,
+
     // ID/EX pipeline
     input [4:0] id_ex_rs1_addr_i,
     input [4:0] id_ex_rs2_addr_i,
+    input [4:0] id_ex_rd_addr_i,
+    input id_ex_write_rd_i,
+    input id_ex_wb_use_mem_i,
 
     // from EX/MEM
     input [4:0] ex_mem_rd_addr_i,
@@ -100,10 +107,19 @@ assign forward_mem_wb_data_o = mem_wb_use_mem_i ? mem_wb_dmem_rdata_i : mem_wb_a
 
 // Hazard Section
 
+// handle use after load hazard
+// In this case we will stall the instruction needing the loaded value for 1 cycle
+// after that, forwarding from the MEM/WB will let it proceed
+
+// A load instruction is currently in the ex_mem stage
+wire id_ex_load = id_ex_write_rd_i && id_ex_wb_use_mem_i;
+wire load_use_hzrd = id_ex_load && ((id_ex_rd_addr_i == id_rs1_addr_i) ||
+    (id_ex_rd_addr_i == id_rs2_addr_i));
+
 // For now, the cpu always predicts that the branch is not taken and continues
 // On a mispredict, flush the 2 instruction after the branch and continue from the new PC
-assign id_ex_flush_o = load_pc_i || !instr_valid_i;
+assign id_ex_flush_o = load_pc_i || !instr_valid_i || load_use_hzrd;
 assign id_ex_stall_o = 0;
-assign if_id_stall_o = 0;
+assign if_id_stall_o = load_use_hzrd;
 
 endmodule: dep_hzrd_detection

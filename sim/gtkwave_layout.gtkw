@@ -1,37 +1,34 @@
 [*]
 [*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
-[*] Sat Aug 26 10:44:27 2023
+[*] Sat Aug 26 14:32:30 2023
 [*]
 [dumpfile] "/home/robin/workdir/yarc/sim/logs/vlt_dump.fst"
-[dumpfile_mtime] "Sat Aug 26 10:36:35 2023"
-[dumpfile_size] 27426
+[dumpfile_mtime] "Sat Aug 26 14:01:18 2023"
+[dumpfile_size] 27148
 [savefile] "/home/robin/workdir/yarc/sim/gtkwave_layout.gtkw"
-[timestart] 41
+[timestart] 53
 [size] 1920 986
 [pos] 0 0
-*-4.419483 140 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-4.754668 130 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [treeopen] TOP.tb.
 [treeopen] TOP.tb.top_i.
 [treeopen] TOP.tb.top_i.yarc_top.
-[sst_width] 352
+[sst_width] 228
 [signals_width] 322
 [sst_expanded] 1
 [sst_vpaned_height] 291
 @28
 TOP.tb.top_i.yarc_top.clk_i
 TOP.tb.top_i.yarc_top.rstn_i
-@22
-TOP.tb.top_i.dmem.mem[0][31:0]
 @800200
 -Instruction Fetch Stage
 @28
 [color] 2
 TOP.tb.top_i.yarc_top.instr_valid
-@23
+@22
 [color] 2
 TOP.tb.top_i.yarc_top.if_id_instr[31:0]
-@22
 [color] 2
 TOP.tb.top_i.yarc_top.if_id_pc[31:0]
 @28
@@ -156,6 +153,9 @@ TOP.tb.top_i.yarc_top.mem_rw_i.read_o
 @22
 TOP.tb.top_i.yarc_top.mem_rw_i.rw_addr_o[31:0]
 TOP.tb.top_i.yarc_top.mem_rw_i.rdata_i[31:0]
+TOP.tb.top_i.yarc_top.mem_rw_i.wsel_byte_o[3:0]
+TOP.tb.top_i.yarc_top.mem_rw_i.wdata_o[31:0]
+TOP.tb.top_i.yarc_top.mem_rw_i.alu_oper2_i[31:0]
 @28
 [color] 2
 TOP.tb.top_i.yarc_top.mem_wb_write_rd

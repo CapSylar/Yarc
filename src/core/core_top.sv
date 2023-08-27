@@ -85,11 +85,9 @@ logic forward_mem_wb_rs1;
 logic forward_mem_wb_rs2;
 logic [31:0] forward_ex_mem_data;
 logic [31:0] forward_mem_wb_data;
+logic if_id_stall;
 logic id_ex_flush;
 logic id_ex_stall;
-
-// Misc.
-wire if_id_stall = 0;
 
 // Fetch Stage
 
@@ -293,9 +291,16 @@ dep_hzrd_detection dep_detection_i
     .clk_i(clk_i),
     .rstn_i(rstn_i),
 
+    // ID stage
+    .id_rs1_addr_i(rs1_addr),
+    .id_rs2_addr_i(rs2_addr),
+
     // ID/EX pipeline
     .id_ex_rs1_addr_i(id_ex_rs1_addr),
     .id_ex_rs2_addr_i(id_ex_rs2_addr),
+    .id_ex_rd_addr_i(id_ex_rd_addr),
+    .id_ex_write_rd_i(id_ex_write_rd),
+    .id_ex_wb_use_mem_i(id_ex_wb_use_mem),
 
     // from EX/MEM
     .ex_mem_rd_addr_i(ex_mem_rd_addr),

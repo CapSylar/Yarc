@@ -89,7 +89,7 @@ begin
     if (!rstn_i)
     begin
         state_r <= INIT;
-        pc_r <= 0;
+        pc_r <= 'h8000_0000;
     end
     else
     begin

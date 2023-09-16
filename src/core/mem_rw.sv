@@ -20,6 +20,8 @@ module mem_rw
     input [31:0] alu_result_i,
     input [31:0] alu_oper2_i,
     input mem_oper_t mem_oper_i,
+    input trap_i,
+
     // for WB stage exclusively
     input wb_use_mem_i,
     input write_rd_i,
@@ -30,7 +32,8 @@ module mem_rw
     output logic write_rd_o,
     output logic [4:0] rd_addr_o,
     output logic [31:0] alu_result_o,
-    output logic [31:0] dmem_rdata_o
+    output logic [31:0] dmem_rdata_o,
+    output trap_o
 );
 
 // TODO: handle unaligned loads and stores, signal an error in this case
@@ -138,6 +141,7 @@ begin
         rd_addr_o <= 0;
         alu_result_o <= 0;
         dmem_rdata_o <= 0;
+        trap_o <= 0;
     end
     else
     begin
@@ -146,6 +150,7 @@ begin
         rd_addr_o <= rd_addr_i;
         alu_result_o <= alu_result_i;
         dmem_rdata_o <= rdata;
+        trap_o <= trap_i;
     end
 end
 

@@ -1,6 +1,9 @@
+
+#define TESTBENCH_TOP Vriscv_tests
+
 #include <memory>
 #include <verilated.h>
-#include "Vtb.h"
+#include "Vriscv_tests.h"
 
 // Legacy function required only so linking works on Cygwin and MSVC++
 double sc_time_stamp() { return 0; }
@@ -40,7 +43,7 @@ int main(int argc, char** argv) {
     // Construct the Verilated model, from Vtb.h generated from Verilating "top.v".
     // Using unique_ptr is similar to "Vtb* top = new Vtb" then deleting at end.
     // "TOP" will be the hierarchical name of the module.
-    const std::unique_ptr<Vtb> top{new Vtb{contextp.get(), "TOP"}};
+    const std::unique_ptr<TESTBENCH_TOP> top{new TESTBENCH_TOP{contextp.get(), "TOP"}};
 
     // Simulate until $finish
     while (!contextp->gotFinish()) {

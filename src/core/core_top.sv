@@ -55,6 +55,7 @@ logic id_ex_write_rd;
 logic [4:0] id_ex_rd_addr;
 logic [4:0] id_ex_rs1_addr;
 logic [4:0] id_ex_rs2_addr;
+logic id_ex_trap;
 
 // Driven by the Ex stage
 logic [31:0] ex_mem_alu_result;
@@ -65,6 +66,7 @@ logic ex_mem_write_rd;
 logic [4:0] ex_mem_rd_addr;
 logic [31:0] new_pc;
 logic load_pc;
+logic ex_mem_trap;
 
 // Driven by the Mem stage
 logic mem_wb_use_mem;
@@ -72,6 +74,7 @@ logic mem_wb_write_rd;
 logic [4:0] mem_wb_rd_addr;
 logic [31:0] mem_wb_alu_result;
 logic [31:0] mem_wb_dmem_rdata;
+logic mem_wb_trap;
 
 // Driven by the Wb stage
 logic regf_write;
@@ -175,7 +178,9 @@ decode decode_i
 
     // used by the hazard/forwarding logic
     .rs1_addr_o(id_ex_rs1_addr),
-    .rs2_addr_o(id_ex_rs2_addr)
+    .rs2_addr_o(id_ex_rs2_addr),
+
+    .trap_o(id_ex_trap)
 );
 
 // Execute Stage
@@ -197,6 +202,7 @@ execute execute_i
 
     // forward to MEM stage
     .mem_oper_i(id_ex_mem_oper),
+    .trap_i(id_ex_trap),
 
     // forward to the WB stage
     .wb_use_mem_i(id_ex_wb_use_mem),
@@ -212,6 +218,7 @@ execute execute_i
     .alu_result_o(ex_mem_alu_result),
     .alu_oper2_o(ex_mem_alu_oper2),
     .mem_oper_o(ex_mem_mem_oper),
+    .trap_o(ex_mem_trap),
     // for WB stage exclusively
     .wb_use_mem_o(ex_mem_wb_use_mem),
     .write_rd_o(ex_mem_write_rd),
@@ -251,6 +258,7 @@ mem_rw mem_rw_i
     .alu_result_i(ex_mem_alu_result),
     .alu_oper2_i(ex_mem_alu_oper2),
     .mem_oper_i(ex_mem_mem_oper),
+    .trap_i(ex_mem_trap),
     // for WB stage exclusively
     .wb_use_mem_i(ex_mem_wb_use_mem),
     .write_rd_i(ex_mem_write_rd),
@@ -261,7 +269,8 @@ mem_rw mem_rw_i
     .write_rd_o(mem_wb_write_rd),
     .rd_addr_o(mem_wb_rd_addr),
     .alu_result_o(mem_wb_alu_result),
-    .dmem_rdata_o(mem_wb_dmem_rdata)
+    .dmem_rdata_o(mem_wb_dmem_rdata),
+    .trap_o(mem_wb_trap)
 );
 
 // Write-back Stage

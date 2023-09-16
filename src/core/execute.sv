@@ -19,6 +19,7 @@ module execute
 
     // forward to MEM stage
     input mem_oper_t mem_oper_i,
+    input trap_i,
     
     // forward to the WB stage
     input wb_use_mem_i,
@@ -34,6 +35,7 @@ module execute
     output [31:0] alu_result_o,
     output [31:0] alu_oper2_o,
     output mem_oper_t mem_oper_o,
+    output trap_o,
     // for WB stage exclusively
     output logic wb_use_mem_o,
     output logic write_rd_o,
@@ -176,6 +178,7 @@ begin : ex_mem_pip
         alu_result_o <= 0;
         alu_oper2_o <= 0;
         mem_oper_o <= MEM_NOP;
+        trap_o <= 0;
         
         wb_use_mem_o <= 0;
         write_rd_o <= 0;
@@ -186,6 +189,7 @@ begin : ex_mem_pip
         alu_result_o <= alu_result;
         alu_oper2_o <= rs2_data;
         mem_oper_o <= mem_oper_i;
+        trap_o <= trap_i;
 
         wb_use_mem_o <= wb_use_mem_i;
         write_rd_o <= write_rd_i;

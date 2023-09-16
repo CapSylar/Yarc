@@ -1,6 +1,11 @@
-module top
+// contains the core with memories
+// instantiated by testbenches
+
+module core_with_mem
+#(parameter string DMEMFILE = "", parameter string IMEMFILE = "")
 (
-    input clk_i
+    input clk_i,
+    input rstn_i
 );
 
 logic rstn, rstn_t;
@@ -10,7 +15,7 @@ logic [31:0] imem_rdata;
 wire imem_ena = !imem_raddr[30];
 
 // Instruction Memory
-sp_mem #(.MEMFILE(`IMEMFILE)) imem
+sp_mem #(.MEMFILE(IMEMFILE)) imem
 (
     .clk_i(clk_i),
     .ena_i(imem_ena),
@@ -31,7 +36,7 @@ logic [31:0] dmem_wdata;
 wire dmem_ena = dmem_addr[30];
 
 // Data Memory
-sp_mem #(.MEMFILE(`DMEMFILE)) dmem
+sp_mem #(.MEMFILE(DMEMFILE)) dmem
 (
     .clk_i(clk_i),
     .ena_i(dmem_ena),
@@ -65,20 +70,4 @@ core_top yarc_top
     .dmem_wdata_o(dmem_wdata)
 );
 
-always_ff @(posedge clk_i)
-begin
-    rstn <= rstn_t;
-end
-
-initial
-begin
-    rstn_t = 1;
-    repeat(2) @(posedge clk_i);
-
-    rstn_t = 0;
-    repeat(2) @(posedge clk_i);
-
-    rstn_t = 1;
-end
-
-endmodule
+endmodule: core_with_mem

@@ -45,7 +45,9 @@ module decode
 
     // used by the hazard/forwarding logic
     output logic [4:0] rs1_addr_o,
-    output logic [4:0] rs2_addr_o
+    output logic [4:0] rs2_addr_o,
+
+    output logic trap_o
 );
 
 // extract the common fields from the instruction format
@@ -81,6 +83,8 @@ bnj_oper_t bnj_oper;
 logic wb_use_mem; // use memory data out to write back to the register file
 mem_oper_t mem_oper; // memory operation if any
 
+logic trap;
+
 // decode
 always_comb
 begin : main_decode
@@ -93,6 +97,7 @@ begin : main_decode
     bnj_oper = BNJ_NO; // no branch
     wb_use_mem = 0;
     mem_oper = MEM_NOP;
+    trap = 0;
 
     case (opcode)
         LUI:
@@ -168,6 +173,17 @@ begin : main_decode
             alu_oper2_src = OPER2_IMM;
             curr_imm = imm_i;
             write_rd = 1;
+        end
+
+        FENCE:
+        begin
+
+        end
+
+        PRIV:
+        begin
+            // detect trap
+            trap = (func3 == 0); // ecall or ebreak
         end
 
         // TODO: handle illegal opcode
@@ -246,6 +262,8 @@ begin : id_ex_pip
 
         rs1_addr_o <= 0;
         rs2_addr_o <= 0;
+
+        trap_o <= 0;
     end
     else if (!stall_i)
     begin
@@ -266,6 +284,8 @@ begin : id_ex_pip
 
         rs1_addr_o <= rs1;
         rs2_addr_o <= rs2;
+
+        trap_o <= trap;
     end
 end
 

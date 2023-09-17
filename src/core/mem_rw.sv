@@ -33,7 +33,7 @@ module mem_rw
     output logic [4:0] rd_addr_o,
     output logic [31:0] alu_result_o,
     output logic [31:0] dmem_rdata_o,
-    output trap_o
+    output logic trap_o
 );
 
 // TODO: handle unaligned loads and stores, signal an error in this case

@@ -8,6 +8,7 @@ TOPMOD  := riscv_tests
 TOPMOD_FILE := $(TOPMOD).sv
 VERILATOR_ARGS = -cc --build -j 0 --timing
 VINC = /usr/share/verilator/include
+SRC_DIR = ../src
 MODULES_PATH := -y ../src -y ../src/core -y ../src/memories -y ../src/testbenches
 INCLUDE_PATH := -I../src/core/includes
 SIMPROG := tb
@@ -31,6 +32,19 @@ compile_sim:
 
 run_sim:
 	obj_dir/V$(TOPMOD) +trace
+
+LIB_NAME ?= work
+
+questa_compile:
+	vlib $(LIB_NAME)
+	export PRJ_DIR=$(SRC_DIR)
+	vlog -work $(LIB_NAME) -f files.f
+
+questa_run:
+	vsim -do vsim.do riscv_tests
+
+questa_clean:
+	vdel -all -lib $(LIB_NAME)
 
 clean:
 	rm -rf $(VDIRFB)/

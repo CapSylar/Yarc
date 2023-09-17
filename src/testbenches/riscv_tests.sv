@@ -133,7 +133,7 @@ endtask: run_test
 
 // handles trace
 initial begin
-        $dumpfile("logs/vlt_dump");
+        $dumpfile("logs/vlt_dump.vcd");
         $dumpvars();
 end
 

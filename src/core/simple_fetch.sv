@@ -8,7 +8,7 @@ module simple_fetch
     // CPU <-> fetch interface
 
     output logic valid_o, // a valid instruction is presented
-    output [31:0] instr_o, // the instruction, only valid when valid_o = 1
+    output logic [31:0] instr_o, // the instruction, only valid when valid_o = 1
     output [31:0] pc_o, // program counter of the instruction presented to the cpu
 
     input stall_i, // is the cpu stalled ?

@@ -32,18 +32,18 @@ module execute
     input stall_i,
     input flush_i,
 
-    output [31:0] alu_result_o,
-    output [31:0] alu_oper2_o,
+    output logic [31:0] alu_result_o,
+    output logic [31:0] alu_oper2_o,
     output mem_oper_t mem_oper_o,
-    output trap_o,
+    output logic trap_o,
     // for WB stage exclusively
     output logic wb_use_mem_o,
     output logic write_rd_o,
     output logic [4:0] rd_addr_o,
 
     // branches and jumps
-    output load_pc_o,
-    output [31:0] new_pc_o,
+    output logic load_pc_o,
+    output logic [31:0] new_pc_o,
 
     // from forwarding logic
     input forward_ex_mem_rs1_i,

@@ -1,14 +1,15 @@
 # runs the simulations
-
 .PHONY: clean all
 
 MEMFILE := ""
+CURRENT_DIR=$(shell pwd)
 
 TOPMOD  := riscv_tests
 TOPMOD_FILE := $(TOPMOD).sv
 VERILATOR_ARGS = -cc --build -j 0 --timing
 VINC = /usr/share/verilator/include
-SRC_DIR = ../src
+SRC_DIR = $(CURRENT_DIR)/../src
+$(info SRC_DIR is $(SRC_DIR))
 MODULES_PATH := -y ../src -y ../src/core -y ../src/memories -y ../src/testbenches
 INCLUDE_PATH := -I../src/core/includes
 SIMPROG := tb
@@ -16,6 +17,8 @@ SIMFILE := $(SIMPROG).cpp
 VDIRFB  := ./obj_dir
 TOP_PARAMS := -GMEMFILE=\"${MEMFILE}\"
 
+PRJ_DIR := $(SRC_DIR)
+export PRJ_DIR
 # # simulation definitions
 # IMEMFILE := ""
 # DMEMFILE := ""
@@ -37,11 +40,12 @@ LIB_NAME ?= work
 
 questa_compile:
 	vlib $(LIB_NAME)
-	export PRJ_DIR=$(SRC_DIR)
-	vlog -work $(LIB_NAME) -f files.f
+	vmap work ./work
+	vlog -work $(LIB_NAME) -modelsimini modelsim.ini -f files.f -sv -sv12compat -timescale "1ns/1ps" -O5
+	vopt +acc riscv_tests -o riscv_test_opt
 
 questa_run:
-	vsim -do vsim.do riscv_tests
+	vsim -do vsim.do riscv_tests_opt
 
 questa_clean:
 	vdel -all -lib $(LIB_NAME)

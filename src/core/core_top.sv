@@ -10,9 +10,8 @@
                                                          |_|    
 */
 
-`include "riscv_defines.svh"
-
 module core_top
+import riscv_pkg::*;
 (
     input clk_i,
     input rstn_i,
@@ -212,8 +211,8 @@ execute execute_i
     // EX/MEM pipeline registers
     
     // feedback into the pipeline register
-    .stall_i(0), // keep the same content in the registers
-    .flush_i(0), // zero the register contents
+    .stall_i(1'b0), // keep the same content in the registers
+    .flush_i(1'b0), // zero the register contents
 
     .alu_result_o(ex_mem_alu_result),
     .alu_oper2_o(ex_mem_alu_oper2),

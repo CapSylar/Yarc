@@ -1,6 +1,5 @@
 
- `ifndef RISCV_DEFINES_VH  // guard
- `define RISCV_DEFINES_VH
+package riscv_pkg;
 
 typedef enum logic [6:0]
 {
@@ -109,4 +108,4 @@ typedef enum logic [3:0]
     MEM_NOP = 4'b1111 // no operation
 } mem_oper_t;
 
-`endif //  RISCV_DEFINES_VH
+endpackage: riscv_pkg

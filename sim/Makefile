@@ -42,7 +42,7 @@ questa_compile:
 	vlib $(LIB_NAME)
 	vmap work ./work
 	vlog -work $(LIB_NAME) -modelsimini modelsim.ini -f files.f -sv -sv12compat -timescale "1ns/1ps" -O5
-	vopt +acc riscv_tests -o riscv_test_opt
+	vopt +acc riscv_tests -o riscv_tests_opt -gMEMFILE=\"${MEMFILE}\"
 
 questa_run:
 	vsim -do vsim.do riscv_tests_opt

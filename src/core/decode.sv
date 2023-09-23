@@ -1,9 +1,8 @@
 // decode module
 // takes instructions in, splits them into control signals
 
-`include "riscv_defines.svh"
-
 module decode
+import riscv_pkg::*;
 (
     input clk_i,
     input rstn_i,

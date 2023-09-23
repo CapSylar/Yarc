@@ -2,6 +2,9 @@
 +incdir+${PRJ_DIR}/core/
 +incdir+${PRJ_DIR}/core/includes/
 
+// packages
+${PRJ_DIR}/core/includes/riscv_pkg.svh
+
 //  core
 ${PRJ_DIR}/core/core_top.sv
 ${PRJ_DIR}/core/decode.sv

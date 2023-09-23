@@ -1,8 +1,7 @@
 // execute module
 
-`include "riscv_defines.svh"
-
 module execute
+import riscv_pkg::*;
 (
     input clk_i,
     input rstn_i,

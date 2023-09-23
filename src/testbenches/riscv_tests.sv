@@ -124,17 +124,49 @@ begin
     $finish;
 end
 
+logic [31:0] begin_signature, end_signature;
+string sig_filename_o;
+
+// handles trace
+initial begin
+        logic [31:0] value;
+
+        // check for start and end of memory signature
+        void'($value$plusargs("begin_signature=%0h", begin_signature));
+        void'($value$plusargs("end_signature=%0h", end_signature));
+        void'($value$plusargs("sig_filename_o=%s", sig_filename_o)); // file to write the signature to
+
+        $dumpfile("logs/vlt_dump.vcd");
+        $dumpvars();
+end
+
 task automatic run_test();
     bit success = 0;
     eval_result(success);
 
-   $display("TEST: %s", success ? "OK" : "FAILED");
+    $display("TEST: %s", success ? "OK" : "FAILED");
+
+    // dump the memory signature so it can be checked with a reference
+    $display("sig start: %x || sig end: %x", begin_signature, end_signature);
+    $display("write sig file to %s", sig_filename_o);
+    dump_sig();
 endtask: run_test
 
-// handles trace
-initial begin
-        $dumpfile("logs/vlt_dump.vcd");
-        $dumpvars();
-end
+task automatic dump_sig();
+
+    int fd;
+    fd = $fopen(sig_filename_o, "w");
+    
+    if (!fd)
+        $display("could not create file %s to dump signature", sig_filename_o);
+
+    for (bit [DEPTH+2-1:2] start = begin_signature[DEPTH+2-1:2]; start < end_signature[DEPTH+2-1:2]; ++start)
+    begin
+        $fwrite(fd, "%x\n", mem_i.mem[start]);
+    end
+
+    $fclose(fd);
+
+endtask: dump_sig
 
 endmodule: riscv_tests

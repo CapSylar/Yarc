@@ -43,7 +43,7 @@ end
 
 // prefetch state machine
 
-enum logic [1:0] {INIT, NEW_PC, CONT_PC} state, state_r;
+enum logic [1:0] {INIT, NEW_PC, CONT_PC} state = INIT, state_r = INIT;
 
 always_comb
 begin : pfetch_sm

@@ -29,6 +29,13 @@ TRACING_OPTIONS := --trace --trace-max-array 2048
 VERILATOR=verilator
 VFLAGS= -cc --exe --timing $(TRACING_OPTIONS) $(DEFINES) $(MODULES_PATH) $(INCLUDE_PATH) $(TOP_PARAMS)
 
+# signature start and end
+begin_signature := 0
+end_signature := 0
+sig_filename_o := ""
+
+VSIM_ARGS := +begin_signature=${begin_signature} +end_signature=${end_signature} +sig_filename_o=${sig_filename_o}
+
 compile_sim:
 	$(VERILATOR) $(VFLAGS) $(TOPMOD_FILE) $(SIMFILE)
 	$(MAKE) -j -C obj_dir -f V$(TOPMOD).mk
@@ -45,7 +52,7 @@ questa_compile:
 	vopt +acc riscv_tests -o riscv_tests_opt -gMEMFILE=\"${MEMFILE}\"
 
 questa_run:
-	vsim -do vsim.do riscv_tests_opt
+	vsim -do vsim.do riscv_tests_opt $(VSIM_ARGS)
 
 questa_clean:
 	vdel -all -lib $(LIB_NAME)

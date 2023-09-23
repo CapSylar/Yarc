@@ -182,7 +182,7 @@ begin : main_decode
         PRIV:
         begin
             // detect trap
-            trap = (func3 == 0); // ecall or ebreak
+            trap = (func3 == 0) && (rs2 != 2); // ecall or ebreak
         end
 
         // TODO: handle illegal opcode

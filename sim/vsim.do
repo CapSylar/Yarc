@@ -125,7 +125,7 @@ add wave -color Gold sim:${CORE}/write_back_i/regf_write_o;
 add wave -color Gold sim:${CORE}/write_back_i/regf_waddr_o;
 add wave -color Gold sim:${CORE}/write_back_i/regf_wdata_o;
 
----------------------------------------------------------
+# ---------------------------------------------------------
 add wave -divider {DEP DETECTION}
 add wave -color Turquoise sim:${CORE}/dep_detection_i/forward_ex_mem_rs1_o;
 add wave -color Turquoise sim:${CORE}/dep_detection_i/forward_ex_mem_rs2_o;
@@ -137,4 +137,6 @@ add wave -color Turquoise sim:${CORE}/dep_detection_i/id_ex_flush_o;
 add wave -color Turquoise sim:${CORE}/dep_detection_i/id_ex_stall_o;
 add wave -color Turquoise sim:${CORE}/dep_detection_i/if_id_stall_o;
 
+# disable creation of the transcript file
+transcript off
 run -all

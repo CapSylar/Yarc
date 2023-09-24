@@ -144,7 +144,10 @@ task automatic run_test();
     bit success = 0;
     eval_result(success);
 
-    $display("TEST: %s", success ? "OK" : "FAILED");
+    if (success)
+        $display("TEST OK");
+    else
+        $display("TEST FAILED");
 
     // dump the memory signature so it can be checked with a reference
     $display("sig start: %x || sig end: %x", begin_signature, end_signature);
@@ -154,15 +157,22 @@ endtask: run_test
 
 task automatic dump_sig();
 
+    int i;
     int fd;
     fd = $fopen(sig_filename_o, "w");
     
     if (!fd)
-        $display("could not create file %s to dump signature", sig_filename_o);
-
-    for (bit [DEPTH+2-1:2] start = begin_signature[DEPTH+2-1:2]; start < end_signature[DEPTH+2-1:2]; ++start)
     begin
-        $fwrite(fd, "%x\n", mem_i.mem[start]);
+        $display("could not create file %s to dump signature", sig_filename_o);
+        return;
+    end
+
+    i = 0;
+    for (bit [DEPTH+2-1:2] start = begin_signature[DEPTH+2-1:2]; start < end_signature[DEPTH+2-1:2]; start += 4)
+    begin
+        for (int i = 3; i >= 0; --i)
+            $fwrite(fd, "%x", mem_i.mem[start + i]);
+        $fwrite(fd, "\n");
     end
 
     $fclose(fd);

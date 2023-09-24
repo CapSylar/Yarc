@@ -1,5 +1,5 @@
 # runs the simulations
-.PHONY: clean all
+.PHONY: clean all compile_sim run_sim questa_compile questa_run questa_clean
 
 MEMFILE := ""
 CURRENT_DIR=$(shell pwd)
@@ -30,11 +30,10 @@ VERILATOR=verilator
 VFLAGS= -cc --exe --timing $(TRACING_OPTIONS) $(DEFINES) $(MODULES_PATH) $(INCLUDE_PATH) $(TOP_PARAMS)
 
 # signature start and end
-begin_signature := 0
-end_signature := 0
-sig_filename_o := ""
-
-VSIM_ARGS := +begin_signature=${begin_signature} +end_signature=${end_signature} +sig_filename_o=${sig_filename_o}
+begin_signature ?= 0
+end_signature ?= 0
+sig_filename_o ?= ""
+IS_GUI ?= 1
 
 compile_sim:
 	$(VERILATOR) $(VFLAGS) $(TOPMOD_FILE) $(SIMFILE)
@@ -43,7 +42,13 @@ compile_sim:
 run_sim:
 	obj_dir/V$(TOPMOD) +trace
 
+# QUESTASIM ARGUMENTS
 LIB_NAME ?= work
+VSIM_ARGS := +begin_signature=${begin_signature} +end_signature=${end_signature} +sig_filename_o=${sig_filename_o}
+
+ifeq ($(IS_GUI), 0)
+	VSIM_ARGS += -c  
+endif
 
 questa_compile:
 	vlib $(LIB_NAME)
@@ -52,7 +57,7 @@ questa_compile:
 	vopt +acc riscv_tests -o riscv_tests_opt -gMEMFILE=\"${MEMFILE}\"
 
 questa_run:
-	vsim -do vsim.do riscv_tests_opt $(VSIM_ARGS)
+	vsim -wlfopt -wlfdeleteonquit -do vsim.do riscv_tests_opt $(VSIM_ARGS)
 
 questa_clean:
 	vdel -all -lib $(LIB_NAME)

@@ -54,41 +54,41 @@ import riscv_pkg::*;
     input [31:0] forward_mem_wb_data_i
 );
 
-logic [31:0] operand1, operand2;
+logic [31:0] rs1_data, rs2_data; // contain the most up to date values of the registers needed
+
+always_comb
+begin : solve_forwarding
+    rs1_data = rs1_data_i;
+    rs2_data = rs2_data_i;
+
+    // any forwarding active for rs1 ?
+    if (forward_ex_mem_rs1_i)
+        rs1_data = forward_ex_mem_data_i;
+    else if (forward_mem_wb_rs1_i)
+        rs1_data = forward_mem_wb_data_i;
+
+    // any forwarding active for rs2 ?
+    if (forward_ex_mem_rs2_i)
+        rs2_data = forward_ex_mem_data_i;
+    else if (forward_mem_wb_rs2_i)
+        rs2_data = forward_mem_wb_data_i;
+end
+
+logic [31:0] operand1, operand2; // arithmetic operations are done on these
 
 // determine operand1
 always_comb
 begin
     case (alu_oper1_src_i)
         OPER1_RS1:
-            // any forwarding active ?
-            if (forward_ex_mem_rs1_i)
-                operand1 = forward_ex_mem_data_i;
-            else if (forward_mem_wb_rs1_i)
-                operand1 = forward_mem_wb_data_i;
-            else
-                operand1 = rs1_data_i;
+            operand1 = rs1_data;
         OPER1_PC:
             operand1 = pc_i;
         OPER1_ZERO:
             operand1 = 0;
         default:
-            operand1 = rs1_data_i;
+            operand1 = rs1_data;
     endcase
-end
-
-logic [31:0] rs2_data;
-
-// determine rs2 data
-always_comb
-begin
-     // any forwarding active ?
-    if (forward_ex_mem_rs2_i)
-        rs2_data = forward_ex_mem_data_i;
-    else if (forward_mem_wb_rs2_i)
-        rs2_data = forward_mem_wb_data_i;
-    else
-        rs2_data = rs2_data_i;
 end
 
 // determine operand2
@@ -102,7 +102,7 @@ begin
         OPER2_PC_INC:
             operand2 = 4; // no support for compressed instructions extension, yet
         default:
-            operand2 = rs2_data_i;
+            operand2 = rs2_data;
     endcase
 end
 
@@ -152,7 +152,7 @@ begin
         BNJ_JALR:
         begin
             load_pc_o = 1;
-            new_pc_o = rs1_data_i + imm_i;
+            new_pc_o = rs1_data + imm_i;
         end
 
         BNJ_BRANCH:

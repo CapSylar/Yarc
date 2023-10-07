@@ -172,8 +172,7 @@ task automatic dump_sig();
     begin
         for (int i = 3; i >= 0; --i) // 4 32-bit words per line
         begin
-            // stored in memory small endian words -> big endian words
-            $fwrite(fd, "%x", {<<8 {mem_i.mem[start + i]}});
+            $fwrite(fd, "%x", mem_i.mem[start + i]);
         end
         $fwrite(fd, "\n");
     end

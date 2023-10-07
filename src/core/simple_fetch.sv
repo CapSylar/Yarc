@@ -37,7 +37,7 @@ begin
     else
     begin
         // instructions are stored as small-endian, flip 'em
-        instr_o <= {<<8 {rdata_i}};
+        instr_o <= rdata_i;
     end
 end
 

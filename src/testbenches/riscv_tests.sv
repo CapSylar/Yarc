@@ -170,8 +170,11 @@ task automatic dump_sig();
     i = 0;
     for (bit [DEPTH+2-1:2] start = begin_signature[DEPTH+2-1:2]; start < end_signature[DEPTH+2-1:2]; start += 4)
     begin
-        for (int i = 3; i >= 0; --i)
-            $fwrite(fd, "%x", mem_i.mem[start + i]);
+        for (int i = 3; i >= 0; --i) // 4 32-bit words per line
+        begin
+            // stored in memory small endian words -> big endian words
+            $fwrite(fd, "%x", {<<8 {mem_i.mem[start + i]}});
+        end
         $fwrite(fd, "\n");
     end
 

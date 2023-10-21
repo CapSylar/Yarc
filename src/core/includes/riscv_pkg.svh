@@ -17,7 +17,7 @@ typedef enum logic [6:0]
 
     FENCE =     7'b0001111,
 
-    PRIV =      7'b1110011 // ecall, ebreak and Zicsr instructions
+    SYSTEM =    7'b1110011 // ecall, ebreak and Zicsr instructions
 } opcode_t;
 
 typedef enum logic [2:0]
@@ -62,14 +62,17 @@ typedef enum logic [1:0]
 {
     OPER1_RS1,
     OPER1_ZERO,
-    OPER1_PC
+    OPER1_PC,
+    OPER1_CSR_IMM
 } alu_oper1_src_t;
 
-typedef enum logic [1:0]
+typedef enum logic [2:0]
 {
     OPER2_RS2,
     OPER2_IMM,
-    OPER2_PC_INC
+    OPER2_PC_INC,
+    OPER2_CSR,
+    OPER2_ZERO
 } alu_oper2_src_t;
 
 typedef enum logic [2:0]
@@ -81,6 +84,16 @@ typedef enum logic [2:0]
     BLTU =  3'b110,
     BGEU =  3'b111
 } opcode_branch_t;
+
+typedef enum logic [2:0]
+{
+    CSRRW = 3'b000,
+    CSRRS = 3'b010,
+    CSRRC = 3'b011,
+    CSRRWI= 3'b101,
+    CSRRSI= 3'b110,
+    CSRRCI= 3'b111
+} system_opc_t;
 
 typedef enum logic [1:0]
 {

@@ -41,8 +41,13 @@ logic [31:0] if_id_pc;
 // Driven by the Register file
 logic [31:0] rs1_data, rs2_data;
 
+// Driven by the CS Register file
+logic [31:0] csr_rdata;
+
 // Driven by the Decode stage
 logic [4:0] rs1_addr, rs2_addr;
+logic csr_re;
+logic [11:0] csr_raddr;
 logic [31:0] id_ex_pc, id_ex_rs1_data, id_ex_rs2_data, id_ex_imm;
 alu_oper1_src_t id_ex_alu_oper1_src;
 alu_oper2_src_t id_ex_alu_oper2_src;
@@ -55,6 +60,9 @@ logic [4:0] id_ex_rd_addr;
 logic [4:0] id_ex_rs1_addr;
 logic [4:0] id_ex_rs2_addr;
 logic id_ex_trap;
+logic [31:0] id_ex_csr_rdata, id_ex_csr_wdata;
+logic id_ex_csr_we;
+logic [11:0] id_ex_csr_waddr;
 
 // Driven by the Ex stage
 logic [31:0] ex_mem_alu_result;
@@ -133,6 +141,23 @@ reg_file reg_file_i
     .wdata_i(regf_wdata)
 );
 
+// CS Register file
+cs_registers cs_registers_i
+(
+    .clk_i(clk_i),
+    .rstn_i(rstn_i),
+
+    // read port
+    .csr_re_i(csr_re),
+    .cs_raddr_i(csr_raddr),
+    .cs_rdata_o(csr_rdata),
+
+    // write port
+    .csr_we_i('0),
+    .csr_waddr_i('0),
+    .csr_wdata_i('0)
+);
+
 // Decode Stage
 
 decode decode_i
@@ -146,6 +171,12 @@ decode decode_i
     .regf_rs2_addr_o(rs2_addr),
     .rs1_data_i(rs1_data),
     .rs2_data_i(rs2_data),
+
+    // csr unit <-> decode module
+    // read port
+    .csr_re_o(csr_re),
+    .csr_raddr_o(csr_raddr),
+    .csr_rdata_i(csr_rdata),
 
     // from IF stage
     .instr_i(if_id_instr), // instruction
@@ -162,6 +193,7 @@ decode decode_i
     .rs1_data_o(id_ex_rs1_data),
     .rs2_data_o(id_ex_rs2_data),
     .imm_o(id_ex_imm),
+    .csr_rdata_o(id_ex_csr_rdata),
     .alu_oper1_src_o(id_ex_alu_oper1_src),
     .alu_oper2_src_o(id_ex_alu_oper2_src),
     .bnj_oper_o(id_ex_bnj_oper),
@@ -169,6 +201,8 @@ decode decode_i
 
     // for the MEM stage
     .mem_oper_o(id_ex_mem_oper),
+    .csr_waddr_o(id_ex_csr_wdata),
+    .csr_we_o(id_ex_csr_we),
 
     // for the WB stage
     .wb_use_mem_o(id_ex_wb_use_mem),

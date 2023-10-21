@@ -14,6 +14,12 @@ import riscv_pkg::*;
     input [31:0] rs1_data_i,
     input [31:0] rs2_data_i,
 
+    // csr unit <-> decode module
+    // read port
+    output csr_re_o, // read enable
+    output [11:0] csr_raddr_o,
+    input [31:0] csr_rdata_i,
+
     // from IF stage
     input [31:0] instr_i, // instruction
     input [31:0] pc_i, // pc of the instruction
@@ -29,6 +35,7 @@ import riscv_pkg::*;
     output logic [31:0] rs1_data_o,
     output logic [31:0] rs2_data_o,
     output logic [31:0] imm_o,
+    output logic [31:0] csr_rdata_o,
     output alu_oper1_src_t alu_oper1_src_o,
     output alu_oper2_src_t alu_oper2_src_o,
     output bnj_oper_t bnj_oper_o,
@@ -36,6 +43,8 @@ import riscv_pkg::*;
 
     // for the MEM stage
     output mem_oper_t mem_oper_o,
+    output logic [11:0] csr_waddr_o,
+    output logic csr_we_o,
 
     // for the WB stage
     output logic wb_use_mem_o,
@@ -61,6 +70,7 @@ assign rs1 = instr_i[19:15];
 assign rs2 = instr_i[24:20];
 assign func3 = instr_i[14:12];
 assign func7 = instr_i[31:25];
+assign csr_addr = instr_i[31:20];
 
 // immediates
 logic [31:0] imm_i, imm_s, imm_b, imm_u, imm_j;
@@ -70,6 +80,7 @@ assign imm_s = 32'(signed'({instr_i[31:25], instr_i[11:7]}));
 assign imm_b = 32'(signed'({instr_i[31], instr_i[7], instr_i[30:25], instr_i[11:8], 1'b0}));
 assign imm_u = {instr_i[31:12], 12'b0};
 assign imm_j = 32'(signed'({instr_i[31], instr_i[19:12], instr_i[20], instr_i[30:21], 1'b0}));
+assign imm_csr = 32'({instr_i[19:15]}); // used for immediate csr instructions
 
 alu_oper_t alu_oper;
 logic [31:0] curr_imm;
@@ -179,10 +190,38 @@ begin : main_decode
 
         end
 
-        PRIV:
+        SYSTEM:
         begin
-            // detect trap
-            trap = (func3 == 0) && (rs2 != 2); // ecall or ebreak
+            if (func3 == '0) // ecall or ebreak
+                trap = (func3 == 0) && (rs2 != 2);
+            else 
+            begin
+
+                // determine if csr will be read
+                // In CSRRW*: if rd = Zero, the csr is not read and any read side-effects will not be triggered
+                csr_re = ((system_opc_t'(func3) == CSRRW ||
+                    system_opc_t'(func3) == CSRRWI) && rd == '0) ? 1'b0 : 1'b1;
+
+                // determine is csr will be written
+                // In CSRRS/C: If rs1 = Zero, the csr is not written and any write side-effect will not be triggered
+                // In CSRRSI/CI: If uimm = Zero, the csr is not written any write side-effects will not be triggered
+                csr_we = (rs1 == '0 && (system_opc_t'(func3) == CSRRS || system_opc_t'(func3) == CSRRS)) ||
+                    (imm_csr == '0 && (system_opc_t'(func3) == CSRRSI || system_opc_t'(func3) == CSRRCI)) ? 1'b0 : 1'b1;
+
+                // handle CSR* instructions
+                if (func3[2]) // indicates the immediate variant
+                begin
+                    alu_oper1_src = OPER1_CSR_IMM;
+                    curr_imm = imm_csr;
+                end
+                else
+                    alu_oper1_src = OPER1_RS1;
+
+                if (func3[1:0] == 2'b10) // CSRRW*
+                    alu_oper2_src = OPER2_ZERO;
+                else
+                    alu_oper2_src = OPER2_CSR;
+            end
         end
 
         // TODO: handle illegal opcode
@@ -230,6 +269,16 @@ begin : alu_decode
                 alu_oper = alu_oper_t'({1'b0,func3});
         end
 
+        SYSTEM:
+        begin
+            if (system_opc_t'(func3) == CSRRW || system_opc_t'(func3) == CSRRWI)
+                alu_oper = ALU_ADD;
+            else if (system_opc_t'(func3) == CSRRS || system_opc_t'(func3) == CSRRSI)
+                alu_oper = ALU_OR;
+            else if (system_opc_t'(func3) == CSRRC || system_opc_t'(func3) == CSRRCI)
+                alu_oper = ALU_XOR;
+        end
+
         default: // no need to handle anything here, already handled illegal opcodes above
         begin end
     endcase
@@ -239,6 +288,8 @@ end
 
 assign regf_rs1_addr_o = rs1;
 assign regf_rs2_addr_o = rs2;
+assign csr_addr_o = csr_addr;
+assign csr_re_o = csr_re;
 
 always_ff @(posedge clk_i, negedge rstn_i)
 begin : id_ex_pip
@@ -248,12 +299,15 @@ begin : id_ex_pip
         rs1_data_o <= 0;
         rs2_data_o <= 0;
         imm_o <= 0;
+        csr_rdata_o <= 0;
         alu_oper1_src_o <= OPER1_RS1;
         alu_oper2_src_o <= OPER2_RS2;
         bnj_oper_o <= BNJ_NO;
         alu_oper_o <= ALU_ADD;
 
         mem_oper_o <= MEM_NOP;
+        csr_addr_o <= 0;
+        csr_we_o <= 0;
 
         wb_use_mem_o <= 0;
         write_rd_o <= 0;
@@ -270,12 +324,15 @@ begin : id_ex_pip
         rs1_data_o <= rs1_data_i;
         rs2_data_o <= rs2_data_i;
         imm_o <= curr_imm;
+        csr_rdata_o <= csr_rdata_i;
         alu_oper1_src_o <= alu_oper1_src;
         alu_oper2_src_o <= alu_oper2_src;
         bnj_oper_o <= bnj_oper;
         alu_oper_o <= alu_oper;
 
         mem_oper_o <= mem_oper;
+        csr_waddr_o <= csr_raddr;
+        csr_we_o <= csr_we;
 
         wb_use_mem_o <= wb_use_mem;
         write_rd_o <= write_rd;

@@ -11,6 +11,7 @@ import riscv_pkg::*;
     input [31:0] rs1_data_i,
     input [31:0] rs2_data_i,
     input [31:0] imm_i,
+    input [31:0] csr_rdata_i,
     input alu_oper1_src_t alu_oper1_src_i,
     input alu_oper2_src_t alu_oper2_src_i,
     input alu_oper_t alu_oper_i,
@@ -18,6 +19,8 @@ import riscv_pkg::*;
 
     // forward to MEM stage
     input mem_oper_t mem_oper_i,
+    input [11:0] csr_waddr_i,
+    input csr_we_i,
     input trap_i,
     
     // forward to the WB stage
@@ -34,6 +37,8 @@ import riscv_pkg::*;
     output logic [31:0] alu_result_o,
     output logic [31:0] alu_oper2_o,
     output mem_oper_t mem_oper_o,
+    output logic [11:0] csr_waddr_o,
+    output logic csr_we_o,
     output logic trap_o,
     // for WB stage exclusively
     output logic wb_use_mem_o,
@@ -79,13 +84,15 @@ logic [31:0] operand1, operand2; // arithmetic operations are done on these
 // determine operand1
 always_comb
 begin
-    case (alu_oper1_src_i)
+    unique case (alu_oper1_src_i)
         OPER1_RS1:
             operand1 = rs1_data;
         OPER1_PC:
             operand1 = pc_i;
         OPER1_ZERO:
-            operand1 = 0;
+            operand1 = '0;
+        OPER1_CSR_IMM:
+            operand1 = imm_i;
         default:
             operand1 = rs1_data;
     endcase
@@ -94,13 +101,17 @@ end
 // determine operand2
 always_comb
 begin
-    case (alu_oper2_src_i)
+    unique case (alu_oper2_src_i)
         OPER2_RS2:
             operand2 = rs2_data;
         OPER2_IMM:
             operand2 = imm_i;
         OPER2_PC_INC:
             operand2 = 4; // no support for compressed instructions extension, yet
+        OPER2_CSR:
+            operand2 = csr_rdata_i;
+        OPER2_ZERO:
+            operand2 = '0;
         default:
             operand2 = rs2_data;
     endcase
@@ -112,7 +123,7 @@ wire [4:0] shift_amount = operand2[4:0];
 // alu result
 always_comb
 begin
-    case (alu_oper_i)
+    unique case (alu_oper_i)
         ALU_ADD: alu_result = operand1 + operand2;
         ALU_SUB: alu_result = operand1 - operand2;
 
@@ -142,7 +153,7 @@ end
 // handle branches and jumps
 always_comb
 begin
-    case (bnj_oper_i)
+    unique case (bnj_oper_i)
         BNJ_JAL:
         begin
             load_pc_o = 1;
@@ -177,6 +188,8 @@ begin : ex_mem_pip
         alu_result_o <= 0;
         alu_oper2_o <= 0;
         mem_oper_o <= MEM_NOP;
+        csr_waddr_o <= '0;
+        csr_we_o <= '0;
         trap_o <= 0;
         
         wb_use_mem_o <= 0;
@@ -188,6 +201,8 @@ begin : ex_mem_pip
         alu_result_o <= alu_result;
         alu_oper2_o <= rs2_data;
         mem_oper_o <= mem_oper_i;
+        csr_waddr_o <= csr_waddr_i;
+        csr_we_o <= csr_we_i;
         trap_o <= trap_i;
 
         wb_use_mem_o <= wb_use_mem_i;

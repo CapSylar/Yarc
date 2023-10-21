@@ -2,13 +2,40 @@
 // instantiated by testbenches
 
 module core_with_mem
-#(parameter string DMEMFILE = "", parameter string IMEMFILE = "")
-(
-    input clk_i,
-    input rstn_i
-);
+#(parameter string DMEMFILE = "", parameter string IMEMFILE = "") ();
+
+// clk generation
+logic clk;
+
+// drive clock
+initial
+begin
+    clk = 0;
+    forever
+    begin
+        #5;
+        clk = ~clk;
+    end
+end
 
 logic rstn, rstn_t;
+always @(posedge clk)
+begin
+    rstn <= rstn_t;    
+end
+
+initial
+begin
+    rstn_t = 1;
+    @(posedge clk);
+    rstn_t = 0;
+    repeat(2) @(posedge clk);
+    rstn_t = 1;
+
+    repeat(100) @(posedge clk);
+    $finish;
+end
+
 logic imem_read;
 logic [31:0] imem_raddr;
 logic [31:0] imem_rdata;
@@ -17,7 +44,7 @@ wire imem_ena = !imem_raddr[30];
 // Instruction Memory
 sp_mem #(.MEMFILE(IMEMFILE)) imem
 (
-    .clk_i(clk_i),
+    .clk_i(clk),
     .ena_i(imem_ena),
 
     .read_i(imem_read),
@@ -38,7 +65,7 @@ wire dmem_ena = dmem_addr[30];
 // Data Memory
 sp_mem #(.MEMFILE(DMEMFILE)) dmem
 (
-    .clk_i(clk_i),
+    .clk_i(clk),
     .ena_i(dmem_ena),
 
     .read_i(dmem_read),
@@ -50,9 +77,9 @@ sp_mem #(.MEMFILE(DMEMFILE)) dmem
 );
 
 // Core Top
-core_top yarc_top
+core_top core_i
 (
-    .clk_i(clk_i),
+    .clk_i(clk),
     .rstn_i(rstn),
 
     // Core <-> Imem interface

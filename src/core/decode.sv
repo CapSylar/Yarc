@@ -63,6 +63,7 @@ opcode_t opcode;
 logic [4:0] rs1, rs2, rd;
 logic [2:0] func3;
 logic [6:0] func7;
+logic [11:0] csr_addr;
 
 assign opcode = opcode_t'(instr_i[6:0]);
 assign rd = instr_i[11:7];
@@ -94,6 +95,8 @@ logic wb_use_mem; // use memory data out to write back to the register file
 mem_oper_t mem_oper; // memory operation if any
 
 logic trap;
+logic csr_re;
+logic csr_we;
 
 // decode
 always_comb
@@ -107,7 +110,10 @@ begin : main_decode
     bnj_oper = BNJ_NO; // no branch
     wb_use_mem = 0;
     mem_oper = MEM_NOP;
+
     trap = 0;
+    csr_re = 0;
+    csr_we = 0;
 
     case (opcode)
         LUI:
@@ -288,7 +294,7 @@ end
 
 assign regf_rs1_addr_o = rs1;
 assign regf_rs2_addr_o = rs2;
-assign csr_addr_o = csr_addr;
+assign csr_raddr_o = csr_addr;
 assign csr_re_o = csr_re;
 
 always_ff @(posedge clk_i, negedge rstn_i)
@@ -306,7 +312,7 @@ begin : id_ex_pip
         alu_oper_o <= ALU_ADD;
 
         mem_oper_o <= MEM_NOP;
-        csr_addr_o <= 0;
+        csr_waddr_o <= 0;
         csr_we_o <= 0;
 
         wb_use_mem_o <= 0;
@@ -331,7 +337,7 @@ begin : id_ex_pip
         alu_oper_o <= alu_oper;
 
         mem_oper_o <= mem_oper;
-        csr_waddr_o <= csr_raddr;
+        csr_waddr_o <= csr_addr;
         csr_we_o <= csr_we;
 
         wb_use_mem_o <= wb_use_mem;

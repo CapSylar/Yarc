@@ -7,14 +7,20 @@ module cs_registers
 
     // read port
     input csr_re_i,
-    input cs_raddr_i,
-    output csr_rdata_o,
+    input [11:0] csr_raddr_i,
+    output [31:0] csr_rdata_o,
 
     // write port
     input csr_we_i,
-    input csr_waddr_i,
-    input csr_wdata_i
+    input [11:0] csr_waddr_i,
+    input [31:0] csr_wdata_i
 );
+
+import csr_pkg::*;
+
+csr_t csr_raddr, csr_waddr;
+assign csr_raddr = csr_t'(csr_raddr_i);
+assign csr_waddr = csr_t'(csr_waddr_i);
 
 logic [31:0] misa_q;
 logic [31:0] mvendorid_q;
@@ -172,6 +178,9 @@ csr #(.Width(32), .ResetValue('0)) csr_mcountinhibit
     .rd_data_o(mcountinhibit_q)
 );
 
+logic mscratch_wen;
+logic [31:0] mscratch_d, mscratch_q;
+
 // MSCRATCH: Machine Scratch Register
 csr #(.Width(32), .ResetValue('0)) csr_mscratch
 (
@@ -211,5 +220,40 @@ csr #(.Width(32), .ResetValue('0)) csr_mtval
     .wr_data_i(mtval_d),
     .rd_data_o(mtval_q)
 );
+
+logic csr_rdata;
+
+// read logic
+always_comb begin: csr_read
+    csr_rdata = '0;
+
+    if (csr_re_i)
+    begin
+        unique case (csr_raddr)
+            CSR_MSCRATCH: csr_rdata = mscratch_q;
+
+
+        endcase
+    end
+end
+
+// write logic
+always_comb begin: csr_write
+
+    mscratch_wen = 1'b0;
+    mscratch_d = csr_wdata_i;
+
+    if (csr_we_i)
+    begin
+        unique case (csr_waddr)
+            CSR_MSCRATCH: mscratch_wen = 1'b1;
+
+
+        endcase
+    end
+end
+
+// assign outputs
+assign csr_rdata_o = csr_rdata;
 
 endmodule: cs_registers

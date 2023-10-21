@@ -15,10 +15,18 @@ import riscv_pkg::*;
     output [3:0] wsel_byte_o,
     output [31:0] wdata_o,
 
+    // Mem-rw <-> CS Register File
+    // write port
+    output [31:0] csr_wdata_o,
+    output [11:0] csr_waddr_o,
+    output csr_we_o,
+
     // from EX/MEM
     input [31:0] alu_result_i,
     input [31:0] alu_oper2_i,
     input mem_oper_t mem_oper_i,
+    input [11:0] csr_waddr_i,
+    input csr_we_i,
     input trap_i,
 
     // for WB stage exclusively
@@ -34,6 +42,10 @@ import riscv_pkg::*;
     output logic [31:0] dmem_rdata_o,
     output logic trap_o
 );
+
+assign csr_we_o = csr_we_i;
+assign csr_waddr_o = csr_waddr_i;
+assign csr_wdata_o = alu_result_i;
 
 // TODO: handle unaligned loads and stores, signal an error in this case
 

@@ -1,5 +1,5 @@
 
-set TOP riscv_tests
+set TOP core_with_mem
 set CORE ${TOP}/core_i
 
 add wave sim:${CORE}/clk_i;
@@ -27,6 +27,16 @@ add wave sim:${CORE}/reg_file_i/waddr_i;
 add wave sim:${CORE}/reg_file_i/wdata_i;
 add wave -color Gold sim:${CORE}/reg_file_i/rs1_data_o;
 add wave -color Gold sim:${CORE}/reg_file_i/rs2_data_o;
+
+# ---------------------------------------------------------
+add wave -divider {CS REGISTERS}
+add wave sim:${CORE}/cs_registers_i/csr_re_i;
+add wave sim:${CORE}/cs_registers_i/csr_raddr_i;
+add wave sim:${CORE}/cs_registers_i/csr_rdata_o;
+
+add wave sim:${CORE}/cs_registers_i/csr_we_i;
+add wave sim:${CORE}/cs_registers_i/csr_waddr_i;
+add wave sim:${CORE}/cs_registers_i/csr_wdata_i;
 
 # ---------------------------------------------------------
 add wave -divider {DECODE}

@@ -54,20 +54,22 @@ alu_oper2_src_t id_ex_alu_oper2_src;
 bnj_oper_t id_ex_bnj_oper;
 alu_oper_t id_ex_alu_oper;
 mem_oper_t id_ex_mem_oper;
+logic [11:0] id_ex_csr_waddr;
+logic id_ex_csr_we;
 logic id_ex_wb_use_mem;
 logic id_ex_write_rd;
 logic [4:0] id_ex_rd_addr;
 logic [4:0] id_ex_rs1_addr;
 logic [4:0] id_ex_rs2_addr;
 logic id_ex_trap;
-logic [31:0] id_ex_csr_rdata, id_ex_csr_wdata;
-logic id_ex_csr_we;
-logic [11:0] id_ex_csr_waddr;
+logic [31:0] id_ex_csr_rdata;
 
 // Driven by the Ex stage
 logic [31:0] ex_mem_alu_result;
 logic [31:0] ex_mem_alu_oper2;
 mem_oper_t ex_mem_mem_oper;
+logic [11:0] ex_mem_csr_waddr;
+logic ex_mem_csr_we;
 logic ex_mem_wb_use_mem;
 logic ex_mem_write_rd;
 logic [4:0] ex_mem_rd_addr;
@@ -81,6 +83,9 @@ logic mem_wb_write_rd;
 logic [4:0] mem_wb_rd_addr;
 logic [31:0] mem_wb_alu_result;
 logic [31:0] mem_wb_dmem_rdata;
+logic [31:0] csr_wdata;
+logic [11:0] csr_waddr;
+logic csr_we;
 logic mem_wb_trap;
 
 // Driven by the Wb stage
@@ -149,13 +154,13 @@ cs_registers cs_registers_i
 
     // read port
     .csr_re_i(csr_re),
-    .cs_raddr_i(csr_raddr),
-    .cs_rdata_o(csr_rdata),
+    .csr_raddr_i(csr_raddr),
+    .csr_rdata_o(csr_rdata),
 
     // write port
-    .csr_we_i('0),
-    .csr_waddr_i('0),
-    .csr_wdata_i('0)
+    .csr_we_i(csr_we),
+    .csr_waddr_i(csr_waddr),
+    .csr_wdata_i(csr_wdata)
 );
 
 // Decode Stage
@@ -201,7 +206,7 @@ decode decode_i
 
     // for the MEM stage
     .mem_oper_o(id_ex_mem_oper),
-    .csr_waddr_o(id_ex_csr_wdata),
+    .csr_waddr_o(id_ex_csr_waddr),
     .csr_we_o(id_ex_csr_we),
 
     // for the WB stage
@@ -228,6 +233,7 @@ execute execute_i
     .rs1_data_i(id_ex_rs1_data),
     .rs2_data_i(id_ex_rs2_data),
     .imm_i(id_ex_imm),
+    .csr_rdata_i(id_ex_csr_rdata),
     .alu_oper1_src_i(id_ex_alu_oper1_src),
     .alu_oper2_src_i(id_ex_alu_oper2_src),
     .alu_oper_i(id_ex_alu_oper),
@@ -235,6 +241,8 @@ execute execute_i
 
     // forward to MEM stage
     .mem_oper_i(id_ex_mem_oper),
+    .csr_waddr_i(id_ex_csr_waddr),
+    .csr_we_i(id_ex_csr_we),
     .trap_i(id_ex_trap),
 
     // forward to the WB stage
@@ -251,6 +259,8 @@ execute execute_i
     .alu_result_o(ex_mem_alu_result),
     .alu_oper2_o(ex_mem_alu_oper2),
     .mem_oper_o(ex_mem_mem_oper),
+    .csr_waddr_o(ex_mem_csr_waddr),
+    .csr_we_o(ex_mem_csr_we),
     .trap_o(ex_mem_trap),
     // for WB stage exclusively
     .wb_use_mem_o(ex_mem_wb_use_mem),
@@ -287,10 +297,18 @@ mem_rw mem_rw_i
     .wsel_byte_o(dmem_wsel_byte_o),
     .wdata_o(dmem_wdata_o),
 
+    // Mem-rw <-> CS Register File
+    // write port
+    .csr_wdata_o(csr_wdata),
+    .csr_waddr_o(csr_waddr),
+    .csr_we_o(csr_we),
+
     // from EX/MEM
     .alu_result_i(ex_mem_alu_result),
     .alu_oper2_i(ex_mem_alu_oper2),
     .mem_oper_i(ex_mem_mem_oper),
+    .csr_waddr_i(ex_mem_csr_waddr),
+    .csr_we_i(ex_mem_csr_we),
     .trap_i(ex_mem_trap),
     // for WB stage exclusively
     .wb_use_mem_i(ex_mem_wb_use_mem),

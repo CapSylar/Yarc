@@ -1,6 +1,9 @@
 # runs the simulations
 .PHONY: clean all compile_sim run_sim questa_compile questa_run questa_clean
 
+# simulation definitions
+IMEMFILE := ""
+DMEMFILE := ""
 MEMFILE := ""
 CURRENT_DIR=$(shell pwd)
 
@@ -15,15 +18,12 @@ INCLUDE_PATH := -I../src/core/includes
 SIMPROG := tb
 SIMFILE := $(SIMPROG).cpp
 VDIRFB  := ./obj_dir
-TOP_PARAMS := -GMEMFILE=\"${MEMFILE}\"
+DEFINES := -gIMEMFILE=\"$(IMEMFILE)\" -gDMEMFILE=\"$(DMEMFILE)\"
+TOP_PARAMS := -gMEMFILE=\"${MEMFILE}\" $(DEFINES)
 
 PRJ_DIR := $(SRC_DIR)
 export PRJ_DIR
-# # simulation definitions
-# IMEMFILE := ""
-# DMEMFILE := ""
 
-DEFINES := +define+IMEMFILE=\"$(IMEMFILE)\" +define+DMEMFILE=\"$(DMEMFILE)\"
 TRACING_OPTIONS := --trace --trace-max-array 2048
 #verilator arguments
 VERILATOR=verilator
@@ -53,11 +53,11 @@ endif
 questa_compile:
 	vlib $(LIB_NAME)
 	vmap work ./work
-	vlog -work $(LIB_NAME) -modelsimini modelsim.ini -f files.f -sv -sv12compat -timescale "1ns/1ps" -O5
-	vopt +acc riscv_tests -o riscv_tests_opt -gMEMFILE=\"${MEMFILE}\"
+	vlog +acc -work $(LIB_NAME) -modelsimini modelsim.ini -f files.f -sv -sv12compat -timescale "1ns/1ps" -O5
+	vopt +acc $(TOPMOD) -o $(TOPMOD)_opt $(TOP_PARAMS)
 
 questa_run:
-	vsim -wlfopt -wlfdeleteonquit -do vsim.do riscv_tests_opt $(VSIM_ARGS)
+	vsim -wlfopt -wlfdeleteonquit -do vsim.tcl $(TOPMOD)_opt $(VSIM_ARGS)
 
 questa_clean:
 	vdel -all -lib $(LIB_NAME)

@@ -16,6 +16,7 @@ import riscv_pkg::*;
     input alu_oper2_src_t alu_oper2_src_i,
     input alu_oper_t alu_oper_i,
     input bnj_oper_t bnj_oper_i,
+    input is_csr_i,
 
     // forward to MEM stage
     input mem_oper_t mem_oper_i,
@@ -34,11 +35,13 @@ import riscv_pkg::*;
     input stall_i,
     input flush_i,
 
-    output logic [31:0] alu_result_o,
+    output logic [31:0] alu_result_o, // always contains a mem address or the rd value
     output logic [31:0] alu_oper2_o,
     output mem_oper_t mem_oper_o,
+    output logic [31:0] csr_wdata_o,
     output logic [11:0] csr_waddr_o,
     output logic csr_we_o,
+    output logic is_csr_o,
     output logic trap_o,
     // for WB stage exclusively
     output logic wb_use_mem_o,
@@ -188,8 +191,10 @@ begin : ex_mem_pip
         alu_result_o <= 0;
         alu_oper2_o <= 0;
         mem_oper_o <= MEM_NOP;
+        csr_wdata_o <= '0;
         csr_waddr_o <= '0;
         csr_we_o <= '0;
+        is_csr_o <= '0;
         trap_o <= 0;
         
         wb_use_mem_o <= 0;
@@ -198,11 +203,16 @@ begin : ex_mem_pip
     end
     else if (!stall_i)
     begin
-        alu_result_o <= alu_result;
+        // TODO: rename alu_result_o
+        // since it doesn't really reflect alu_result
+        // it is really the value to write to rd if any
+        alu_result_o <= is_csr_i ? csr_rdata_i : alu_result;
         alu_oper2_o <= rs2_data;
         mem_oper_o <= mem_oper_i;
+        csr_wdata_o <= alu_result;
         csr_waddr_o <= csr_waddr_i;
         csr_we_o <= csr_we_i;
+        is_csr_o <= is_csr_i;
         trap_o <= trap_i;
 
         wb_use_mem_o <= wb_use_mem_i;

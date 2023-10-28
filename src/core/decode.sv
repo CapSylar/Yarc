@@ -40,6 +40,7 @@ import riscv_pkg::*;
     output alu_oper2_src_t alu_oper2_src_o,
     output bnj_oper_t bnj_oper_o,
     output alu_oper_t alu_oper_o,
+    output logic is_csr_o,
 
     // for the MEM stage
     output mem_oper_t mem_oper_o,
@@ -54,6 +55,7 @@ import riscv_pkg::*;
     // used by the hazard/forwarding logic
     output logic [4:0] rs1_addr_o,
     output logic [4:0] rs2_addr_o,
+    output logic id_is_csr_o, // driven combinationally
 
     output logic trap_o
 );
@@ -97,6 +99,7 @@ mem_oper_t mem_oper; // memory operation if any
 logic trap;
 logic csr_re;
 logic csr_we;
+logic is_csr;
 
 // decode
 always_comb
@@ -114,6 +117,7 @@ begin : main_decode
     trap = 0;
     csr_re = 0;
     csr_we = 0;
+    is_csr = 0;
 
     case (opcode)
         LUI:
@@ -198,11 +202,13 @@ begin : main_decode
 
         SYSTEM:
         begin
+            write_rd = 1'b1;
+
             if (func3 == '0) // ecall or ebreak
                 trap = (func3 == 0) && (rs2 != 2);
-            else 
+            else  // CSR instruction
             begin
-
+                is_csr = 1'b1;
                 // determine if csr will be read
                 // In CSRRW*: if rd = Zero, the csr is not read and any read side-effects will not be triggered
                 csr_re = ((system_opc_t'(func3) == CSRRW ||
@@ -223,7 +229,7 @@ begin : main_decode
                 else
                     alu_oper1_src = OPER1_RS1;
 
-                if (func3[1:0] == 2'b10) // CSRRW*
+                if (func3[1:0] == 2'b01) // CSRRW*
                     alu_oper2_src = OPER2_ZERO;
                 else
                     alu_oper2_src = OPER2_CSR;
@@ -296,6 +302,7 @@ assign regf_rs1_addr_o = rs1;
 assign regf_rs2_addr_o = rs2;
 assign csr_raddr_o = csr_addr;
 assign csr_re_o = csr_re;
+assign id_is_csr_o = is_csr;
 
 always_ff @(posedge clk_i, negedge rstn_i)
 begin : id_ex_pip
@@ -310,6 +317,7 @@ begin : id_ex_pip
         alu_oper2_src_o <= OPER2_RS2;
         bnj_oper_o <= BNJ_NO;
         alu_oper_o <= ALU_ADD;
+        is_csr_o <= '0;
 
         mem_oper_o <= MEM_NOP;
         csr_waddr_o <= 0;
@@ -335,6 +343,7 @@ begin : id_ex_pip
         alu_oper2_src_o <= alu_oper2_src;
         bnj_oper_o <= bnj_oper;
         alu_oper_o <= alu_oper;
+        is_csr_o <= is_csr;
 
         mem_oper_o <= mem_oper;
         csr_waddr_o <= csr_addr;

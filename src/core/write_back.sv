@@ -4,7 +4,7 @@ module write_back
 (
     input clk_i,
     input rstn_i,
-
+ 
     // from MEM/WB
     input use_mem_i,
     input write_rd_i,

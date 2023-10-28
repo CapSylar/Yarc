@@ -221,7 +221,7 @@ csr #(.Width(32), .ResetValue('0)) csr_mtval
     .rd_data_o(mtval_q)
 );
 
-logic csr_rdata;
+logic [31:0] csr_rdata;
 
 // read logic
 always_comb begin: csr_read

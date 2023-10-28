@@ -52,6 +52,7 @@ logic [31:0] id_ex_pc, id_ex_rs1_data, id_ex_rs2_data, id_ex_imm;
 alu_oper1_src_t id_ex_alu_oper1_src;
 alu_oper2_src_t id_ex_alu_oper2_src;
 bnj_oper_t id_ex_bnj_oper;
+logic id_ex_is_csr;
 alu_oper_t id_ex_alu_oper;
 mem_oper_t id_ex_mem_oper;
 logic [11:0] id_ex_csr_waddr;
@@ -61,6 +62,7 @@ logic id_ex_write_rd;
 logic [4:0] id_ex_rd_addr;
 logic [4:0] id_ex_rs1_addr;
 logic [4:0] id_ex_rs2_addr;
+logic id_is_csr;
 logic id_ex_trap;
 logic [31:0] id_ex_csr_rdata;
 
@@ -68,8 +70,10 @@ logic [31:0] id_ex_csr_rdata;
 logic [31:0] ex_mem_alu_result;
 logic [31:0] ex_mem_alu_oper2;
 mem_oper_t ex_mem_mem_oper;
+logic [31:0] ex_mem_csr_wdata;
 logic [11:0] ex_mem_csr_waddr;
 logic ex_mem_csr_we;
+logic ex_mem_is_csr;
 logic ex_mem_wb_use_mem;
 logic ex_mem_write_rd;
 logic [4:0] ex_mem_rd_addr;
@@ -101,6 +105,7 @@ logic forward_mem_wb_rs2;
 logic [31:0] forward_ex_mem_data;
 logic [31:0] forward_mem_wb_data;
 logic if_id_stall;
+logic id_id_flush;
 logic id_ex_flush;
 logic id_ex_stall;
 
@@ -116,6 +121,7 @@ simple_fetch simple_fetch_i
     .pc_o(if_id_pc),
 
     .stall_i(if_id_stall),
+    .flush_i(if_id_flush),
 
     .pc_i(new_pc),
     .new_pc_i(load_pc),
@@ -203,6 +209,7 @@ decode decode_i
     .alu_oper2_src_o(id_ex_alu_oper2_src),
     .bnj_oper_o(id_ex_bnj_oper),
     .alu_oper_o(id_ex_alu_oper),
+    .is_csr_o(id_ex_is_csr),
 
     // for the MEM stage
     .mem_oper_o(id_ex_mem_oper),
@@ -217,6 +224,7 @@ decode decode_i
     // used by the hazard/forwarding logic
     .rs1_addr_o(id_ex_rs1_addr),
     .rs2_addr_o(id_ex_rs2_addr),
+    .id_is_csr_o(id_is_csr),
 
     .trap_o(id_ex_trap)
 );
@@ -238,6 +246,7 @@ execute execute_i
     .alu_oper2_src_i(id_ex_alu_oper2_src),
     .alu_oper_i(id_ex_alu_oper),
     .bnj_oper_i(id_ex_bnj_oper),
+    .is_csr_i(id_ex_is_csr),
 
     // forward to MEM stage
     .mem_oper_i(id_ex_mem_oper),
@@ -259,9 +268,12 @@ execute execute_i
     .alu_result_o(ex_mem_alu_result),
     .alu_oper2_o(ex_mem_alu_oper2),
     .mem_oper_o(ex_mem_mem_oper),
+    .csr_wdata_o(ex_mem_csr_wdata),
     .csr_waddr_o(ex_mem_csr_waddr),
     .csr_we_o(ex_mem_csr_we),
+    .is_csr_o(ex_mem_is_csr),
     .trap_o(ex_mem_trap),
+
     // for WB stage exclusively
     .wb_use_mem_o(ex_mem_wb_use_mem),
     .write_rd_o(ex_mem_write_rd),
@@ -307,6 +319,7 @@ mem_rw mem_rw_i
     .alu_result_i(ex_mem_alu_result),
     .alu_oper2_i(ex_mem_alu_oper2),
     .mem_oper_i(ex_mem_mem_oper),
+    .csr_wdata_i(ex_mem_csr_wdata),
     .csr_waddr_i(ex_mem_csr_waddr),
     .csr_we_i(ex_mem_csr_we),
     .trap_i(ex_mem_trap),
@@ -387,12 +400,18 @@ dep_hzrd_detection dep_detection_i
     .instr_valid_i(instr_valid),
     .load_pc_i(load_pc),
 
+    // to handle CSR read/write side effects
+    .id_is_csr_i(id_is_csr),
+    .ex_is_csr_i(id_ex_is_csr),
+    .mem_is_csr_i(ex_mem_is_csr),
+
     // hazard lines to ID/EX
     .id_ex_flush_o(id_ex_flush),
     .id_ex_stall_o(id_ex_stall),
 
     // hazard lines to IF/EX
-    .if_id_stall_o(if_id_stall)
+    .if_id_stall_o(if_id_stall),
+    .if_id_flush_o(if_id_flush)
 );
 
 endmodule : core_top

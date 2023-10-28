@@ -12,6 +12,7 @@ module simple_fetch
     output [31:0] pc_o, // program counter of the instruction presented to the cpu
 
     input stall_i, // is the cpu stalled ?
+    input flush_i,
 
     // used on a jump
     input [31:0] pc_i,
@@ -33,12 +34,11 @@ assign pc_o = pc_r;
 always @(posedge clk_i, negedge rstn_i)
 begin
     if (!rstn_i)
-        instr_o <= 0;
+        instr_o <= '0;
+    else if (flush_i)
+        instr_o <= '0;
     else
-    begin
-        // instructions are stored as small-endian, flip 'em
         instr_o <= rdata_i;
-    end
 end
 
 // prefetch state machine

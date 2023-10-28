@@ -31,11 +31,11 @@ add wave -color Gold sim:${CORE}/reg_file_i/rs2_data_o;
 # ---------------------------------------------------------
 add wave -divider {CS REGISTERS}
 add wave sim:${CORE}/cs_registers_i/csr_re_i;
-add wave sim:${CORE}/cs_registers_i/csr_raddr_i;
+add wave sim:${CORE}/cs_registers_i/csr_raddr;
 add wave sim:${CORE}/cs_registers_i/csr_rdata_o;
 
 add wave sim:${CORE}/cs_registers_i/csr_we_i;
-add wave sim:${CORE}/cs_registers_i/csr_waddr_i;
+add wave sim:${CORE}/cs_registers_i/csr_waddr;
 add wave sim:${CORE}/cs_registers_i/csr_wdata_i;
 
 # ---------------------------------------------------------
@@ -53,11 +53,14 @@ add wave -color Gold sim:${CORE}/decode_i/pc_o;
 add wave -color Gold sim:${CORE}/decode_i/rs1_data_o;
 add wave -color Gold sim:${CORE}/decode_i/rs2_data_o;
 add wave -color Gold sim:${CORE}/decode_i/imm_o;
+add wave -color Gold sim:${CORE}/decode_i/csr_rdata_o;
 add wave -color Gold sim:${CORE}/decode_i/alu_oper1_src_o;
 add wave -color Gold sim:${CORE}/decode_i/alu_oper2_src_o;
 add wave -color Gold sim:${CORE}/decode_i/bnj_oper_o;
 add wave -color Gold sim:${CORE}/decode_i/alu_oper_o;
 add wave -color Gold sim:${CORE}/decode_i/mem_oper_o;
+add wave -color Gold sim:${CORE}/decode_i/csr_waddr_o;
+add wave -color Gold sim:${CORE}/decode_i/csr_we_o;
 add wave -color Gold sim:${CORE}/decode_i/wb_use_mem_o;
 add wave -color Gold sim:${CORE}/decode_i/write_rd_o;
 add wave -color Gold sim:${CORE}/decode_i/rd_addr_o;
@@ -76,6 +79,8 @@ add wave sim:${CORE}/execute_i/alu_oper2_src_i;
 add wave sim:${CORE}/execute_i/alu_oper_i;
 add wave sim:${CORE}/execute_i/bnj_oper_i;
 add wave sim:${CORE}/execute_i/mem_oper_i;
+add wave sim:${CORE}/execute_i/operand1;
+add wave sim:${CORE}/execute_i/operand2;
 add wave -color Turquoise sim:${CORE}/execute_i/trap_i;
 add wave sim:${CORE}/execute_i/wb_use_mem_i;
 add wave sim:${CORE}/execute_i/write_rd_i;
@@ -93,6 +98,8 @@ add wave -color Turquoise sim:${CORE}/execute_i/forward_mem_wb_data_i;
 add wave -color Gold sim:${CORE}/execute_i/alu_result_o;
 add wave -color Gold sim:${CORE}/execute_i/alu_oper2_o;
 add wave -color Gold sim:${CORE}/execute_i/mem_oper_o;
+add wave -color Gold sim:${CORE}/execute_i/csr_waddr_o;
+add wave -color Gold sim:${CORE}/execute_i/csr_we_o;
 add wave -color Turquoise sim:${CORE}/execute_i/trap_o;
 add wave -color Gold sim:${CORE}/execute_i/wb_use_mem_o;
 add wave -color Gold sim:${CORE}/execute_i/write_rd_o;

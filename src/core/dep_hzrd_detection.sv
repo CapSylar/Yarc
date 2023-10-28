@@ -42,12 +42,17 @@ module dep_hzrd_detection
     input instr_valid_i,
     input load_pc_i,
 
+    input id_is_csr_i,
+    input ex_is_csr_i,
+    input mem_is_csr_i,
+
     // hazard lines to ID/EX
     output id_ex_flush_o,
     output id_ex_stall_o,
 
     // hazard lines to IF/EX
-    output if_id_stall_o
+    output if_id_stall_o,
+    output if_id_flush_o
 );
 
 // forwarding to the EX stage happens when we are writing to a register that is sourced
@@ -120,6 +125,11 @@ wire load_use_hzrd = id_ex_load && ((id_ex_rd_addr_i == id_rs1_addr_i) ||
 // On a mispredict, flush the 2 instruction after the branch and continue from the new PC
 assign id_ex_flush_o = load_pc_i || !instr_valid_i || load_use_hzrd;
 assign id_ex_stall_o = 0;
-assign if_id_stall_o = load_use_hzrd;
+
+// Instruction fetch is stalled on:
+// 1- Load use hazard
+// 2- There is a CSR instruction in the pipeline
+assign if_id_stall_o = load_use_hzrd || ex_is_csr_i || mem_is_csr_i;
+assign if_id_flush_o = id_is_csr_i || ex_is_csr_i || mem_is_csr_i;
 
 endmodule: dep_hzrd_detection

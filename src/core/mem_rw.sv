@@ -25,6 +25,7 @@ import riscv_pkg::*;
     input [31:0] alu_result_i,
     input [31:0] alu_oper2_i,
     input mem_oper_t mem_oper_i,
+    input [31:0] csr_wdata_i,
     input [11:0] csr_waddr_i,
     input csr_we_i,
     input trap_i,
@@ -45,7 +46,7 @@ import riscv_pkg::*;
 
 assign csr_we_o = csr_we_i;
 assign csr_waddr_o = csr_waddr_i;
-assign csr_wdata_o = alu_result_i;
+assign csr_wdata_o = csr_wdata_i;
 
 // TODO: handle unaligned loads and stores, signal an error in this case
 

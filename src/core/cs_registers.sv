@@ -88,8 +88,17 @@ csr #(.Width(32), .ResetValue('0)) csr_mhartid
     .rd_data_o(mhartid_q)
 );
 
+mstatus_t mstatus_d, mstatus_q;
+logic mstatus_wen;
+parameter mstatus_t MSTATUS_RST_VALUE = '{
+    mie: 1'b0,
+    mpie: 1'b1,
+    mpp: PRIV_LVL_U,
+    mprv: 1'b0
+};
+
 // MSTATUS: Machine Status Register
-csr #(.Width(32), .ResetValue('0)) csr_mstatus
+csr #(.Width($bits(mstatus_t)), .ResetValue(MSTATUS_RST_VALUE)) csr_mstatus
 (
     .clk_i(clk_i),
     .rstn_i(rstn_i),
@@ -98,15 +107,8 @@ csr #(.Width(32), .ResetValue('0)) csr_mstatus
     .rd_data_o(mstatus_q)
 );
 
-// MSTATUSH: Machine Status Register
-csr #(.Width(32), .ResetValue('0)) csr_mstatush
-(
-    .clk_i(clk_i),
-    .rstn_i(rstn_i),
-    .wr_en_i('0),
-    .wr_data_i('0),
-    .rd_data_o(mstatush_q)
-);
+logic [31:0] mtvec_d, mtvec_q;
+logic mtvec_wen;
 
 // MTVEC: Machine Trap-Vector Base-Address Register
 csr #(.Width(32), .ResetValue('0)) csr_mtvec
@@ -118,6 +120,9 @@ csr #(.Width(32), .ResetValue('0)) csr_mtvec
     .rd_data_o(mtvec_q)
 );
 
+logic [31:0] mip_d, mip_q;
+logic mip_wen;
+
 // MIP: Machine Interrupt Pending Register
 csr #(.Width(32), .ResetValue('0)) csr_mip
 (
@@ -127,6 +132,9 @@ csr #(.Width(32), .ResetValue('0)) csr_mip
     .wr_data_i(mip_d),
     .rd_data_o(mip_q)
 );
+
+logic [31:0] mie_d, mie_q;
+logic mie_wen;
 
 // MIE: Machine Interrupt Enable Register
 csr #(.Width(32), .ResetValue('0)) csr_mie
@@ -191,6 +199,9 @@ csr #(.Width(32), .ResetValue('0)) csr_mscratch
     .rd_data_o(mscratch_q)
 );
 
+logic [31:0] mepc_d, mepc_q;
+logic mepc_wen;
+
 // MEPC: Machine Exception Program Counter
 csr #(.Width(32), .ResetValue('0)) csr_mepc
 (
@@ -231,7 +242,19 @@ always_comb begin: csr_read
     begin
         unique case (csr_raddr)
             CSR_MSCRATCH: csr_rdata = mscratch_q;
-
+            CSR_MSTATUS:
+            begin
+                csr_rdata[CSR_MSTATUS_MIE_BIT] = mstatus_q.mie;
+                csr_rdata[CSR_MSTATUS_MPIE_BIT] = mstatus_q.mpie;
+                csr_rdata[CSR_MSTATUS_MPP_BIT_HIGH:CSR_MSTATUS_MPP_BIT_LOW] = mstatus_q.mpp;
+                csr_rdata[CSR_MSTATUS_MPRV_BIT] = mstatus_q.mprv;
+            end
+            CSR_MSTATUSH: csr_rdata = '0;
+            CSR_MTVEC: csr_rdata = mtvec_q;
+            CSR_MEPC: csr_rdata = mepc_q;
+            CSR_MIE: csr_rdata = mie_q;
+            CSR_MIP: csr_rdata = mie_q;
+            CSR_MEPC: csr_rdata = mepc_q;
 
         endcase
     end
@@ -243,11 +266,49 @@ always_comb begin: csr_write
     mscratch_wen = 1'b0;
     mscratch_d = csr_wdata_i;
 
+    mstatus_wen = 1'b0;
+    mstatus_d = mstatus_q;
+
+    mtvec_wen = 1'b0;
+    mtvec_d = mtvec_q;
+
+    mie_wen = 1'b0;
+    mie_d = mie_q;
+
+    mepc_wen = 1'b0;
+    mepc_d = mepc_q;
+
     if (csr_we_i)
     begin
         unique case (csr_waddr)
             CSR_MSCRATCH: mscratch_wen = 1'b1;
+            CSR_MSTATUS:
+            begin
+                mstatus_wen = 1'b1;
+                mstatus_d = '{
+                    mie: csr_wdata_i[CSR_MSTATUS_MIE_BIT],
+                    mpie: csr_wdata_i[CSR_MSTATUS_MPIE_BIT],
+                    mpp: priv_lvl_e'(csr_wdata_i[CSR_MSTATUS_MPP_BIT_HIGH:CSR_MSTATUS_MPP_BIT_LOW]),
+                    mprv: csr_wdata_i[CSR_MSTATUS_MPRV_BIT]
+                };
 
+                // TODO: illegal values ?
+            end
+            CSR_MTVEC:
+            begin
+                mtvec_wen = 1'b1;
+                mtvec_d = csr_wdata_i;
+            end
+            CSR_MIE:
+            begin
+                mie_wen = 1'b1;
+                mie_d = csr_wdata_i;
+            end
+            CSR_MEPC:
+            begin
+                mepc_wen = 1'b1;
+                mepc_d = {csr_wdata_i[31:2], 2'b00}; // IALIGN=32
+            end
 
         endcase
     end

@@ -173,4 +173,25 @@ package csr_pkg;
     CSR_SECURESEED     = 12'h7C1
   } csr_t;
 
+typedef enum logic [1:0]
+{
+  PRIV_LVL_U = 2'b00,
+  PRIV_LVL_M = 2'b11
+} priv_lvl_e;
+
+typedef struct packed
+{
+  logic mie;
+  logic mpie;
+  priv_lvl_e mpp;
+  logic mprv; 
+} mstatus_t;
+
+// specify where the fields lie according to the ISA
+parameter unsigned CSR_MSTATUS_MIE_BIT = 3;
+parameter unsigned CSR_MSTATUS_MPIE_BIT = 7;
+parameter unsigned CSR_MSTATUS_MPP_BIT_LOW = 11;
+parameter unsigned CSR_MSTATUS_MPP_BIT_HIGH = 12;
+parameter unsigned CSR_MSTATUS_MPRV_BIT = 17;
+
 endpackage: csr_pkg

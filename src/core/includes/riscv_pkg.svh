@@ -87,7 +87,7 @@ typedef enum logic [2:0]
 
 typedef enum logic [2:0]
 {
-    CSRRW = 3'b000,
+    CSRRW = 3'b001,
     CSRRS = 3'b010,
     CSRRC = 3'b011,
     CSRRWI= 3'b101,

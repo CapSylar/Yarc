@@ -16,6 +16,8 @@ add wave sim:${CORE}/simple_fetch_i/pc_i;
 add wave sim:${CORE}/simple_fetch_i/read_o;
 add wave sim:${CORE}/simple_fetch_i/raddr_o;
 add wave sim:${CORE}/simple_fetch_i/rdata_i;
+add wave sim:${CORE}/simple_fetch_i/current_state;
+add wave sim:${CORE}/simple_fetch_i/next_state;
 
 # ---------------------------------------------------------
 add wave -divider {REGISTER FILE}
@@ -37,6 +39,10 @@ add wave sim:${CORE}/cs_registers_i/csr_rdata_o;
 add wave sim:${CORE}/cs_registers_i/csr_we_i;
 add wave sim:${CORE}/cs_registers_i/csr_waddr;
 add wave sim:${CORE}/cs_registers_i/csr_wdata_i;
+
+add wave -group {CSRs} sim:${CORE}/cs_registers_i/mscratch_wen;
+add wave -group {CSRs} sim:${CORE}/cs_registers_i/mscratch_d;
+add wave -group {CSRs} sim:${CORE}/cs_registers_i/mscratch_q;
 
 # ---------------------------------------------------------
 add wave -divider {DECODE}

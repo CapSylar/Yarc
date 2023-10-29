@@ -35,51 +35,69 @@ always @(posedge clk_i, negedge rstn_i)
 begin
     if (!rstn_i)
         instr_o <= '0;
-    else if (flush_i)
-        instr_o <= '0;
+    // else if (flush_i)
+    //     instr_o <= '0;
     else
         instr_o <= rdata_i;
 end
 
 // prefetch state machine
 
-enum logic [1:0] {INIT, NEW_PC, CONT_PC} state = INIT, state_r = INIT;
+enum {IDLE, NEW_PC, CONT_PC, STALLED} current_state, next_state;
+
+// next state logic
+always_ff @(posedge clk_i, negedge rstn_i)
+    if (!rstn_i) current_state <= IDLE;
+    else current_state <= next_state;
 
 always_comb
 begin : pfetch_sm
-    state = state_r;
+    next_state = current_state;
     read_o = 0;
     valid_o = 0;
     pc = pc_r;
     
-    unique case (state)
-        INIT:
+    unique case (current_state)
+        IDLE:
         begin
-            state = NEW_PC;
+            next_state = NEW_PC;
         end
 
         CONT_PC:
         begin
-            read_o = 1;
-            valid_o = 1;
+            read_o = 1'b1;
+            valid_o = 1'b1;
 
-            if (new_pc_i)
+            if (stall_i)
+            begin
+                next_state = STALLED;
+                valid_o = 1'b0;
+            end
+            else if (new_pc_i)
             begin
                 pc = pc_i;
-                state = NEW_PC;
+                next_state = NEW_PC;
             end
-            else if (!stall_i)
+            else
                 pc = pc + 4;
         end
 
         NEW_PC:
         begin
-            read_o = 1;
-            valid_o = 0;
-            state = CONT_PC;
+            read_o = 1'b1;
+            valid_o = 1'b0;
+            next_state = CONT_PC;
 
             // if (!stall_i)
             //     pc = pc + 4;
+        end
+
+        STALLED:
+        begin
+            valid_o = 1'b0;
+
+            if (!stall_i)
+                next_state = NEW_PC;
         end
     endcase
 end
@@ -88,12 +106,10 @@ always_ff @(posedge clk_i, negedge rstn_i)
 begin
     if (!rstn_i)
     begin
-        state_r <= INIT;
         pc_r <= 'h8000_0000;
     end
     else
     begin
-        state_r <= state;
         pc_r <= pc;
     end
 end

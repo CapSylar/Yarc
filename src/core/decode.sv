@@ -108,16 +108,16 @@ begin : main_decode
     alu_oper1_src = OPER1_RS1;
     alu_oper2_src = OPER2_RS2;
 
-    write_rd = 0;
-    curr_imm = 0;
+    write_rd = '0;
+    curr_imm = '0;
     bnj_oper = BNJ_NO; // no branch
-    wb_use_mem = 0;
+    wb_use_mem = '0;
     mem_oper = MEM_NOP;
 
-    trap = 0;
-    csr_re = 0;
-    csr_we = 0;
-    is_csr = 0;
+    trap = '0;
+    csr_re = '0;
+    csr_we = '0;
+    is_csr = '0;
 
     case (opcode)
         LUI:

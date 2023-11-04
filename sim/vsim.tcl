@@ -11,9 +11,11 @@ add wave -color Gold sim:${CORE}/simple_fetch_i/valid_o;
 add wave -color Gold sim:${CORE}/simple_fetch_i/instr_o;
 add wave -color Gold sim:${CORE}/simple_fetch_i/pc_o;
 add wave sim:${CORE}/simple_fetch_i/stall_i;
-add wave sim:${CORE}/simple_fetch_i/new_pc_i;
-add wave sim:${CORE}/simple_fetch_i/pc_i;
-add wave sim:${CORE}/simple_fetch_i/read_o;
+add wave sim:${CORE}/simple_fetch_i/new_pc_en_i;
+add wave sim:${CORE}/simple_fetch_i/pc_sel_i;
+add wave sim:${CORE}/simple_fetch_i/branch_target_i;
+add wave sim:${CORE}/simple_fetch_i/csr_mepc_i;
+
 add wave sim:${CORE}/simple_fetch_i/raddr_o;
 add wave sim:${CORE}/simple_fetch_i/rdata_i;
 add wave sim:${CORE}/simple_fetch_i/current_state;
@@ -39,6 +41,10 @@ add wave sim:${CORE}/cs_registers_i/csr_rdata_o;
 add wave sim:${CORE}/cs_registers_i/csr_we_i;
 add wave sim:${CORE}/cs_registers_i/csr_waddr;
 add wave sim:${CORE}/cs_registers_i/csr_wdata_i;
+
+add wave sim:${CORE}/cs_registers_i/csr_mret_i;
+
+add wave sim:${CORE}/cs_registers_i/csr_mepc_o;
 
 add wave sim:${CORE}/cs_registers_i/current_plvl_q;
 add wave sim:${CORE}/cs_registers_i/current_plvl_d;
@@ -94,6 +100,10 @@ add wave -color Turquoise sim:${CORE}/execute_i/trap_i;
 add wave sim:${CORE}/execute_i/wb_use_mem_i;
 add wave sim:${CORE}/execute_i/write_rd_i;
 add wave sim:${CORE}/execute_i/rd_addr_i;
+
+add wave sim:${CORE}/execute_i/new_pc_en_o;
+add wave sim:${CORE}/execute_i/branch_target_o;
+
 add wave -color Turquoise sim:${CORE}/execute_i/stall_i;
 add wave -color Turquoise sim:${CORE}/execute_i/flush_i;
 
@@ -113,8 +123,6 @@ add wave -color Turquoise sim:${CORE}/execute_i/trap_o;
 add wave -color Gold sim:${CORE}/execute_i/wb_use_mem_o;
 add wave -color Gold sim:${CORE}/execute_i/write_rd_o;
 add wave -color Gold sim:${CORE}/execute_i/rd_addr_o;
-add wave -color Gold sim:${CORE}/execute_i/load_pc_o;
-add wave -color Gold sim:${CORE}/execute_i/new_pc_o;
 
 # ---------------------------------------------------------
 add wave -divider {MEM_RW}
@@ -152,7 +160,7 @@ add wave -color Gold sim:${CORE}/write_back_i/regf_waddr_o;
 add wave -color Gold sim:${CORE}/write_back_i/regf_wdata_o;
 
 # ---------------------------------------------------------
-add wave -divider {DEP DETECTION}
+add wave -divider {CONTROLLER}
 add wave -color Turquoise sim:${CORE}/controller_i/forward_ex_mem_rs1_o;
 add wave -color Turquoise sim:${CORE}/controller_i/forward_ex_mem_rs2_o;
 add wave -color Turquoise sim:${CORE}/controller_i/forward_ex_mem_data_o;
@@ -162,6 +170,13 @@ add wave -color Turquoise sim:${CORE}/controller_i/forward_mem_wb_data_o;
 add wave -color Turquoise sim:${CORE}/controller_i/id_ex_flush_o;
 add wave -color Turquoise sim:${CORE}/controller_i/id_ex_stall_o;
 add wave -color Turquoise sim:${CORE}/controller_i/if_id_stall_o;
+add wave -color Turquoise sim:${CORE}/controller_i/if_id_flush_o;
+add wave -color Turquoise sim:${CORE}/controller_i/ex_mem_flush_o;
+add wave -color Turquoise sim:${CORE}/controller_i/ex_mem_stall_o;
+
+add wave sim:${CORE}/controller_i/new_pc_en_o;
+add wave sim:${CORE}/controller_i/pc_sel_o;
+add wave sim:${CORE}/controller_i/csr_mret_o;
 
 # disable creation of the transcript file
 transcript off

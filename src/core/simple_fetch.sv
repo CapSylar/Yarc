@@ -1,6 +1,7 @@
 // cpu fetch module, interfaces with the simple simulation memories
 
 module simple_fetch
+import riscv_pkg::*;
 (
     input clk_i,
     input rstn_i,
@@ -14,12 +15,14 @@ module simple_fetch
     input stall_i, // is the cpu stalled ?
     input flush_i,
 
-    // used on a jump
-    input [31:0] pc_i,
-    input new_pc_i,
+    input new_pc_en_i, // load a new pc
+    input pc_sel_t pc_sel_i, // which pc to load from the addresses below
+
+    // target addresses
+    input [31:0] branch_target_i,
+    input [31:0] csr_mepc_i,
 
     // fetch <-> memory interface
-
     output logic read_o,
     output [31:0] raddr_o,
     input [31:0] rdata_i
@@ -27,6 +30,18 @@ module simple_fetch
 
 logic [31:0] pc;
 logic [31:0] pc_r;
+logic [31:0] new_pc;
+
+// determine the new pc
+always_comb
+begin
+    new_pc = '0;
+    unique case (pc_sel_i)
+        PC_JUMP: new_pc = branch_target_i;
+        PC_MEPC: new_pc = csr_mepc_i;
+        default:;
+    endcase
+end
 
 assign raddr_o = pc;
 assign pc_o = pc_r;
@@ -73,9 +88,9 @@ begin : pfetch_sm
                 next_state = STALLED;
                 valid_o = 1'b0;
             end
-            else if (new_pc_i)
+            else if (new_pc_en_i)
             begin
-                pc = pc_i;
+                pc = new_pc;
                 next_state = NEW_PC;
             end
             else

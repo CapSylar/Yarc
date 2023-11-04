@@ -15,6 +15,9 @@ module cs_registers
     input [11:0] csr_waddr_i,
     input [31:0] csr_wdata_i,
 
+    // output some cs registers
+    output [31:0] csr_mepc_o,
+
     // exceptions
     input csr_mret_i
 );
@@ -344,10 +347,12 @@ always_comb begin: csr_write
             mstatus_d.mpie = '0;
             mstatus_d.mpp = PRIV_LVL_U;
         end
+        default:;
     endcase
 end
 
 // assign outputs
 assign csr_rdata_o = csr_rdata;
+assign csr_mepc_o = mtvec_q;
 
 endmodule: cs_registers

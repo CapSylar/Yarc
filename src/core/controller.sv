@@ -18,6 +18,9 @@ import riscv_pkg::*;
     input id_ex_write_rd_i,
     input id_ex_wb_use_mem_i,
 
+    // EX stage
+    input ex_new_pc_en,
+
     // from EX/MEM
     input [4:0] ex_mem_rd_addr_i,
     input ex_mem_write_rd_i,
@@ -42,11 +45,18 @@ import riscv_pkg::*;
     output [31:0] forward_mem_wb_data_o,
 
     input instr_valid_i,
-    input load_pc_i,
 
+    // to handle CSR read/write side effects
     input id_is_csr_i,
     input ex_is_csr_i,
     input mem_is_csr_i,
+
+    // to fetch stage, to steer the pc
+    output logic new_pc_en_o,
+    output pc_sel_t pc_sel_o,
+
+    // to cs registers
+    output logic csr_mret_o,
 
     // flush/stall to ID/EX
     output id_ex_flush_o,
@@ -60,13 +70,6 @@ import riscv_pkg::*;
     output ex_mem_stall_o,
     output ex_mem_flush_o
 );
-
-logic mret;
-
-always_comb
-begin: decode_trap
-    mret = mem_wb_trap_i == MRET;
-end
 
 // forwarding to the EX stage happens when we are writing to a register that is sourced
 // by the instruction currently decoded, it will read a stale value in the decode stage
@@ -135,7 +138,7 @@ wire load_use_hzrd = id_ex_load && ((id_ex_rd_addr_i == id_rs1_addr_i) ||
 
 // For now, the cpu always predicts that the branch is not taken and continues
 // On a mispredict, flush the 2 instruction after the branch and continue from the new PC
-assign id_ex_flush_o = load_pc_i || !instr_valid_i || load_use_hzrd || mret;
+assign id_ex_flush_o = ex_new_pc_en || !instr_valid_i || load_use_hzrd || mem_wb_trap_i != NO_TRAP;
 assign id_ex_stall_o = 0;
 
 // Instruction fetch is stalled on:
@@ -144,7 +147,33 @@ assign id_ex_stall_o = 0;
 assign if_id_stall_o = load_use_hzrd || ex_is_csr_i || mem_is_csr_i;
 assign if_id_flush_o = id_is_csr_i || ex_is_csr_i || mem_is_csr_i;
 
-assign ex_mem_stall_o = mret ;
+assign ex_mem_stall_o = mem_wb_trap_i != NO_TRAP;
 assign ex_mem_flush_o = '0;
+
+// loading new PCs
+
+always_comb
+begin
+    new_pc_en_o = '0;
+    pc_sel_o = PC_JUMP; // doesn't matter
+    csr_mret_o = '0;
+
+    unique case (mem_wb_trap_i)
+        NO_TRAP:
+        begin
+            new_pc_en_o = ex_new_pc_en;
+            pc_sel_o = PC_JUMP;
+        end
+
+        MRET:
+        begin
+            new_pc_en_o = 1'b1;
+            pc_sel_o = PC_MEPC;
+            csr_mret_o = 1'b1; // causes changes in cs registers
+        end
+
+        default:;
+    endcase
+end
 
 endmodule: controller

@@ -49,8 +49,8 @@ import riscv_pkg::*;
     output logic [4:0] rd_addr_o,
 
     // branches and jumps
-    output logic load_pc_o,
-    output logic [31:0] new_pc_o,
+    output logic new_pc_en_o,
+    output logic [31:0] branch_target_o,
 
     // from forwarding logic
     input forward_ex_mem_rs1_i,
@@ -159,25 +159,25 @@ begin
     unique case (bnj_oper_i)
         BNJ_JAL:
         begin
-            load_pc_o = 1;
-            new_pc_o = pc_i + imm_i;
+            new_pc_en_o = 1;
+            branch_target_o = pc_i + imm_i;
         end
 
         BNJ_JALR:
         begin
-            load_pc_o = 1;
-            new_pc_o = rs1_data + imm_i;
+            new_pc_en_o = 1;
+            branch_target_o = rs1_data + imm_i;
         end
 
         BNJ_BRANCH:
         begin
-            load_pc_o = alu_result[0];
-            new_pc_o = pc_i + imm_i;
+            new_pc_en_o = alu_result[0];
+            branch_target_o = pc_i + imm_i;
         end
         default:
         begin
-            load_pc_o = 0;
-            new_pc_o = 0;
+            new_pc_en_o = 0;
+            branch_target_o = 0;
         end
     endcase
 end

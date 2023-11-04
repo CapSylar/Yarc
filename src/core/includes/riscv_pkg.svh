@@ -129,4 +129,10 @@ typedef enum logic [1:0]
     EBREAK
 } exc_t;
 
+typedef enum logic [1:0]
+{
+    PC_JUMP,
+    PC_MEPC
+} pc_sel_t;
+
 endpackage: riscv_pkg

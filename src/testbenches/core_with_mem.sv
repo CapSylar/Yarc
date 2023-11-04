@@ -26,11 +26,11 @@ end
 
 initial
 begin
-    rstn_t = 1;
+    rstn_t = 1'b1;
     @(posedge clk);
-    rstn_t = 0;
+    rstn_t = 1'b0;
     repeat(2) @(posedge clk);
-    rstn_t = 1;
+    rstn_t = 1'b1;
 
     repeat(100) @(posedge clk);
     $finish;
@@ -51,8 +51,8 @@ sp_mem #(.MEMFILE(IMEMFILE)) imem
     .addr_i(imem_raddr[31:2]), // 4-byte addressable
     .rdata_o(imem_rdata),
 
-    .wsel_byte_i(0),
-    .wdata_i(0)
+    .wsel_byte_i('0),
+    .wdata_i('0)
 );
 
 logic [31:0] dmem_addr;

@@ -43,6 +43,7 @@ logic [31:0] rs1_data, rs2_data;
 
 // Driven by the CS Register file
 logic [31:0] csr_rdata;
+logic [31:0] csr_mepc;
 
 // Driven by the Decode stage
 logic [4:0] rs1_addr, rs2_addr;
@@ -77,8 +78,8 @@ logic ex_mem_is_csr;
 logic ex_mem_wb_use_mem;
 logic ex_mem_write_rd;
 logic [4:0] ex_mem_rd_addr;
-logic [31:0] new_pc;
-logic load_pc;
+logic [31:0] branch_target;
+logic ex_new_pc_en;
 exc_t ex_mem_trap;
 
 // Driven by the Mem stage
@@ -110,6 +111,9 @@ logic id_ex_flush;
 logic id_ex_stall;
 logic ex_mem_flush;
 logic ex_mem_stall;
+logic new_pc_en;
+pc_sel_t pc_sel;
+logic is_mret;
 
 // Fetch Stage
 
@@ -125,8 +129,12 @@ simple_fetch simple_fetch_i
     .stall_i(if_id_stall),
     .flush_i(if_id_flush),
 
-    .pc_i(new_pc),
-    .new_pc_i(load_pc),
+    // target addresses
+    .branch_target_i(branch_target),
+    .csr_mepc_i(csr_mepc),
+
+    .new_pc_en_i(new_pc_en),
+    .pc_sel_i(pc_sel),
 
     // Imem interface
     .read_o(imem_read_o),
@@ -170,8 +178,11 @@ cs_registers cs_registers_i
     .csr_waddr_i(csr_waddr),
     .csr_wdata_i(csr_wdata),
 
+    // output some cs registers
+    .csr_mepc_o(csr_mepc),
+
     // exceptions
-    .csr_mret_i('0)
+    .csr_mret_i(is_mret)
 );
 
 // Decode Stage
@@ -285,8 +296,8 @@ execute execute_i
     .rd_addr_o(ex_mem_rd_addr),
 
     // branches and jumps
-    .load_pc_o(load_pc),
-    .new_pc_o(new_pc),
+    .new_pc_en_o(ex_new_pc_en),
+    .branch_target_o(branch_target),
 
     // from forwarding logic
     .forward_ex_mem_rs1_i(forward_ex_mem_rs1),
@@ -369,16 +380,19 @@ controller controller_i
     .clk_i(clk_i),
     .rstn_i(rstn_i),
 
-    // ID stage
+    // from ID stage
     .id_rs1_addr_i(rs1_addr),
     .id_rs2_addr_i(rs2_addr),
 
-    // ID/EX pipeline
+    // from ID/EX pipeline
     .id_ex_rs1_addr_i(id_ex_rs1_addr),
     .id_ex_rs2_addr_i(id_ex_rs2_addr),
     .id_ex_rd_addr_i(id_ex_rd_addr),
     .id_ex_write_rd_i(id_ex_write_rd),
     .id_ex_wb_use_mem_i(id_ex_wb_use_mem),
+
+    // from EX stage
+    .ex_new_pc_en(ex_new_pc_en),
 
     // from EX/MEM
     .ex_mem_rd_addr_i(ex_mem_rd_addr),
@@ -404,7 +418,13 @@ controller controller_i
     .forward_mem_wb_data_o(forward_mem_wb_data),
 
     .instr_valid_i(instr_valid),
-    .load_pc_i(load_pc),
+
+    // to fetch stage, to steer the pc
+    .new_pc_en_o(new_pc_en),
+    .pc_sel_o(pc_sel),
+
+    // to cs registers
+    .csr_mret_o(is_mret),
 
     // to handle CSR read/write side effects
     .id_is_csr_i(id_is_csr),

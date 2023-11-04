@@ -63,7 +63,7 @@ logic [4:0] id_ex_rd_addr;
 logic [4:0] id_ex_rs1_addr;
 logic [4:0] id_ex_rs2_addr;
 logic id_is_csr;
-logic id_ex_trap;
+exc_t id_ex_trap;
 logic [31:0] id_ex_csr_rdata;
 
 // Driven by the Ex stage
@@ -79,7 +79,7 @@ logic ex_mem_write_rd;
 logic [4:0] ex_mem_rd_addr;
 logic [31:0] new_pc;
 logic load_pc;
-logic ex_mem_trap;
+exc_t ex_mem_trap;
 
 // Driven by the Mem stage
 logic mem_wb_use_mem;
@@ -90,7 +90,7 @@ logic [31:0] mem_wb_dmem_rdata;
 logic [31:0] csr_wdata;
 logic [11:0] csr_waddr;
 logic csr_we;
-logic mem_wb_trap;
+exc_t mem_wb_trap;
 
 // Driven by the Wb stage
 logic regf_write;
@@ -108,6 +108,8 @@ logic if_id_stall;
 logic id_id_flush;
 logic id_ex_flush;
 logic id_ex_stall;
+logic ex_mem_flush;
+logic ex_mem_stall;
 
 // Fetch Stage
 
@@ -166,7 +168,10 @@ cs_registers cs_registers_i
     // write port
     .csr_we_i(csr_we),
     .csr_waddr_i(csr_waddr),
-    .csr_wdata_i(csr_wdata)
+    .csr_wdata_i(csr_wdata),
+
+    // exceptions
+    .csr_mret_i('0)
 );
 
 // Decode Stage
@@ -262,8 +267,8 @@ execute execute_i
     // EX/MEM pipeline registers
     
     // feedback into the pipeline register
-    .stall_i(1'b0), // keep the same content in the registers
-    .flush_i(1'b0), // zero the register contents
+    .stall_i(ex_mem_stall), // keep the same content in the registers
+    .flush_i(ex_mem_flush), // zero the register contents
 
     .alu_result_o(ex_mem_alu_result),
     .alu_oper2_o(ex_mem_alu_oper2),
@@ -359,7 +364,7 @@ write_back write_back_i
 
 // Dependency detection unit
 
-dep_hzrd_detection dep_detection_i
+controller controller_i
 (
     .clk_i(clk_i),
     .rstn_i(rstn_i),
@@ -387,6 +392,7 @@ dep_hzrd_detection dep_detection_i
     .mem_wb_use_mem_i(mem_wb_use_mem),
     .mem_wb_alu_result_i(mem_wb_alu_result),
     .mem_wb_dmem_rdata_i(mem_wb_dmem_rdata),
+    .mem_wb_trap_i(mem_wb_trap),
 
     // forward from EX/MEM stage
     .forward_ex_mem_rs1_o(forward_ex_mem_rs1),
@@ -411,7 +417,11 @@ dep_hzrd_detection dep_detection_i
 
     // hazard lines to IF/EX
     .if_id_stall_o(if_id_stall),
-    .if_id_flush_o(if_id_flush)
+    .if_id_flush_o(if_id_flush),
+
+    // flush/stall to EX/MEM
+    .ex_mem_stall_o(ex_mem_stall),
+    .ex_mem_flush_o(ex_mem_flush)
 );
 
 endmodule : core_top

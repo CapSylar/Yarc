@@ -1,7 +1,8 @@
 // dependancy and hazard detection unit
 // TODO: document functionality
 
-module dep_hzrd_detection
+module controller
+import riscv_pkg::*;
 (
     input clk_i,
     input rstn_i,
@@ -29,6 +30,7 @@ module dep_hzrd_detection
     input mem_wb_use_mem_i,
     input [31:0] mem_wb_alu_result_i,
     input [31:0] mem_wb_dmem_rdata_i,
+    input exc_t mem_wb_trap_i,
 
     // forward from EX/MEM stage to EX stage
     output forward_ex_mem_rs1_o,
@@ -46,14 +48,25 @@ module dep_hzrd_detection
     input ex_is_csr_i,
     input mem_is_csr_i,
 
-    // hazard lines to ID/EX
+    // flush/stall to ID/EX
     output id_ex_flush_o,
     output id_ex_stall_o,
 
-    // hazard lines to IF/EX
+    // flush/stall to IF/EX
     output if_id_stall_o,
-    output if_id_flush_o
+    output if_id_flush_o,
+
+    // flush/stall to EX/MEM
+    output ex_mem_stall_o,
+    output ex_mem_flush_o
 );
+
+logic mret;
+
+always_comb
+begin: decode_trap
+    mret = mem_wb_trap_i == MRET;
+end
 
 // forwarding to the EX stage happens when we are writing to a register that is sourced
 // by the instruction currently decoded, it will read a stale value in the decode stage
@@ -70,7 +83,6 @@ logic forward_mem_wb_rs2;
 
 always_comb begin : forwarding
     forward_ex_mem_rs1 = 0;
-    forward_ex_mem_rs2 = 0;
     forward_mem_wb_rs1 = 0;
     forward_mem_wb_rs2 = 0;
 
@@ -123,7 +135,7 @@ wire load_use_hzrd = id_ex_load && ((id_ex_rd_addr_i == id_rs1_addr_i) ||
 
 // For now, the cpu always predicts that the branch is not taken and continues
 // On a mispredict, flush the 2 instruction after the branch and continue from the new PC
-assign id_ex_flush_o = load_pc_i || !instr_valid_i || load_use_hzrd;
+assign id_ex_flush_o = load_pc_i || !instr_valid_i || load_use_hzrd || mret;
 assign id_ex_stall_o = 0;
 
 // Instruction fetch is stalled on:
@@ -132,4 +144,7 @@ assign id_ex_stall_o = 0;
 assign if_id_stall_o = load_use_hzrd || ex_is_csr_i || mem_is_csr_i;
 assign if_id_flush_o = id_is_csr_i || ex_is_csr_i || mem_is_csr_i;
 
-endmodule: dep_hzrd_detection
+assign ex_mem_stall_o = mret ;
+assign ex_mem_flush_o = '0;
+
+endmodule: controller

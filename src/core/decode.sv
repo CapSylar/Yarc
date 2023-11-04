@@ -57,7 +57,7 @@ import riscv_pkg::*;
     output logic [4:0] rs2_addr_o,
     output logic id_is_csr_o, // driven combinationally
 
-    output logic trap_o
+    output exc_t trap_o
 );
 
 // extract the common fields from the instruction format
@@ -96,7 +96,7 @@ bnj_oper_t bnj_oper;
 logic wb_use_mem; // use memory data out to write back to the register file
 mem_oper_t mem_oper; // memory operation if any
 
-logic trap;
+exc_t trap;
 logic csr_re;
 logic csr_we;
 logic is_csr;
@@ -114,7 +114,7 @@ begin : main_decode
     wb_use_mem = '0;
     mem_oper = MEM_NOP;
 
-    trap = '0;
+    trap = NO_TRAP;
     csr_re = '0;
     csr_we = '0;
     is_csr = '0;
@@ -204,8 +204,15 @@ begin : main_decode
         begin
             write_rd = 1'b1;
 
-            if (func3 == '0) // ecall or ebreak
-                trap = (func3 == 0) && (rs2 != 2);
+            if (func3 == '0 && rd == '0) // ecall, ebreak or mret
+            begin
+                if (func7 == 7'b0011000) // mret
+                    trap = MRET;
+                else
+                begin
+                    trap = (instr_i[31:20] == 12'd1) ? EBREAK : ECALL;
+                end
+            end
             else  // CSR instruction
             begin
                 is_csr = 1'b1;
@@ -330,7 +337,7 @@ begin : id_ex_pip
         rs1_addr_o <= 0;
         rs2_addr_o <= 0;
 
-        trap_o <= 0;
+        trap_o <= NO_TRAP;
     end
     else if (!stall_i)
     begin

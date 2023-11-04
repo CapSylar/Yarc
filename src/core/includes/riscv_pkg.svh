@@ -121,4 +121,12 @@ typedef enum logic [3:0]
     MEM_NOP = 4'b1111 // no operation
 } mem_oper_t;
 
+typedef enum logic [1:0]
+{
+    NO_TRAP,
+    MRET,
+    ECALL,
+    EBREAK
+} exc_t;
+
 endpackage: riscv_pkg

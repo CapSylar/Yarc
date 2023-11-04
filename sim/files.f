@@ -9,7 +9,7 @@ ${PRJ_DIR}/core/includes/csr_pkg.sv
 //  core
 ${PRJ_DIR}/core/core_top.sv
 ${PRJ_DIR}/core/decode.sv
-${PRJ_DIR}/core/dep_hzrd_detection.sv
+${PRJ_DIR}/core/controller.sv
 ${PRJ_DIR}/core/execute.sv
 ${PRJ_DIR}/core/mem_rw.sv
 ${PRJ_DIR}/core/reg_file.sv

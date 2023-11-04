@@ -28,7 +28,7 @@ import riscv_pkg::*;
     input [31:0] csr_wdata_i,
     input [11:0] csr_waddr_i,
     input csr_we_i,
-    input trap_i,
+    input exc_t trap_i,
 
     // for WB stage exclusively
     input wb_use_mem_i,
@@ -41,7 +41,7 @@ import riscv_pkg::*;
     output logic [4:0] rd_addr_o,
     output logic [31:0] alu_result_o,
     output logic [31:0] dmem_rdata_o,
-    output logic trap_o
+    output exc_t trap_o
 );
 
 assign csr_we_o = csr_we_i;
@@ -153,7 +153,7 @@ begin
         rd_addr_o <= 0;
         alu_result_o <= 0;
         dmem_rdata_o <= 0;
-        trap_o <= 0;
+        trap_o <= NO_TRAP;
     end
     else
     begin

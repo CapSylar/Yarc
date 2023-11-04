@@ -22,7 +22,7 @@ import riscv_pkg::*;
     input mem_oper_t mem_oper_i,
     input [11:0] csr_waddr_i,
     input csr_we_i,
-    input trap_i,
+    input exc_t trap_i,
     
     // forward to the WB stage
     input wb_use_mem_i,
@@ -42,7 +42,7 @@ import riscv_pkg::*;
     output logic [11:0] csr_waddr_o,
     output logic csr_we_o,
     output logic is_csr_o,
-    output logic trap_o,
+    output exc_t trap_o,
     // for WB stage exclusively
     output logic wb_use_mem_o,
     output logic write_rd_o,
@@ -195,7 +195,7 @@ begin : ex_mem_pip
         csr_waddr_o <= '0;
         csr_we_o <= '0;
         is_csr_o <= '0;
-        trap_o <= 0;
+        trap_o <= NO_TRAP;
         
         wb_use_mem_o <= 0;
         write_rd_o <= 0;

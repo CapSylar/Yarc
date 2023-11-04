@@ -13,7 +13,10 @@ module cs_registers
     // write port
     input csr_we_i,
     input [11:0] csr_waddr_i,
-    input [31:0] csr_wdata_i
+    input [31:0] csr_wdata_i,
+
+    // exceptions
+    input csr_mret_i
 );
 
 import csr_pkg::*;
@@ -21,6 +24,17 @@ import csr_pkg::*;
 csr_t csr_raddr, csr_waddr;
 assign csr_raddr = csr_t'(csr_raddr_i);
 assign csr_waddr = csr_t'(csr_waddr_i);
+
+// current privilege level
+priv_lvl_e current_plvl_d, current_plvl_q;
+
+always_ff @(posedge clk_i, negedge rstn_i)
+begin
+    if (!rstn_i)
+        current_plvl_q <= PRIV_LVL_M;
+    else
+        current_plvl_q <= current_plvl_d;
+end
 
 logic [31:0] misa_q;
 logic [31:0] mvendorid_q;
@@ -263,6 +277,8 @@ end
 // write logic
 always_comb begin: csr_write
 
+    current_plvl_d = current_plvl_q;
+
     mscratch_wen = 1'b0;
     mscratch_d = csr_wdata_i;
 
@@ -278,6 +294,7 @@ always_comb begin: csr_write
     mepc_wen = 1'b0;
     mepc_d = mepc_q;
 
+    // CSR read and writes from CSRRW/S/C instructions
     if (csr_we_i)
     begin
         unique case (csr_waddr)
@@ -312,6 +329,22 @@ always_comb begin: csr_write
 
         endcase
     end
+
+    unique case (1'b1)
+        csr_mret_i:
+        begin
+            current_plvl_d = mstatus_q.mpp;
+
+            mstatus_wen = 1'b1;
+            mstatus_d.mie = mstatus_q.mpie;
+
+            if (mstatus_q.mpp != PRIV_LVL_M)
+                mstatus_d.mprv = '0;
+
+            mstatus_d.mpie = '0;
+            mstatus_d.mpp = PRIV_LVL_U;
+        end
+    endcase
 end
 
 // assign outputs

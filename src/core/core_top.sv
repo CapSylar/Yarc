@@ -91,7 +91,7 @@ logic [31:0] mem_wb_dmem_rdata;
 logic [31:0] csr_wdata;
 logic [11:0] csr_waddr;
 logic csr_we;
-exc_t mem_wb_trap;
+exc_t mem_trap;
 
 // Driven by the Wb stage
 logic regf_write;
@@ -350,7 +350,7 @@ mem_rw mem_rw_i
     .rd_addr_o(mem_wb_rd_addr),
     .alu_result_o(mem_wb_alu_result),
     .dmem_rdata_o(mem_wb_dmem_rdata),
-    .trap_o(mem_wb_trap)
+    .trap_o(mem_trap)
 );
 
 // Write-back Stage
@@ -406,7 +406,7 @@ controller controller_i
     .mem_wb_use_mem_i(mem_wb_use_mem),
     .mem_wb_alu_result_i(mem_wb_alu_result),
     .mem_wb_dmem_rdata_i(mem_wb_dmem_rdata),
-    .mem_wb_trap_i(mem_wb_trap),
+    .mem_trap_i(mem_trap),
 
     // forward from EX/MEM stage
     .forward_ex_mem_rs1_o(forward_ex_mem_rs1),

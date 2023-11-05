@@ -353,6 +353,6 @@ end
 
 // assign outputs
 assign csr_rdata_o = csr_rdata;
-assign csr_mepc_o = mtvec_q;
+assign csr_mepc_o = mepc_q;
 
 endmodule: cs_registers

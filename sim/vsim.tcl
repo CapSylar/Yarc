@@ -53,6 +53,10 @@ add wave -group {CSRs} sim:${CORE}/cs_registers_i/mscratch_wen;
 add wave -group {CSRs} sim:${CORE}/cs_registers_i/mscratch_d;
 add wave -group {CSRs} sim:${CORE}/cs_registers_i/mscratch_q;
 
+add wave -group {CSRs} sim:${CORE}/cs_registers_i/mepc_wen;
+add wave -group {CSRs} sim:${CORE}/cs_registers_i/mepc_d;
+add wave -group {CSRs} sim:${CORE}/cs_registers_i/mepc_q;
+
 # ---------------------------------------------------------
 add wave -divider {DECODE}
 add wave sim:${CORE}/decode_i/pc_i;
@@ -93,6 +97,8 @@ add wave sim:${CORE}/execute_i/alu_oper1_src_i;
 add wave sim:${CORE}/execute_i/alu_oper2_src_i;
 add wave sim:${CORE}/execute_i/alu_oper_i;
 add wave sim:${CORE}/execute_i/bnj_oper_i;
+add wave sim:${CORE}/execute_i/is_csr_i;
+
 add wave sim:${CORE}/execute_i/mem_oper_i;
 add wave sim:${CORE}/execute_i/operand1;
 add wave sim:${CORE}/execute_i/operand2;
@@ -139,6 +145,10 @@ add wave sim:${CORE}/mem_rw_i/read_o;
 add wave sim:${CORE}/mem_rw_i/rdata_i;
 add wave sim:${CORE}/mem_rw_i/wsel_byte_o;
 add wave sim:${CORE}/mem_rw_i/wdata_o;
+
+add wave sim:${CORE}/mem_rw_i/csr_wdata_o;
+add wave sim:${CORE}/mem_rw_i/csr_waddr_o;
+add wave sim:${CORE}/mem_rw_i/csr_we_o;
 
 add wave -color Gold sim:${CORE}/mem_rw_i/wb_use_mem_o;
 add wave -color Gold sim:${CORE}/mem_rw_i/write_rd_o;

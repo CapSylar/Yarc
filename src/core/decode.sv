@@ -202,8 +202,6 @@ begin : main_decode
 
         SYSTEM:
         begin
-            write_rd = 1'b1;
-
             if (func3 == '0 && rd == '0) // ecall, ebreak or mret
             begin
                 if (func7 == 7'b0011000) // mret
@@ -215,6 +213,7 @@ begin : main_decode
             end
             else  // CSR instruction
             begin
+                write_rd = 1'b1;
                 is_csr = 1'b1;
                 // determine if csr will be read
                 // In CSRRW*: if rd = Zero, the csr is not read and any read side-effects will not be triggered

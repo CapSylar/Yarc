@@ -21,6 +21,8 @@ import riscv_pkg::*;
     output [11:0] csr_waddr_o,
     output csr_we_o,
 
+    output exc_t trap_o,
+
     // from EX/MEM
     input [31:0] alu_result_i,
     input [31:0] alu_oper2_i,
@@ -40,16 +42,15 @@ import riscv_pkg::*;
     output logic write_rd_o,
     output logic [4:0] rd_addr_o,
     output logic [31:0] alu_result_o,
-    output logic [31:0] dmem_rdata_o,
-    output exc_t trap_o
+    output logic [31:0] dmem_rdata_o
 );
 
 assign csr_we_o = csr_we_i;
 assign csr_waddr_o = csr_waddr_i;
 assign csr_wdata_o = csr_wdata_i;
+assign trap_o = trap_i; // rerouted here just for cleanliness
 
 // TODO: handle unaligned loads and stores, signal an error in this case
-
 wire [31:0] addr = rw_addr_o;
 wire [31:0] to_write = alu_oper2_i;
 logic [31:0] rdata;
@@ -153,7 +154,6 @@ begin
         rd_addr_o <= 0;
         alu_result_o <= 0;
         dmem_rdata_o <= 0;
-        trap_o <= NO_TRAP;
     end
     else
     begin
@@ -162,7 +162,6 @@ begin
         rd_addr_o <= rd_addr_i;
         alu_result_o <= alu_result_i;
         dmem_rdata_o <= rdata;
-        trap_o <= trap_i;
     end
 end
 

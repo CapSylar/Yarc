@@ -33,7 +33,7 @@ import riscv_pkg::*;
     input mem_wb_use_mem_i,
     input [31:0] mem_wb_alu_result_i,
     input [31:0] mem_wb_dmem_rdata_i,
-    input exc_t mem_wb_trap_i,
+    input exc_t mem_trap_i,
 
     // forward from EX/MEM stage to EX stage
     output forward_ex_mem_rs1_o,
@@ -138,7 +138,7 @@ wire load_use_hzrd = id_ex_load && ((id_ex_rd_addr_i == id_rs1_addr_i) ||
 
 // For now, the cpu always predicts that the branch is not taken and continues
 // On a mispredict, flush the 2 instruction after the branch and continue from the new PC
-assign id_ex_flush_o = ex_new_pc_en || !instr_valid_i || load_use_hzrd || mem_wb_trap_i != NO_TRAP;
+assign id_ex_flush_o = ex_new_pc_en || !instr_valid_i || load_use_hzrd || mem_trap_i != NO_TRAP;
 assign id_ex_stall_o = 0;
 
 // Instruction fetch is stalled on:
@@ -147,8 +147,8 @@ assign id_ex_stall_o = 0;
 assign if_id_stall_o = load_use_hzrd || ex_is_csr_i || mem_is_csr_i;
 assign if_id_flush_o = id_is_csr_i || ex_is_csr_i || mem_is_csr_i;
 
-assign ex_mem_stall_o = mem_wb_trap_i != NO_TRAP;
-assign ex_mem_flush_o = '0;
+assign ex_mem_stall_o = '0;
+assign ex_mem_flush_o = mem_trap_i != NO_TRAP;
 
 // loading new PCs
 
@@ -158,7 +158,7 @@ begin
     pc_sel_o = PC_JUMP; // doesn't matter
     csr_mret_o = '0;
 
-    unique case (mem_wb_trap_i)
+    unique case (mem_trap_i)
         NO_TRAP:
         begin
             new_pc_en_o = ex_new_pc_en;

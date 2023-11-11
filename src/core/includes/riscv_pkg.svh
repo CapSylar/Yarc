@@ -121,18 +121,37 @@ typedef enum logic [3:0]
     MEM_NOP = 4'b1111 // no operation
 } mem_oper_t;
 
-typedef enum logic [1:0]
+typedef enum logic [4:0]
 {
-    NO_TRAP,
-    MRET,
-    ECALL,
-    EBREAK
+    NO_TRAP = 5'b1_0000,
+    MRET = 5'b1_0001, // TODO: not an exception, find a better place maybe ?
+    
+    INST_ADDR_MISALIGN = 5'd0,
+    INST_ACC_FAULT = 5'd1,
+
+    ILL_INSTR = 5'd2,
+    BRK_POINT = 5'd3,
+
+    LOAD_ADDR_MISALIGNED = 5'd4,
+    LOAD_ACC_FAULT = 5'd5,
+
+    STORE_AMO_ADDR_MISALIGNED = 5'd6,
+    STORE_AMO_ACC_FAULT = 5'd7,
+
+    ECALL_UMODE = 5'd8,
+    ECALL_MMODE = 5'd11,
+
+    INSTR_PAGE_FAULT = 5'd12,
+    LOAD_PAGE_FAULT = 5'd13,
+
+    STORE_AMO_PAGE_FAULT = 5'd15
 } exc_t;
 
 typedef enum logic [1:0]
 {
     PC_JUMP,
-    PC_MEPC
+    PC_MEPC,
+    PC_EXC
 } pc_sel_t;
 
 endpackage: riscv_pkg

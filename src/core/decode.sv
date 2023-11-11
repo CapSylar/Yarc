@@ -3,9 +3,14 @@
 
 module decode
 import riscv_pkg::*;
+import csr_pkg::*;
 (
     input clk_i,
     input rstn_i,
+    input instr_valid_i,
+
+    // from csr unit
+    input priv_lvl_e current_plvl_i,
 
     // register file <-> decode module
     // read port
@@ -119,135 +124,141 @@ begin : main_decode
     csr_we = '0;
     is_csr = '0;
 
-    case (opcode)
-        LUI:
-        begin
-            alu_oper1_src = OPER1_ZERO;
-            alu_oper2_src = OPER2_IMM;
-
-            curr_imm = imm_u;
-            write_rd = 1;
-        end
-
-        AUIPC:
-        begin
-            alu_oper1_src = OPER1_PC;
-            alu_oper2_src = OPER2_IMM;
-
-            curr_imm = imm_u;
-            write_rd = 1;
-        end
-
-        JAL:
-        begin
-            alu_oper1_src = OPER1_PC;
-            alu_oper2_src = OPER2_PC_INC;
-
-            curr_imm = imm_j;
-            write_rd = 1;
-            bnj_oper = BNJ_JAL;
-        end
-
-        JALR:
-        begin
-            alu_oper1_src = OPER1_PC;
-            alu_oper2_src = OPER2_PC_INC;
-            
-            curr_imm = imm_i;
-            write_rd = 1;
-            bnj_oper = BNJ_JALR;
-        end
-
-        BRANCH:
-        begin
-            curr_imm = imm_b;
-            bnj_oper = BNJ_BRANCH;
-        end
-
-        LOAD:
-        begin
-            alu_oper2_src = OPER2_IMM;
-            curr_imm = imm_i;
-
-            write_rd = 1;
-            wb_use_mem = 1;
-
-            mem_oper = mem_oper_t'({1'b0, func3});
-        end
-
-        STORE:
-        begin
-            alu_oper2_src = OPER2_IMM;
-            curr_imm = imm_s;
-
-            mem_oper = mem_oper_t'({1'b1, func3});
-        end
-
-        ARITH:
-        begin
-            write_rd = 1;
-        end
-
-        ARITH_IMM:
-        begin
-            alu_oper2_src = OPER2_IMM;
-            curr_imm = imm_i;
-            write_rd = 1;
-        end
-
-        FENCE:
-        begin
-
-        end
-
-        SYSTEM:
-        begin
-            if (func3 == '0 && rd == '0) // ecall, ebreak or mret
+    // zero out control signals when the instruction being fed in is not valid
+    // could avoid some read side effects in some registers in the future
+    if (instr_valid_i)
+        case (opcode)
+            LUI:
             begin
-                if (func7 == 7'b0011000) // mret
-                    trap = MRET;
-                else
+                alu_oper1_src = OPER1_ZERO;
+                alu_oper2_src = OPER2_IMM;
+
+                curr_imm = imm_u;
+                write_rd = 1;
+            end
+
+            AUIPC:
+            begin
+                alu_oper1_src = OPER1_PC;
+                alu_oper2_src = OPER2_IMM;
+
+                curr_imm = imm_u;
+                write_rd = 1;
+            end
+
+            JAL:
+            begin
+                alu_oper1_src = OPER1_PC;
+                alu_oper2_src = OPER2_PC_INC;
+
+                curr_imm = imm_j;
+                write_rd = 1;
+                bnj_oper = BNJ_JAL;
+            end
+
+            JALR:
+            begin
+                alu_oper1_src = OPER1_PC;
+                alu_oper2_src = OPER2_PC_INC;
+                
+                curr_imm = imm_i;
+                write_rd = 1;
+                bnj_oper = BNJ_JALR;
+            end
+
+            BRANCH:
+            begin
+                curr_imm = imm_b;
+                bnj_oper = BNJ_BRANCH;
+            end
+
+            LOAD:
+            begin
+                alu_oper2_src = OPER2_IMM;
+                curr_imm = imm_i;
+
+                write_rd = 1;
+                wb_use_mem = 1;
+
+                mem_oper = mem_oper_t'({1'b0, func3});
+            end
+
+            STORE:
+            begin
+                alu_oper2_src = OPER2_IMM;
+                curr_imm = imm_s;
+
+                mem_oper = mem_oper_t'({1'b1, func3});
+            end
+
+            ARITH:
+            begin
+                write_rd = 1;
+            end
+
+            ARITH_IMM:
+            begin
+                alu_oper2_src = OPER2_IMM;
+                curr_imm = imm_i;
+                write_rd = 1;
+            end
+
+            FENCE:
+            begin
+
+            end
+
+            SYSTEM:
+            begin
+                if (func3 == '0 && rd == '0) // ecall, ebreak or mret
                 begin
-                    trap = (instr_i[31:20] == 12'd1) ? EBREAK : ECALL;
+                    if (func7 == 7'b0011000) // mret
+                        trap = MRET;
+                    else
+                    begin
+                        if (instr_i[31:20] == 12'd1)
+                            trap = BRK_POINT;
+                        else
+                            trap = (current_plvl_i == PRIV_LVL_M) ? ECALL_MMODE : ECALL_UMODE;
+                    end
+                end
+                else  // CSR instruction
+                begin
+                    write_rd = 1'b1;
+                    is_csr = 1'b1;
+                    // determine if csr will be read
+                    // In CSRRW*: if rd = Zero, the csr is not read and any read side-effects will not be triggered
+                    csr_re = ((system_opc_t'(func3) == CSRRW ||
+                        system_opc_t'(func3) == CSRRWI) && rd == '0) ? 1'b0 : 1'b1;
+
+                    // determine is csr will be written
+                    // In CSRRS/C: If rs1 = Zero, the csr is not written and any write side-effect will not be triggered
+                    // In CSRRSI/CI: If uimm = Zero, the csr is not written any write side-effects will not be triggered
+                    csr_we = (rs1 == '0 && (system_opc_t'(func3) == CSRRS || system_opc_t'(func3) == CSRRS)) ||
+                        (imm_csr == '0 && (system_opc_t'(func3) == CSRRSI || system_opc_t'(func3) == CSRRCI)) ? 1'b0 : 1'b1;
+
+                    // handle CSR* instructions
+                    if (func3[2]) // indicates the immediate variant
+                    begin
+                        alu_oper1_src = OPER1_CSR_IMM;
+                        curr_imm = imm_csr;
+                    end
+                    else
+                        alu_oper1_src = OPER1_RS1;
+
+                    if (func3[1:0] == 2'b01) // CSRRW*
+                        alu_oper2_src = OPER2_ZERO;
+                    else
+                        alu_oper2_src = OPER2_CSR;
                 end
             end
-            else  // CSR instruction
+
+            // TODO: handle illegal opcode
+            default:
             begin
-                write_rd = 1'b1;
-                is_csr = 1'b1;
-                // determine if csr will be read
-                // In CSRRW*: if rd = Zero, the csr is not read and any read side-effects will not be triggered
-                csr_re = ((system_opc_t'(func3) == CSRRW ||
-                    system_opc_t'(func3) == CSRRWI) && rd == '0) ? 1'b0 : 1'b1;
 
-                // determine is csr will be written
-                // In CSRRS/C: If rs1 = Zero, the csr is not written and any write side-effect will not be triggered
-                // In CSRRSI/CI: If uimm = Zero, the csr is not written any write side-effects will not be triggered
-                csr_we = (rs1 == '0 && (system_opc_t'(func3) == CSRRS || system_opc_t'(func3) == CSRRS)) ||
-                    (imm_csr == '0 && (system_opc_t'(func3) == CSRRSI || system_opc_t'(func3) == CSRRCI)) ? 1'b0 : 1'b1;
-
-                // handle CSR* instructions
-                if (func3[2]) // indicates the immediate variant
-                begin
-                    alu_oper1_src = OPER1_CSR_IMM;
-                    curr_imm = imm_csr;
-                end
-                else
-                    alu_oper1_src = OPER1_RS1;
-
-                if (func3[1:0] == 2'b01) // CSRRW*
-                    alu_oper2_src = OPER2_ZERO;
-                else
-                    alu_oper2_src = OPER2_CSR;
             end
-        end
-
-        // TODO: handle illegal opcode
-        default:
-        begin
-
-        end
-    endcase
+        endcase
 end
 
 // decoding the alu operations separately

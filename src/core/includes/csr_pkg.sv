@@ -194,4 +194,27 @@ parameter unsigned CSR_MSTATUS_MPP_BIT_LOW = 11;
 parameter unsigned CSR_MSTATUS_MPP_BIT_HIGH = 12;
 parameter unsigned CSR_MSTATUS_MPRV_BIT = 17;
 
+typedef struct packed
+{
+  logic irq;
+  logic [3:0] trap_code; // we don't have codes outside 0-15 for now
+} mcause_t;
+
+parameter unsigned CSR_MCAUSE_IRQ_BIT = 31;
+parameter unsigned CSR_MCAUSE_CODE_BIT_HIGH = 3;
+parameter unsigned CSR_MCAUSE_CODE_BIT_LOW = 0;
+
+typedef enum logic [1:0]
+{
+  MTVEC_DIRECT = 2'b00,
+  MTVEC_VECTORED = 2'b01
+  // the rest is reserved
+} mtvec_mode_t;
+
+typedef struct packed
+{
+  logic [31:2] base;
+  mtvec_mode_t mode; // 0 - direct, 1 - vectored
+} mtvec_t;
+
 endpackage: csr_pkg

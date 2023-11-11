@@ -15,11 +15,14 @@ add wave sim:${CORE}/simple_fetch_i/new_pc_en_i;
 add wave sim:${CORE}/simple_fetch_i/pc_sel_i;
 add wave sim:${CORE}/simple_fetch_i/branch_target_i;
 add wave sim:${CORE}/simple_fetch_i/csr_mepc_i;
+add wave sim:${CORE}/simple_fetch_i/mcause_i;
+add wave sim:${CORE}/simple_fetch_i/mtvec_i;
 
 add wave sim:${CORE}/simple_fetch_i/raddr_o;
 add wave sim:${CORE}/simple_fetch_i/rdata_i;
 add wave sim:${CORE}/simple_fetch_i/current_state;
 add wave sim:${CORE}/simple_fetch_i/next_state;
+add wave sim:${CORE}/simple_fetch_i/exc_target_addr;
 
 # ---------------------------------------------------------
 add wave -divider {REGISTER FILE}
@@ -43,6 +46,9 @@ add wave sim:${CORE}/cs_registers_i/csr_waddr;
 add wave sim:${CORE}/cs_registers_i/csr_wdata_i;
 
 add wave sim:${CORE}/cs_registers_i/csr_mret_i;
+add wave sim:${CORE}/cs_registers_i/is_trap_i;
+add wave sim:${CORE}/cs_registers_i/mcause_i;
+add wave sim:${CORE}/cs_registers_i/exc_pc_i;
 
 add wave sim:${CORE}/cs_registers_i/csr_mepc_o;
 
@@ -57,8 +63,17 @@ add wave -group {CSRs} sim:${CORE}/cs_registers_i/mepc_wen;
 add wave -group {CSRs} sim:${CORE}/cs_registers_i/mepc_d;
 add wave -group {CSRs} sim:${CORE}/cs_registers_i/mepc_q;
 
+add wave -group {CSRs} sim:${CORE}/cs_registers_i/mtvec_wen;
+add wave -group {CSRs} sim:${CORE}/cs_registers_i/mtvec_d;
+add wave -group {CSRs} sim:${CORE}/cs_registers_i/mtvec_q;
+
+add wave -group {CSRs} sim:${CORE}/cs_registers_i/mcause_wen;
+add wave -group {CSRs} sim:${CORE}/cs_registers_i/mcause_d;
+add wave -group {CSRs} sim:${CORE}/cs_registers_i/mcause_q;
+
 # ---------------------------------------------------------
 add wave -divider {DECODE}
+add wave sim:${CORE}/decode_i/current_plvl_i;
 add wave sim:${CORE}/decode_i/pc_i;
 add wave sim:${CORE}/decode_i/instr_i;
 add wave sim:${CORE}/decode_i/stall_i;
@@ -187,6 +202,8 @@ add wave -color Turquoise sim:${CORE}/controller_i/ex_mem_stall_o;
 add wave sim:${CORE}/controller_i/new_pc_en_o;
 add wave sim:${CORE}/controller_i/pc_sel_o;
 add wave sim:${CORE}/controller_i/csr_mret_o;
+add wave sim:${CORE}/controller_i/csr_mcause_o;
+add wave sim:${CORE}/controller_i/is_trap_o;
 
 # disable creation of the transcript file
 transcript off

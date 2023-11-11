@@ -12,6 +12,7 @@
 
 module core_top
 import riscv_pkg::*;
+import csr_pkg::*;
 (
     input clk_i,
     input rstn_i,
@@ -44,6 +45,8 @@ logic [31:0] rs1_data, rs2_data;
 // Driven by the CS Register file
 logic [31:0] csr_rdata;
 logic [31:0] csr_mepc;
+priv_lvl_e current_plvl;
+mtvec_t csr_mtvec;
 
 // Driven by the Decode stage
 logic [4:0] rs1_addr, rs2_addr;
@@ -81,6 +84,7 @@ logic [4:0] ex_mem_rd_addr;
 logic [31:0] branch_target;
 logic ex_new_pc_en;
 exc_t ex_mem_trap;
+logic [31:0] ex_mem_pc;
 
 // Driven by the Mem stage
 logic mem_wb_use_mem;
@@ -114,6 +118,8 @@ logic ex_mem_stall;
 logic new_pc_en;
 pc_sel_t pc_sel;
 logic is_mret;
+mcause_t mcause;
+logic is_trap;
 
 // Fetch Stage
 
@@ -132,6 +138,8 @@ simple_fetch simple_fetch_i
     // target addresses
     .branch_target_i(branch_target),
     .csr_mepc_i(csr_mepc),
+    .mcause_i(mcause),
+    .mtvec_i(csr_mtvec),
 
     .new_pc_en_i(new_pc_en),
     .pc_sel_i(pc_sel),
@@ -180,9 +188,14 @@ cs_registers cs_registers_i
 
     // output some cs registers
     .csr_mepc_o(csr_mepc),
+    .csr_mtvec_o(csr_mtvec),
+    .current_plvl_o(current_plvl),
 
-    // exceptions
-    .csr_mret_i(is_mret)
+    // mret, traps...
+    .csr_mret_i(is_mret),
+    .is_trap_i(is_trap),
+    .mcause_i(mcause),
+    .exc_pc_i(ex_mem_pc)
 );
 
 // Decode Stage
@@ -191,6 +204,10 @@ decode decode_i
 (
     .clk_i(clk_i),
     .rstn_i(rstn_i),
+    .instr_valid_i(instr_valid),
+
+    // from csr unit
+    .current_plvl_i(current_plvl),
 
     // register file <-> decode module
     // read port
@@ -289,6 +306,7 @@ execute execute_i
     .csr_we_o(ex_mem_csr_we),
     .is_csr_o(ex_mem_is_csr),
     .trap_o(ex_mem_trap),
+    .pc_o(ex_mem_pc),
 
     // for WB stage exclusively
     .wb_use_mem_o(ex_mem_wb_use_mem),
@@ -425,6 +443,8 @@ controller controller_i
 
     // to cs registers
     .csr_mret_o(is_mret),
+    .csr_mcause_o(mcause),
+    .is_trap_o(is_trap),
 
     // to handle CSR read/write side effects
     .id_is_csr_i(id_is_csr),

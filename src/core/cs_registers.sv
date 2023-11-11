@@ -1,6 +1,7 @@
 // contains all CS registers
 
 module cs_registers
+import csr_pkg::*;
 (
     input clk_i,
     input rstn_i,
@@ -17,9 +18,14 @@ module cs_registers
 
     // output some cs registers
     output [31:0] csr_mepc_o,
+    output mtvec_t csr_mtvec_o,
+    output priv_lvl_e current_plvl_o,
 
-    // exceptions
-    input csr_mret_i
+    // mret, traps...
+    input csr_mret_i,
+    input is_trap_i,
+    input wire mcause_t mcause_i,
+    input [31:0] exc_pc_i
 );
 
 import csr_pkg::*;
@@ -124,11 +130,11 @@ csr #(.Width($bits(mstatus_t)), .ResetValue(MSTATUS_RST_VALUE)) csr_mstatus
     .rd_data_o(mstatus_q)
 );
 
-logic [31:0] mtvec_d, mtvec_q;
+mtvec_t mtvec_d, mtvec_q;
 logic mtvec_wen;
 
 // MTVEC: Machine Trap-Vector Base-Address Register
-csr #(.Width(32), .ResetValue('0)) csr_mtvec
+csr #(.Width($bits(mtvec_t)), .ResetValue('0)) csr_mtvec
 (
     .clk_i(clk_i),
     .rstn_i(rstn_i),
@@ -229,8 +235,11 @@ csr #(.Width(32), .ResetValue('0)) csr_mepc
     .rd_data_o(mepc_q)
 );
 
+mcause_t mcause_d, mcause_q;
+logic mcause_wen;
+
 // MCAUSE: Machine Cause Register
-csr #(.Width(32), .ResetValue('0)) csr_mcause
+csr #(.Width($bits(mcause_t)), .ResetValue('0)) csr_mcause
 (
     .clk_i(clk_i),
     .rstn_i(rstn_i),
@@ -272,7 +281,12 @@ always_comb begin: csr_read
             CSR_MIE: csr_rdata = mie_q;
             CSR_MIP: csr_rdata = mie_q;
             CSR_MEPC: csr_rdata = mepc_q;
-
+            CSR_MCAUSE:
+            begin
+                csr_rdata[CSR_MCAUSE_IRQ_BIT] = mcause_q.irq;
+                csr_rdata[CSR_MCAUSE_CODE_BIT_HIGH:CSR_MCAUSE_CODE_BIT_LOW] = mcause_q.trap_code;
+            end
+            default:;
         endcase
     end
 end
@@ -297,6 +311,9 @@ always_comb begin: csr_write
     mepc_wen = 1'b0;
     mepc_d = mepc_q;
 
+    mcause_wen = 1'b0;
+    mcause_d = mcause_q;
+
     // CSR read and writes from CSRRW/S/C instructions
     if (csr_we_i)
     begin
@@ -317,7 +334,7 @@ always_comb begin: csr_write
             CSR_MTVEC:
             begin
                 mtvec_wen = 1'b1;
-                mtvec_d = csr_wdata_i;
+                mtvec_d = mtvec_t'(csr_wdata_i);
             end
             CSR_MIE:
             begin
@@ -328,6 +345,16 @@ always_comb begin: csr_write
             begin
                 mepc_wen = 1'b1;
                 mepc_d = {csr_wdata_i[31:2], 2'b00}; // IALIGN=32
+            end
+            CSR_MCAUSE:
+            begin
+                mcause_wen = 1'b1;
+                mcause_d = '{
+                    irq: csr_wdata_i[CSR_MCAUSE_IRQ_BIT],
+                    trap_code: csr_wdata_i[CSR_MCAUSE_CODE_BIT_HIGH:CSR_MCAUSE_CODE_BIT_LOW]
+                };
+
+                // TODO: illegal values
             end
 
         endcase
@@ -347,6 +374,29 @@ always_comb begin: csr_write
             mstatus_d.mpie = '0;
             mstatus_d.mpp = PRIV_LVL_U;
         end
+        is_trap_i:
+        begin
+            // all traps cause the core to transition to M-mode
+            current_plvl_d = PRIV_LVL_M;
+
+            // save the current privilege mode inside mpp
+            mstatus_wen = 1'b1;
+            mstatus_d.mpp = current_plvl_q;
+            // the interrutps are now globally disabled
+            mstatus_d.mie = 1'b0;
+            // save the old interrupt enable
+            mstatus_d.mpie = mstatus_q.mie;
+
+            // update mcause
+            mcause_wen = 1'b1;
+            mcause_d = mcause_i;
+
+            // update mepc
+            mepc_wen = 1'b1;
+            mepc_d = exc_pc_i;
+
+            // TODO: update mtval
+        end
         default:;
     endcase
 end
@@ -354,5 +404,7 @@ end
 // assign outputs
 assign csr_rdata_o = csr_rdata;
 assign csr_mepc_o = mepc_q;
+assign csr_mtvec_o = mtvec_q;
+assign current_plvl_o = current_plvl_q;
 
 endmodule: cs_registers

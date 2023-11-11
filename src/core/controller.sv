@@ -3,6 +3,7 @@
 
 module controller
 import riscv_pkg::*;
+import csr_pkg::*;
 (
     input clk_i,
     input rstn_i,
@@ -57,6 +58,8 @@ import riscv_pkg::*;
 
     // to cs registers
     output logic csr_mret_o,
+    output mcause_t csr_mcause_o,
+    output logic is_trap_o,
 
     // flush/stall to ID/EX
     output id_ex_flush_o,
@@ -157,6 +160,7 @@ begin
     new_pc_en_o = '0;
     pc_sel_o = PC_JUMP; // doesn't matter
     csr_mret_o = '0;
+    is_trap_o = '0;
 
     unique case (mem_trap_i)
         NO_TRAP:
@@ -171,9 +175,20 @@ begin
             pc_sel_o = PC_MEPC;
             csr_mret_o = 1'b1; // causes changes in cs registers
         end
-
-        default:;
+        
+        // too lazy to enumerate the rest of this shite
+        default: // exceptions
+        begin
+            is_trap_o = 1'b1;
+            new_pc_en_o = 1'b1;
+            pc_sel_o = PC_EXC;
+        end
     endcase
 end
+
+assign csr_mcause_o = '{
+    irq: 1'b0, // for now
+    trap_code: mem_trap_i[3:0]
+};
 
 endmodule: controller

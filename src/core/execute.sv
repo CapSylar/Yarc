@@ -43,6 +43,8 @@ import riscv_pkg::*;
     output logic csr_we_o,
     output logic is_csr_o,
     output exc_t trap_o,
+    output logic [31:0] pc_o,
+
     // for WB stage exclusively
     output logic wb_use_mem_o,
     output logic write_rd_o,
@@ -196,6 +198,7 @@ begin : ex_mem_pip
         csr_we_o <= '0;
         is_csr_o <= '0;
         trap_o <= NO_TRAP;
+        pc_o <= '0;
         
         wb_use_mem_o <= 0;
         write_rd_o <= 0;
@@ -214,6 +217,7 @@ begin : ex_mem_pip
         csr_we_o <= csr_we_i;
         is_csr_o <= is_csr_i;
         trap_o <= trap_i;
+        pc_o <= pc_i;
 
         wb_use_mem_o <= wb_use_mem_i;
         write_rd_o <= write_rd_i;

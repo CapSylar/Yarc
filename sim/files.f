@@ -15,6 +15,7 @@ ${PRJ_DIR}/core/mem_rw.sv
 ${PRJ_DIR}/core/reg_file.sv
 ${PRJ_DIR}/core/simple_fetch.sv
 ${PRJ_DIR}/core/write_back.sv
+${PRJ_DIR}/core/perf_counter.sv
 ${PRJ_DIR}/core/cs_registers.sv
 ${PRJ_DIR}/core/csr.sv
 

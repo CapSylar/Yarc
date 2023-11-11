@@ -71,6 +71,15 @@ add wave -group {CSRs} sim:${CORE}/cs_registers_i/mcause_wen;
 add wave -group {CSRs} sim:${CORE}/cs_registers_i/mcause_d;
 add wave -group {CSRs} sim:${CORE}/cs_registers_i/mcause_q;
 
+add wave -group {CSRs} sim:${CORE}/cs_registers_i/mcountinhibit_wen;
+add wave -group {CSRs} sim:${CORE}/cs_registers_i/mcountinhibit_d;
+add wave -group {CSRs} sim:${CORE}/cs_registers_i/mcountinhibit_q;
+
+add wave -group {Perf Counters} sim:${CORE}/cs_registers_i/mhpmcounter;
+add wave -group {Perf Counters} sim:${CORE}/cs_registers_i/mhpmcounter_we;
+add wave -group {Perf Counters} sim:${CORE}/cs_registers_i/mhpmcounterh_we;
+add wave -group {Perf Counters} sim:${CORE}/cs_registers_i/mhpmcounter_incr;
+
 # ---------------------------------------------------------
 add wave -divider {DECODE}
 add wave sim:${CORE}/decode_i/current_plvl_i;

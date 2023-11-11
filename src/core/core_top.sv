@@ -122,7 +122,6 @@ mcause_t mcause;
 logic is_trap;
 
 // Fetch Stage
-
 simple_fetch simple_fetch_i
 (
     .clk_i(clk_i),
@@ -195,11 +194,13 @@ cs_registers cs_registers_i
     .csr_mret_i(is_mret),
     .is_trap_i(is_trap),
     .mcause_i(mcause),
-    .exc_pc_i(ex_mem_pc)
+    .exc_pc_i(ex_mem_pc),
+
+    // used by the performance counters
+    .instr_ret_i('0)
 );
 
 // Decode Stage
-
 decode decode_i
 (
     .clk_i(clk_i),
@@ -263,7 +264,6 @@ decode decode_i
 );
 
 // Execute Stage
-
 execute execute_i
 (
     .clk_i(clk_i),
@@ -328,7 +328,6 @@ execute execute_i
 );
 
 // Memory Stage
-
 mem_rw mem_rw_i
 (
     .clk_i(clk_i),
@@ -372,7 +371,6 @@ mem_rw mem_rw_i
 );
 
 // Write-back Stage
-
 write_back write_back_i
 (
     .clk_i(clk_i),
@@ -392,7 +390,6 @@ write_back write_back_i
 );
 
 // Dependency detection unit
-
 controller controller_i
 (
     .clk_i(clk_i),

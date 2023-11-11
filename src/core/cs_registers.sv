@@ -1,4 +1,5 @@
 // contains all CS registers
+// Heavily inspired from Ibex Core (practically copied)
 
 module cs_registers
 import csr_pkg::*;
@@ -25,7 +26,10 @@ import csr_pkg::*;
     input csr_mret_i,
     input is_trap_i,
     input wire mcause_t mcause_i,
-    input [31:0] exc_pc_i
+    input [31:0] exc_pc_i,
+
+    // used by the performance counters
+    input instr_ret_i
 );
 
 import csr_pkg::*;
@@ -169,35 +173,8 @@ csr #(.Width(32), .ResetValue('0)) csr_mie
     .rd_data_o(mie_q)
 );
 
-// MCYCLE: Machine Cycle Register
-csr #(.Width(64), .ResetValue('0)) csr_mcycle
-(
-    .clk_i(clk_i),
-    .rstn_i(rstn_i),
-    .wr_en_i(mcycle_wen),
-    .wr_data_i(mcycle_d),
-    .rd_data_o(mcycle_q)
-);
-
-// MINSTRET: Machine Instruction Retired Register
-csr #(.Width(64), .ResetValue('0)) csr_minstret
-(
-    .clk_i(clk_i),
-    .rstn_i(rstn_i),
-    .wr_en_i(minstret_wen),
-    .wr_data_i(minstret_d),
-    .rd_data_o(minstret_q)
-);
-
-// MCOUNTEREN: Machine Counter-Enable Register
-csr #(.Width(32), .ResetValue('0)) csr_mcounteren
-(
-    .clk_i(clk_i),
-    .rstn_i(rstn_i),
-    .wr_en_i(mcounteren_wen),
-    .wr_data_i(mcounteren_d),
-    .rd_data_o(mcounteren_q)
-);
+logic mcountinhibit_wen;
+logic [31:0] mcountinhibit_d, mcountinhibit_q;
 
 // MCOUNTINHIBIT: Machine Counter-Inhibit CSR
 csr #(.Width(32), .ResetValue('0)) csr_mcountinhibit
@@ -208,6 +185,61 @@ csr #(.Width(32), .ResetValue('0)) csr_mcountinhibit
     .wr_data_i(mcountinhibit_d),
     .rd_data_o(mcountinhibit_q)
 );
+
+logic [63:0] mhpmcounter [32];
+logic [31:0] mhpmcounter_we;
+logic [31:0] mhpmcounterh_we;
+logic [31:0] mhpmcounter_incr;
+
+logic [4:0] mhpmcounter_ridx; // read index
+logic [4:0] mhpmcounter_widx; // write index
+
+assign mhpmcounter_ridx = csr_raddr_i;
+assign mhpmcounter_widx = csr_waddr_i;
+
+always_comb
+begin
+    mhpmcounter_incr[0] = 1'b1; // mcycle
+    mhpmcounter_incr[1] = 1'b0; // nothing here
+    mhpmcounter_incr[2] = instr_ret_i; // minstret
+end
+
+// MCYCLE: Machine Cycle Register
+perf_counter csr_mcycle
+(
+    .clk_i(clk_i),
+    .rstn_i(rstn_i),
+    .inc_en_i(mhpmcounter_incr[0] & ~mcountinhibit_q[0]),
+    
+    .we_i(mhpmcounter_we[0]),
+    .weh_i(mhpmcounterh_we[0]),
+    .w_value_i(csr_wdata_i),
+    .value_o(mhpmcounter[0])
+);
+
+// MINSTRET: Machine Instruction Retired Register
+perf_counter csr_minstret
+(
+    .clk_i(clk_i),
+    .rstn_i(rstn_i),
+    .inc_en_i(mhpmcounter_incr[2] & ~mcountinhibit_q[2]),
+    
+    .we_i(mhpmcounter_we[2]),
+    .weh_i(mhpmcounterh_we[2]),
+    .w_value_i(csr_wdata_i),
+    .value_o(mhpmcounter[2])
+);
+
+// TODO: Implement
+// MCOUNTEREN: Machine Counter-Enable Register
+// csr #(.Width(32), .ResetValue('0)) csr_mcounteren
+// (
+//     .clk_i(clk_i),
+//     .rstn_i(rstn_i),
+//     .wr_en_i(mcounteren_wen),
+//     .wr_data_i(mcounteren_d),
+//     .rd_data_o(mcounteren_q)
+// );
 
 logic mscratch_wen;
 logic [31:0] mscratch_d, mscratch_q;
@@ -286,6 +318,19 @@ always_comb begin: csr_read
                 csr_rdata[CSR_MCAUSE_IRQ_BIT] = mcause_q.irq;
                 csr_rdata[CSR_MCAUSE_CODE_BIT_HIGH:CSR_MCAUSE_CODE_BIT_LOW] = mcause_q.trap_code;
             end
+            CSR_MCOUNTINHIBIT: csr_rdata = mcountinhibit_q;
+            CSR_MCOUNTEREN: csr_rdata = '0;
+
+            // Performance Counters
+            CSR_MCYCLE, CSR_MINSTRET: // lower half
+            begin
+                csr_rdata = mhpmcounter[mhpmcounter_ridx][31:0];
+            end
+
+            CSR_MCYCLEH, CSR_MINSTRETH: // upper half
+            begin
+                csr_rdata = mhpmcounter[mhpmcounter_ridx][63:32];
+            end
             default:;
         endcase
     end
@@ -313,6 +358,12 @@ always_comb begin: csr_write
 
     mcause_wen = 1'b0;
     mcause_d = mcause_q;
+
+    mcountinhibit_wen = 1'b0;
+    mcountinhibit_d = mcountinhibit_q;
+
+    mhpmcounter_we = '0;
+    mhpmcounterh_we = '0;
 
     // CSR read and writes from CSRRW/S/C instructions
     if (csr_we_i)
@@ -356,7 +407,22 @@ always_comb begin: csr_write
 
                 // TODO: illegal values
             end
+            CSR_MCOUNTINHIBIT:
+            begin
+                mcountinhibit_wen = 1'b1;
+                mcountinhibit_d = {29'd0, csr_wdata_i[2], 1'b0, csr_wdata_i[0]};
+            end
+            
+            // performance counters
+            CSR_MCYCLE, CSR_MINSTRET:
+            begin
+                mhpmcounter_we[mhpmcounter_widx] = 1'b1;
+            end
 
+            CSR_MCYCLEH, CSR_MINSTRETH:
+            begin
+                mhpmcounterh_we[mhpmcounter_widx] = 1'b1;
+            end
         endcase
     end
 

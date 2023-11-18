@@ -77,7 +77,7 @@ import csr_pkg::*;
 // forwarding to the EX stage happens when we are writing to a register that is sourced
 // by the instruction currently decoded, it will read a stale value in the decode stage
 
-// we can't foward from the EX stage if the instruction will load from memory
+// we can't forward from the EX stage if the instruction will load from memory
 // since the alu result is not the written value but the address to memory
 wire ex_mem_forward_possible = (ex_mem_rd_addr_i != 0) && ex_mem_write_rd_i && !ex_mem_wb_use_mem_i;
 wire mem_wb_forward_possible = (mem_wb_rd_addr_i != 0) && mem_wb_write_rd_i;
@@ -90,6 +90,7 @@ logic forward_mem_wb_rs2;
 always_comb begin : forwarding
     forward_ex_mem_rs1 = 0;
     forward_mem_wb_rs1 = 0;
+    forward_ex_mem_rs2 = 0;
     forward_mem_wb_rs2 = 0;
 
     // Note: forwarding from the most recent stage takes priority

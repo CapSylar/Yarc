@@ -23,6 +23,7 @@ TOP_PARAMS := -gMEMFILE=\"${MEMFILE}\" $(DEFINES)
 
 PRJ_DIR := $(SRC_DIR)
 export PRJ_DIR
+export SIM_TOP = $(TOPMOD)
 
 TRACING_OPTIONS := --trace --trace-max-array 2048
 #verilator arguments
@@ -45,9 +46,13 @@ run_sim:
 # QUESTASIM ARGUMENTS
 LIB_NAME ?= work
 VSIM_ARGS := +begin_signature=${begin_signature} +end_signature=${end_signature} +sig_filename_o=${sig_filename_o}
+DO_FILE := ""
 
 ifeq ($(IS_GUI), 0)
 	VSIM_ARGS += -c  
+	DO_FILE := run.tcl
+else
+	DO_FILE := run_gui.tcl
 endif
 
 questa_compile:
@@ -57,7 +62,7 @@ questa_compile:
 	vopt +acc $(TOPMOD) -o $(TOPMOD)_opt $(TOP_PARAMS)
 
 questa_run:
-	vsim -wlfopt -wlfdeleteonquit -do vsim.tcl $(TOPMOD)_opt $(VSIM_ARGS)
+	vsim -wlfopt -wlfdeleteonquit -do $(DO_FILE) $(TOPMOD)_opt $(VSIM_ARGS)
 
 questa_clean:
 	vdel -all -lib $(LIB_NAME)

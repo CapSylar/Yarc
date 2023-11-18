@@ -63,7 +63,7 @@ def run_tests(argv):
         
         if dump:
             print(f"build command: {colored(compile_command, 'yellow')}")
-            print(f"run comman: {colored(run_command,'yellow')}")
+            print(f"run command: {colored(run_command,'yellow')}")
 
         completed = subprocess.run([run_command], shell=True, capture_output=True)
         run_log = completed.stdout.decode()
@@ -81,7 +81,12 @@ def run_tests(argv):
             spikesig_file = f"./temp/{filename}_spikesig.txt"
             spike_log = f"./temp/{filename}_spike.log"
 
-            subprocess.run([f"spike --isa=RV32I -l --log={spike_log} +signature={spikesig_file} --signature={spikesig_file} {testfile}"], capture_output=True, shell=True)
+            spike_run_command = f"spike --isa=RV32I -l --log={spike_log} +signature={spikesig_file} --signature={spikesig_file} {testfile}"
+            
+            if dump:
+                print(f"spike run command {colored(spike_run_command,'yellow')}")
+
+            subprocess.run([spike_run_command], capture_output=True, shell=True)
 
             sig_match = filecmp.cmp(spikesig_file, signature_file)
             sig_message = get_colored_str(sig_match)

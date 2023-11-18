@@ -1,5 +1,6 @@
 
-set TOP core_with_mem
+global env
+set TOP $env(SIM_TOP)
 set CORE ${TOP}/core_i
 
 add wave sim:${CORE}/clk_i;
@@ -54,6 +55,10 @@ add wave sim:${CORE}/cs_registers_i/csr_mepc_o;
 
 add wave sim:${CORE}/cs_registers_i/current_plvl_q;
 add wave sim:${CORE}/cs_registers_i/current_plvl_d;
+
+add wave -group {CSRs} sim:${CORE}/cs_registers_i/mstatus_wen;
+add wave -group {CSRs} sim:${CORE}/cs_registers_i/mstatus_d;
+add wave -group {CSRs} sim:${CORE}/cs_registers_i/mstatus_q;
 
 add wave -group {CSRs} sim:${CORE}/cs_registers_i/mscratch_wen;
 add wave -group {CSRs} sim:${CORE}/cs_registers_i/mscratch_d;

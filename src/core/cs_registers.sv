@@ -106,14 +106,7 @@ csr #(.Width(32), .ResetValue(MIMP_ID)) csr_mimpid
 );
 
 // MHARTID: Hart ID Register
-csr #(.Width(32), .ResetValue('0)) csr_mhartid
-(
-    .clk_i(clk_i),
-    .rstn_i(rstn_i),
-    .wr_en_i(mhartid_wen),
-    .wr_data_i(mhartid_d),
-    .rd_data_o(mhartid_q)
-);
+localparam logic [31:0] MHART_ID = 32'd0;
 
 mstatus_t mstatus_d, mstatus_q;
 logic mstatus_wen;
@@ -331,6 +324,8 @@ always_comb begin: csr_read
             begin
                 csr_rdata = mhpmcounter[mhpmcounter_ridx][63:32];
             end
+            CSR_MHARTID:
+                csr_rdata = MHART_ID;
             default:;
         endcase
     end
@@ -423,6 +418,7 @@ always_comb begin: csr_write
             begin
                 mhpmcounterh_we[mhpmcounter_widx] = 1'b1;
             end
+            default:;
         endcase
     end
 

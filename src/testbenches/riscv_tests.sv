@@ -2,6 +2,7 @@
 // https://github.com/riscv-software-src/riscv-tests
 
 module riscv_tests
+import riscv_pkg::*;
 #(parameter string MEMFILE = "", parameter int max_ticks = 100000)
 ();
 
@@ -48,7 +49,14 @@ core_top core_i
     .dmem_wdata_o(dmem_wdata)
 );
 
-wire trap = core_i.mem_wb_trap;
+exc_t trap;
+assign trap = core_i.mem_trap;
+
+logic stop_sim;
+
+always_ff @(posedge clk, negedge rstn)
+    if (!rstn) stop_sim <= '0;
+    else stop_sim <= (trap == ECALL_MMODE || trap == ECALL_UMODE);
 
 wire imem_en = imem_raddr[31]; // starts at 0x8000_0000
 wire dmem_en = dmem_addr[31]; // start at 0x8000_0000
@@ -72,13 +80,6 @@ mem_i
 );
 
 // ******************************************************************************************
-
-// catch write_tohost, the simulation is ended
-// always_ff @(posedge clk)
-// begin: write_tohost
-
-// end
-
 task automatic eval_result(output success);
     int ticks = 0;
     success = 0;
@@ -88,15 +89,17 @@ task automatic eval_result(output success);
         @(posedge clk);
         // $display("tick %d", ticks);
         // stop the test when a trap is detected
-        if (trap)
+        if (stop_sim)
         begin
+            // test has stopped, check if the test passed or failed
             if (core_i.reg_file_i.regf[3] == 1 && 
                 core_i.reg_file_i.regf[17] == 93 &&
                 core_i.reg_file_i.regf[10] == 0 )
             begin
                 success = 1;
-                break;
             end
+
+            break;
         end
     end
 

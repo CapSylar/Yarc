@@ -82,7 +82,7 @@ assign func7 = instr_i[31:25];
 assign csr_addr = instr_i[31:20];
 
 // immediates
-logic [31:0] imm_i, imm_s, imm_b, imm_u, imm_j;
+logic [31:0] imm_i, imm_s, imm_b, imm_u, imm_j, imm_csr;
 
 assign imm_i = 32'(signed'(instr_i[31:20]));
 assign imm_s = 32'(signed'({instr_i[31:25], instr_i[11:7]}));
@@ -235,8 +235,8 @@ begin : main_decode
                     // determine is csr will be written
                     // In CSRRS/C: If rs1 = Zero, the csr is not written and any write side-effect will not be triggered
                     // In CSRRSI/CI: If uimm = Zero, the csr is not written any write side-effects will not be triggered
-                    csr_we = (rs1 == '0 && (system_opc_t'(func3) == CSRRS || system_opc_t'(func3) == CSRRS)) ||
-                        (imm_csr == '0 && (system_opc_t'(func3) == CSRRSI || system_opc_t'(func3) == CSRRCI)) ? 1'b0 : 1'b1;
+                    csr_we = ((rs1 == '0 && (system_opc_t'(func3) == CSRRS || system_opc_t'(func3) == CSRRS)) ||
+                        (imm_csr == '0 && (system_opc_t'(func3) == CSRRSI || system_opc_t'(func3) == CSRRCI))) ? 1'b0 : 1'b1;
 
                     // handle CSR* instructions
                     if (func3[2]) // indicates the immediate variant

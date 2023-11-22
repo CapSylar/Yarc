@@ -20,19 +20,24 @@ import csr_pkg::*;
     // output some cs registers
     output [31:0] csr_mepc_o,
     output mtvec_t csr_mtvec_o,
+    output mstatus_t csr_mstatus_o,
     output priv_lvl_e current_plvl_o,
+
+    output irqs_t irq_pending_o,
 
     // mret, traps...
     input csr_mret_i,
     input is_trap_i,
     input wire mcause_t mcause_i,
     input [31:0] exc_pc_i,
+    // interrupts
+    input irq_software_i,
+    input irq_timer_i,
+    input irq_external_i,
 
     // used by the performance counters
     input instr_ret_i
 );
-
-import csr_pkg::*;
 
 csr_t csr_raddr, csr_waddr;
 assign csr_raddr = csr_t'(csr_raddr_i);
@@ -140,24 +145,17 @@ csr #(.Width($bits(mtvec_t)), .ResetValue('0)) csr_mtvec
     .rd_data_o(mtvec_q)
 );
 
-logic [31:0] mip_d, mip_q;
-logic mip_wen;
+// MIP: Machine Interrupt Pending
+irqs_t mip_d;
+assign mip_d.m_software = irq_software_i;
+assign mip_d.m_timer = irq_timer_i;
+assign mip_d.m_external = irq_external_i;
 
-// MIP: Machine Interrupt Pending Register
-csr #(.Width(32), .ResetValue('0)) csr_mip
-(
-    .clk_i(clk_i),
-    .rstn_i(rstn_i),
-    .wr_en_i(mip_wen),
-    .wr_data_i(mip_d),
-    .rd_data_o(mip_q)
-);
-
-logic [31:0] mie_d, mie_q;
+irqs_t mie_d, mie_q;
 logic mie_wen;
 
 // MIE: Machine Interrupt Enable Register
-csr #(.Width(32), .ResetValue('0)) csr_mie
+csr #(.Width($bits(irqs_t)), .ResetValue('0)) csr_mie
 (
     .clk_i(clk_i),
     .rstn_i(rstn_i),
@@ -303,8 +301,18 @@ always_comb begin: csr_read
             CSR_MSTATUSH: csr_rdata = '0;
             CSR_MTVEC: csr_rdata = mtvec_q;
             CSR_MEPC: csr_rdata = mepc_q;
-            CSR_MIE: csr_rdata = mie_q;
-            CSR_MIP: csr_rdata = mie_q;
+            CSR_MIE:
+            begin
+                csr_rdata[CSR_MSI_BIT] = mie_q.m_software;
+                csr_rdata[CSR_MTI_BIT] = mie_q.m_timer;
+                csr_rdata[CSR_MEI_BIT] = mie_q.m_external;
+            end
+            CSR_MIP:
+            begin
+                csr_rdata[CSR_MSI_BIT] = mip_d.m_software;
+                csr_rdata[CSR_MTI_BIT] = mip_d.m_timer;
+                csr_rdata[CSR_MEI_BIT] = mip_d.m_external;
+            end
             CSR_MEPC: csr_rdata = mepc_q;
             CSR_MCAUSE:
             begin
@@ -385,6 +393,12 @@ always_comb begin: csr_write
             CSR_MIE:
             begin
                 mie_wen = 1'b1;
+                mie_d = '{
+                    m_software: csr_wdata_i[CSR_MSI_BIT],
+                    m_timer: csr_wdata_i[CSR_MTI_BIT],
+                    m_external: csr_wdata_i[CSR_MEI_BIT]
+                };
+
                 mie_d = csr_wdata_i;
             end
             CSR_MEPC:
@@ -467,6 +481,8 @@ end
 assign csr_rdata_o = csr_rdata;
 assign csr_mepc_o = mepc_q;
 assign csr_mtvec_o = mtvec_q;
+assign csr_mstatus_o = mstatus_q;
 assign current_plvl_o = current_plvl_q;
+assign irq_pending_o = mip_d & mie_q;
 
 endmodule: cs_registers

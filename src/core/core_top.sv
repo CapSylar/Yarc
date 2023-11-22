@@ -29,13 +29,17 @@ import csr_pkg::*;
     input [31:0] dmem_rdata_i,
     // write port
     output [3:0] dmem_wsel_byte_o,
-    output [31:0] dmem_wdata_o
+    output [31:0] dmem_wdata_o,
+
+    // interrupts
+    input irq_timer_i,
+    input irq_external_i
 );
 
 // Signal definitions
 
 // Driven by the Fetch stage
-logic instr_valid;
+logic if_id_instr_valid;
 logic [31:0] if_id_instr;
 logic [31:0] if_id_pc;
 
@@ -47,6 +51,7 @@ logic [31:0] csr_rdata;
 logic [31:0] csr_mepc;
 priv_lvl_e current_plvl;
 mtvec_t csr_mtvec;
+irqs_t irq_pending;
 
 // Driven by the Decode stage
 logic [4:0] rs1_addr, rs2_addr;
@@ -57,6 +62,7 @@ alu_oper1_src_t id_ex_alu_oper1_src;
 alu_oper2_src_t id_ex_alu_oper2_src;
 bnj_oper_t id_ex_bnj_oper;
 logic id_ex_is_csr;
+logic id_ex_instr_valid;
 alu_oper_t id_ex_alu_oper;
 mem_oper_t id_ex_mem_oper;
 logic [11:0] id_ex_csr_waddr;
@@ -85,6 +91,7 @@ logic [31:0] branch_target;
 logic ex_new_pc_en;
 exc_t ex_mem_trap;
 logic [31:0] ex_mem_pc;
+logic ex_mem_instr_valid;
 
 // Driven by the Mem stage
 logic mem_wb_use_mem;
@@ -102,7 +109,7 @@ logic regf_write;
 logic [4:0] regf_waddr;
 logic [31:0] regf_wdata;
 
-// Driven by the Dependency detection unit
+// Driven by the Core Controller
 logic forward_ex_mem_rs1;
 logic forward_ex_mem_rs2;
 logic forward_mem_wb_rs1;
@@ -120,6 +127,7 @@ pc_sel_t pc_sel;
 logic is_mret;
 mcause_t mcause;
 logic is_trap;
+logic [31:0] exc_pc;
 
 // Fetch Stage
 simple_fetch simple_fetch_i
@@ -127,7 +135,7 @@ simple_fetch simple_fetch_i
     .clk_i(clk_i),
     .rstn_i(rstn_i),
 
-    .valid_o(instr_valid),
+    .valid_o(if_id_instr_valid),
     .instr_o(if_id_instr),
     .pc_o(if_id_pc),
 
@@ -188,13 +196,20 @@ cs_registers cs_registers_i
     // output some cs registers
     .csr_mepc_o(csr_mepc),
     .csr_mtvec_o(csr_mtvec),
+    .csr_mstatus_o(csr_mstatus),
     .current_plvl_o(current_plvl),
+
+    .irq_pending_o(irq_pending),
 
     // mret, traps...
     .csr_mret_i(is_mret),
     .is_trap_i(is_trap),
     .mcause_i(mcause),
-    .exc_pc_i(ex_mem_pc),
+    .exc_pc_i(exc_pc),
+    // interrupts
+    .irq_software_i('0),
+    .irq_timer_i(irq_timer_i),
+    .irq_external_i(irq_external_i),
 
     // used by the performance counters
     .instr_ret_i('0)
@@ -205,7 +220,7 @@ decode decode_i
 (
     .clk_i(clk_i),
     .rstn_i(rstn_i),
-    .instr_valid_i(instr_valid),
+    .instr_valid_i(if_id_instr_valid),
 
     // from csr unit
     .current_plvl_i(current_plvl),
@@ -244,6 +259,7 @@ decode decode_i
     .bnj_oper_o(id_ex_bnj_oper),
     .alu_oper_o(id_ex_alu_oper),
     .is_csr_o(id_ex_is_csr),
+    .instr_valid_o(id_ex_instr_valid),
 
     // for the MEM stage
     .mem_oper_o(id_ex_mem_oper),
@@ -280,6 +296,7 @@ execute execute_i
     .alu_oper_i(id_ex_alu_oper),
     .bnj_oper_i(id_ex_bnj_oper),
     .is_csr_i(id_ex_is_csr),
+    .instr_valid_i(id_ex_instr_valid),
 
     // forward to MEM stage
     .mem_oper_i(id_ex_mem_oper),
@@ -307,6 +324,7 @@ execute execute_i
     .is_csr_o(ex_mem_is_csr),
     .trap_o(ex_mem_trap),
     .pc_o(ex_mem_pc),
+    .instr_valid_o(ex_mem_instr_valid),
 
     // for WB stage exclusively
     .wb_use_mem_o(ex_mem_wb_use_mem),
@@ -407,7 +425,7 @@ controller controller_i
     .id_ex_wb_use_mem_i(id_ex_wb_use_mem),
 
     // from EX stage
-    .ex_new_pc_en(ex_new_pc_en),
+    .ex_new_pc_en_i(ex_new_pc_en),
 
     // from EX/MEM
     .ex_mem_rd_addr_i(ex_mem_rd_addr),
@@ -432,7 +450,14 @@ controller controller_i
     .forward_mem_wb_rs2_o(forward_mem_wb_rs2),
     .forward_mem_wb_data_o(forward_mem_wb_data),
 
-    .instr_valid_i(instr_valid),
+    .if_fetch_i(imem_read_o), // TODO: ugly man, just ugly!
+    .if_pc_i(imem_raddr_o),
+    .if_id_instr_valid_i(if_id_instr_valid),
+    .if_id_pc_i(if_id_pc),
+    .id_ex_instr_valid_i(id_ex_instr_valid),
+    .id_ex_pc_i(id_ex_pc),
+    .ex_mem_instr_valid_i(ex_mem_instr_valid),
+    .ex_mem_pc_i(ex_mem_pc),
 
     // to fetch stage, to steer the pc
     .new_pc_en_o(new_pc_en),
@@ -442,11 +467,17 @@ controller controller_i
     .csr_mret_o(is_mret),
     .csr_mcause_o(mcause),
     .is_trap_o(is_trap),
+    .exc_pc_o(exc_pc),
 
     // to handle CSR read/write side effects
     .id_is_csr_i(id_is_csr),
     .ex_is_csr_i(id_ex_is_csr),
     .mem_is_csr_i(ex_mem_is_csr),
+
+    // for interrupt handling
+    .current_plvl_i(current_plvl),
+    .csr_mstatus_i(csr_mstatus),
+    .irq_pending_i(irq_pending),
 
     // hazard lines to ID/EX
     .id_ex_flush_o(id_ex_flush),

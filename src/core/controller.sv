@@ -20,7 +20,7 @@ import csr_pkg::*;
     input id_ex_wb_use_mem_i,
 
     // EX stage
-    input ex_new_pc_en,
+    input ex_new_pc_en_i,
 
     // from EX/MEM
     input [4:0] ex_mem_rd_addr_i,
@@ -45,12 +45,27 @@ import csr_pkg::*;
     output forward_mem_wb_rs2_o,
     output [31:0] forward_mem_wb_data_o,
 
-    input instr_valid_i,
+    input if_fetch_i, // if IF is currently fetching
+    input if_pc_i, // the IF PC
+
+    input if_id_instr_valid_i,
+    input if_id_pc_i,
+
+    input id_ex_instr_valid_i,
+    input id_ex_pc_i,
+
+    input ex_mem_instr_valid_i,
+    input ex_mem_pc_i,
 
     // to handle CSR read/write side effects
     input id_is_csr_i,
     input ex_is_csr_i,
     input mem_is_csr_i,
+
+    // for interrupt handling
+    input priv_lvl_e current_plvl_i,
+    input var mstatus_t csr_mstatus_i,
+    input var irqs_t irq_pending_i,
 
     // to fetch stage, to steer the pc
     output logic new_pc_en_o,
@@ -60,18 +75,19 @@ import csr_pkg::*;
     output logic csr_mret_o,
     output mcause_t csr_mcause_o,
     output logic is_trap_o,
+    output logic [31:0] exc_pc_o, // this will be saved in mepc
 
     // flush/stall to ID/EX
-    output id_ex_flush_o,
-    output id_ex_stall_o,
+    output logic id_ex_flush_o,
+    output logic id_ex_stall_o,
 
     // flush/stall to IF/EX
-    output if_id_stall_o,
-    output if_id_flush_o,
+    output logic if_id_stall_o,
+    output logic if_id_flush_o,
 
     // flush/stall to EX/MEM
-    output ex_mem_stall_o,
-    output ex_mem_flush_o
+    output logic ex_mem_stall_o,
+    output logic ex_mem_flush_o
 );
 
 // forwarding to the EX stage happens when we are writing to a register that is sourced
@@ -142,54 +158,129 @@ wire load_use_hzrd = id_ex_load && ((id_ex_rd_addr_i == id_rs1_addr_i) ||
 
 // For now, the cpu always predicts that the branch is not taken and continues
 // On a mispredict, flush the 2 instruction after the branch and continue from the new PC
-assign id_ex_flush_o = ex_new_pc_en || !instr_valid_i || load_use_hzrd || mem_trap_i != NO_TRAP;
-assign id_ex_stall_o = 0;
 
 // Instruction fetch is stalled on:
 // 1- Load use hazard
 // 2- There is a CSR instruction in the pipeline
-assign if_id_stall_o = load_use_hzrd || ex_is_csr_i || mem_is_csr_i;
-assign if_id_flush_o = id_is_csr_i || ex_is_csr_i || mem_is_csr_i;
 
-assign ex_mem_stall_o = '0;
-assign ex_mem_flush_o = mem_trap_i != NO_TRAP;
+// handle interrupts
 
-// loading new PCs
+logic interrupt_en;
+logic handle_irq;
+// Global interrupt enable or In U mode since MIE is a don't care in U mode
+assign interrupt_en = csr_mstatus_i.mie || current_plvl_i == PRIV_LVL_U;
+assign handle_irq = interrupt_en & |irq_pending_i;
 
+// determine the IRQ code with the highest priority
+logic [3:0] interrupt_code;
 always_comb
 begin
-    new_pc_en_o = '0;
-    pc_sel_o = PC_JUMP; // doesn't matter
-    csr_mret_o = '0;
-    is_trap_o = '0;
-
-    unique case (mem_trap_i)
-        NO_TRAP:
-        begin
-            new_pc_en_o = ex_new_pc_en;
-            pc_sel_o = PC_JUMP;
-        end
-
-        MRET:
-        begin
-            new_pc_en_o = 1'b1;
-            pc_sel_o = PC_MEPC;
-            csr_mret_o = 1'b1; // causes changes in cs registers
-        end
-        
-        // too lazy to enumerate the rest of this shite
-        default: // exceptions
-        begin
-            is_trap_o = 1'b1;
-            new_pc_en_o = 1'b1;
-            pc_sel_o = PC_EXC;
-        end
+    interrupt_code = '0;
+    unique case (1'b1)
+        irq_pending_i.m_software: interrupt_code = CSR_MSI_BIT;
+        irq_pending_i.m_timer: interrupt_code = CSR_MTI_BIT;
+        irq_pending_i.m_external: interrupt_code = CSR_MEI_BIT;
+        default:;
     endcase
 end
 
-assign csr_mcause_o = '{
-    irq: 1'b0, // for now
-    trap_code: mem_trap_i[3:0]
-};
+typedef enum logic [1:0] 
+{
+    DECODE,
+    IRQ_TAKEN
+} state_t;
+
+state_t current_state, next_state;
+
+// next state logic
+always_ff @(posedge clk_i, negedge rstn_i)
+    if (!rstn_i) current_state <= DECODE;
+    else current_state <= next_state;
+
+always_comb
+begin
+    next_state = current_state;
+
+    is_trap_o = '0;
+    new_pc_en_o = '0;
+    pc_sel_o = PC_JUMP;
+    csr_mret_o = '0;
+
+    // for exceptions
+    exc_pc_o = ex_mem_pc_i;
+    csr_mcause_o = '{
+        irq: 1'b0,
+        trap_code: mem_trap_i[3:0]
+    };
+
+    id_ex_flush_o = load_use_hzrd;
+    id_ex_stall_o = '0;
+
+    if_id_stall_o = load_use_hzrd || ex_is_csr_i || mem_is_csr_i;
+    if_id_flush_o = id_is_csr_i || ex_is_csr_i || mem_is_csr_i;
+
+    ex_mem_stall_o = '0;
+    ex_mem_flush_o = '0;
+
+    unique case (current_state)
+        DECODE:
+        begin
+            // instruction in the MEM stage raised a trap
+            if (mem_trap_i != NO_TRAP)
+            begin
+                id_ex_flush_o = 1'b1;
+                ex_mem_flush_o = 1'b1;
+
+                // MRET
+                if (mem_trap_i == MRET)
+                begin
+                    new_pc_en_o = 1'b1;
+                    pc_sel_o = PC_MEPC;
+                    csr_mret_o = 1'b1; // triggers needed changes in cs_registers
+                end
+                else // regular exception
+                begin
+                    is_trap_o = 1'b1;
+                    new_pc_en_o = 1'b1;
+                    pc_sel_o = PC_TRAP;
+                end
+            end
+            else if (handle_irq)
+            begin
+                // the instruction currently commiting in the MEM stage will be allowed to finish
+                // but the EX_MEM and ID_EX pipeline registers must be flushed
+
+                id_ex_flush_o = 1'b1;
+                ex_mem_flush_o = 1'b1;
+                pc_sel_o = PC_TRAP;
+                new_pc_en_o = 1'b1;
+                is_trap_o = 1'b1;
+
+                csr_mcause_o = '{
+                    irq: 1'b1,
+                    trap_code: interrupt_code
+                };
+
+                // we need the pipeline to restart from the first valid instruction that is younger
+                // that the one that will retire in this cycle
+                if (id_ex_instr_valid_i)
+                    exc_pc_o = id_ex_pc_i;
+                else if (if_id_instr_valid_i)
+                    exc_pc_o = if_id_pc_i;
+                else if (if_fetch_i)
+                    exc_pc_o = if_pc_i;
+            end
+            else if (ex_new_pc_en_i) // EX determined that the branch was taken
+            begin
+                new_pc_en_o = 1'b1;
+
+                // for now the branch is always predicted as not taken, hence if it's taken
+                // we must flush the wrong instruction currently in id_ex
+                id_ex_flush_o = 1'b1;
+                // pc_sel_o is already set
+            end
+        end
+    endcase
+end
 
 endmodule: controller

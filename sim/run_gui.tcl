@@ -213,6 +213,9 @@ add wave -color Turquoise sim:${CORE}/controller_i/if_id_flush_o;
 add wave -color Turquoise sim:${CORE}/controller_i/ex_mem_flush_o;
 add wave -color Turquoise sim:${CORE}/controller_i/ex_mem_stall_o;
 
+add wave sim:${CORE}/controller_i/current_state;
+add wave sim:${CORE}/controller_i/next_state;
+
 add wave sim:${CORE}/controller_i/new_pc_en_o;
 add wave sim:${CORE}/controller_i/pc_sel_o;
 add wave sim:${CORE}/controller_i/csr_mret_o;

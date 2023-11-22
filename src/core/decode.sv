@@ -46,6 +46,7 @@ import csr_pkg::*;
     output bnj_oper_t bnj_oper_o,
     output alu_oper_t alu_oper_o,
     output logic is_csr_o,
+    output logic instr_valid_o,
 
     // for the MEM stage
     output mem_oper_t mem_oper_o,
@@ -323,7 +324,7 @@ assign id_is_csr_o = is_csr;
 
 always_ff @(posedge clk_i, negedge rstn_i)
 begin : id_ex_pip
-    if (!rstn_i || flush_i)
+    if (!rstn_i || flush_i || !instr_valid_i)
     begin
         pc_o <= 0;
         rs1_data_o <= 0;
@@ -335,6 +336,7 @@ begin : id_ex_pip
         bnj_oper_o <= BNJ_NO;
         alu_oper_o <= ALU_ADD;
         is_csr_o <= '0;
+        instr_valid_o <= '0;
 
         mem_oper_o <= MEM_NOP;
         csr_waddr_o <= 0;
@@ -361,6 +363,7 @@ begin : id_ex_pip
         bnj_oper_o <= bnj_oper;
         alu_oper_o <= alu_oper;
         is_csr_o <= is_csr;
+        instr_valid_o <= instr_valid_i;
 
         mem_oper_o <= mem_oper;
         csr_waddr_o <= csr_addr;

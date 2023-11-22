@@ -17,6 +17,7 @@ import riscv_pkg::*;
     input alu_oper_t alu_oper_i,
     input bnj_oper_t bnj_oper_i,
     input is_csr_i,
+    input instr_valid_i,
 
     // forward to MEM stage
     input mem_oper_t mem_oper_i,
@@ -44,6 +45,7 @@ import riscv_pkg::*;
     output logic is_csr_o,
     output exc_t trap_o,
     output logic [31:0] pc_o,
+    output logic instr_valid_o,
 
     // for WB stage exclusively
     output logic wb_use_mem_o,
@@ -199,6 +201,7 @@ begin : ex_mem_pip
         is_csr_o <= '0;
         trap_o <= NO_TRAP;
         pc_o <= '0;
+        instr_valid_o <= '0;
         
         wb_use_mem_o <= 0;
         write_rd_o <= 0;
@@ -218,6 +221,7 @@ begin : ex_mem_pip
         is_csr_o <= is_csr_i;
         trap_o <= trap_i;
         pc_o <= pc_i;
+        instr_valid_o <= instr_valid_i;
 
         wb_use_mem_o <= wb_use_mem_i;
         write_rd_o <= write_rd_i;

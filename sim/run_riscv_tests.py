@@ -50,6 +50,10 @@ def run_tests(argv):
 
         # first run questa over the testfile
         compile_command = f"make questa_compile MEMFILE={vmem_file}"
+
+        if dump:
+            print(f"build command: {colored(compile_command, 'yellow')}")
+
         subprocess.run([compile_command], shell=True, capture_output=True)
 
         # extract end_signature location from elf file
@@ -62,7 +66,6 @@ def run_tests(argv):
         run_command = f"make questa_run begin_signature={begin_signature} end_signature={end_signature} sig_filename_o={signature_file} IS_GUI=0"
         
         if dump:
-            print(f"build command: {colored(compile_command, 'yellow')}")
             print(f"run command: {colored(run_command,'yellow')}")
 
         completed = subprocess.run([run_command], shell=True, capture_output=True)

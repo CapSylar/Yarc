@@ -52,7 +52,7 @@ begin
     unique case (pc_sel_i)
         PC_JUMP: new_pc = branch_target_i;
         PC_MEPC: new_pc = csr_mepc_i;
-        PC_EXC:  new_pc = exc_target_addr;
+        PC_TRAP:  new_pc = exc_target_addr;
         default:;
     endcase
 end

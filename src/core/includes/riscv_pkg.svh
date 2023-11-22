@@ -151,7 +151,7 @@ typedef enum logic [1:0]
 {
     PC_JUMP,
     PC_MEPC,
-    PC_EXC
+    PC_TRAP
 } pc_sel_t;
 
 endpackage: riscv_pkg

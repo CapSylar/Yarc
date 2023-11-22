@@ -46,7 +46,11 @@ core_top core_i
     .dmem_read_o(dmem_read),
     .dmem_rdata_i(dmem_rdata),
     .dmem_wsel_byte_o(dmem_wsel_byte),
-    .dmem_wdata_o(dmem_wdata)
+    .dmem_wdata_o(dmem_wdata),
+
+    // interrupts
+    .irq_timer_i('0),
+    .irq_external_i('0)
 );
 
 exc_t trap;

@@ -24,13 +24,25 @@ begin
     rstn <= rstn_t;    
 end
 
+// interrupts
+logic irq_external;
+logic irq_timer;
+
 initial
 begin
+    irq_external = '0;
+    irq_timer = '0;
+
     rstn_t = 1'b1;
     @(posedge clk);
     rstn_t = 1'b0;
     repeat(2) @(posedge clk);
     rstn_t = 1'b1;
+
+    repeat(65) @(posedge clk);
+    irq_external = 1'b1;
+    repeat(3) @(posedge clk);
+    irq_external = 1'b0;
 
     repeat(100) @(posedge clk);
     $finish;
@@ -97,8 +109,8 @@ core_top core_i
     .dmem_wdata_o(dmem_wdata),
 
     // interrupts
-    .irq_timer_i('0),
-    .irq_external_i('0)
+    .irq_timer_i(irq_timer),
+    .irq_external_i(irq_external)
 );
 
 endmodule: core_with_mem

@@ -271,6 +271,9 @@ csr #(.Width($bits(mcause_t)), .ResetValue('0)) csr_mcause
     .rd_data_o(mcause_q)
 );
 
+logic mtval_wen;
+logic [31:0] mtval_d, mtval_q;
+
 // MTVAL: Machine Trap Value Register
 csr #(.Width(32), .ResetValue('0)) csr_mtval
 (
@@ -300,6 +303,7 @@ always_comb begin: csr_read
             end
             CSR_MSTATUSH: csr_rdata = '0;
             CSR_MTVEC: csr_rdata = mtvec_q;
+            CSR_MTVAL: csr_rdata = mtval_q;
             CSR_MEPC: csr_rdata = mepc_q;
             CSR_MIE:
             begin
@@ -353,6 +357,9 @@ always_comb begin: csr_write
     mtvec_wen = 1'b0;
     mtvec_d = mtvec_q;
 
+    mtval_wen = 1'b0;
+    mtval_d = mtval_q;
+
     mie_wen = 1'b0;
     mie_d = mie_q;
 
@@ -389,6 +396,11 @@ always_comb begin: csr_write
             begin
                 mtvec_wen = 1'b1;
                 mtvec_d = mtvec_t'(csr_wdata_i);
+            end
+            CSR_MTVAL:
+            begin
+                mtval_wen = 1'b1;
+                mtval_d = csr_wdata_i;
             end
             CSR_MIE:
             begin
@@ -471,7 +483,9 @@ always_comb begin: csr_write
             mepc_wen = 1'b1;
             mepc_d = exc_pc_i;
 
-            // TODO: update mtval
+            // TODO: it would be better if mtval would not always be set to zero
+            mtval_wen = 1'b1;
+            mtval_d = '0;
         end
         default:;
     endcase

@@ -51,6 +51,7 @@ logic [31:0] csr_rdata;
 logic [31:0] csr_mepc;
 priv_lvl_e current_plvl;
 mtvec_t csr_mtvec;
+mstatus_t csr_mstatus;
 irqs_t irq_pending;
 
 // Driven by the Decode stage
@@ -450,7 +451,6 @@ controller controller_i
     .forward_mem_wb_rs2_o(forward_mem_wb_rs2),
     .forward_mem_wb_data_o(forward_mem_wb_data),
 
-    .if_fetch_i(imem_read_o), // TODO: ugly man, just ugly!
     .if_pc_i(imem_raddr_o),
     .if_id_instr_valid_i(if_id_instr_valid),
     .if_id_pc_i(if_id_pc),

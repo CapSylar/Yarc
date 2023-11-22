@@ -45,17 +45,16 @@ import csr_pkg::*;
     output forward_mem_wb_rs2_o,
     output [31:0] forward_mem_wb_data_o,
 
-    input if_fetch_i, // if IF is currently fetching
-    input if_pc_i, // the IF PC
+    input [31:0] if_pc_i, // the IF PC
 
     input if_id_instr_valid_i,
-    input if_id_pc_i,
+    input [31:0] if_id_pc_i,
 
     input id_ex_instr_valid_i,
-    input id_ex_pc_i,
+    input [31:0] id_ex_pc_i,
 
     input ex_mem_instr_valid_i,
-    input ex_mem_pc_i,
+    input [31:0] ex_mem_pc_i,
 
     // to handle CSR read/write side effects
     input id_is_csr_i,
@@ -267,7 +266,7 @@ begin
                     exc_pc_o = id_ex_pc_i;
                 else if (if_id_instr_valid_i)
                     exc_pc_o = if_id_pc_i;
-                else if (if_fetch_i)
+                else
                     exc_pc_o = if_pc_i;
             end
             else if (ex_new_pc_en_i) // EX determined that the branch was taken
@@ -280,6 +279,7 @@ begin
                 // pc_sel_o is already set
             end
         end
+        default:;
     endcase
 end
 

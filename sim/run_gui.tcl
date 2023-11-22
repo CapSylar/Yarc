@@ -46,12 +46,21 @@ add wave sim:${CORE}/cs_registers_i/csr_we_i;
 add wave sim:${CORE}/cs_registers_i/csr_waddr;
 add wave sim:${CORE}/cs_registers_i/csr_wdata_i;
 
+add wave sim:${CORE}/cs_registers_i/csr_mepc_o;
+add wave sim:${CORE}/cs_registers_i/csr_mtvec_o;
+add wave sim:${CORE}/cs_registers_i/csr_mstatus_o;
+add wave sim:${CORE}/cs_registers_i/irq_pending_o;
+
+# ret, traps...
 add wave sim:${CORE}/cs_registers_i/csr_mret_i;
 add wave sim:${CORE}/cs_registers_i/is_trap_i;
 add wave sim:${CORE}/cs_registers_i/mcause_i;
 add wave sim:${CORE}/cs_registers_i/exc_pc_i;
 
-add wave sim:${CORE}/cs_registers_i/csr_mepc_o;
+# interrupts
+add wave sim:${CORE}/cs_registers_i/irq_software_i;
+add wave sim:${CORE}/cs_registers_i/irq_timer_i;
+add wave sim:${CORE}/cs_registers_i/irq_external_i;
 
 add wave sim:${CORE}/cs_registers_i/current_plvl_q;
 add wave sim:${CORE}/cs_registers_i/current_plvl_d;
@@ -67,6 +76,12 @@ add wave -group {CSRs} sim:${CORE}/cs_registers_i/mscratch_q;
 add wave -group {CSRs} sim:${CORE}/cs_registers_i/mepc_wen;
 add wave -group {CSRs} sim:${CORE}/cs_registers_i/mepc_d;
 add wave -group {CSRs} sim:${CORE}/cs_registers_i/mepc_q;
+
+add wave -group {CSRs} sim:${CORE}/cs_registers_i/mie_wen;
+add wave -group {CSRs} sim:${CORE}/cs_registers_i/mie_d;
+add wave -group {CSRs} sim:${CORE}/cs_registers_i/mie_q;
+
+add wave -group {CSRs} sim:${CORE}/cs_registers_i/mip_d;
 
 add wave -group {CSRs} sim:${CORE}/cs_registers_i/mtvec_wen;
 add wave -group {CSRs} sim:${CORE}/cs_registers_i/mtvec_d;
@@ -127,11 +142,13 @@ add wave sim:${CORE}/execute_i/alu_oper2_src_i;
 add wave sim:${CORE}/execute_i/alu_oper_i;
 add wave sim:${CORE}/execute_i/bnj_oper_i;
 add wave sim:${CORE}/execute_i/is_csr_i;
+add wave sim:${CORE}/execute_i/instr_valid_i;
 
 add wave sim:${CORE}/execute_i/mem_oper_i;
-add wave sim:${CORE}/execute_i/operand1;
-add wave sim:${CORE}/execute_i/operand2;
+add wave sim:${CORE}/execute_i/csr_waddr_i;
+add wave sim:${CORE}/execute_i/csr_we_i;
 add wave -color Turquoise sim:${CORE}/execute_i/trap_i;
+
 add wave sim:${CORE}/execute_i/wb_use_mem_i;
 add wave sim:${CORE}/execute_i/write_rd_i;
 add wave sim:${CORE}/execute_i/rd_addr_i;
@@ -152,13 +169,20 @@ add wave -color Turquoise sim:${CORE}/execute_i/forward_mem_wb_data_i;
 add wave -color Gold sim:${CORE}/execute_i/alu_result_o;
 add wave -color Gold sim:${CORE}/execute_i/alu_oper2_o;
 add wave -color Gold sim:${CORE}/execute_i/mem_oper_o;
+add wave -color Gold sim:${CORE}/execute_i/csr_wdata_o;
 add wave -color Gold sim:${CORE}/execute_i/csr_waddr_o;
 add wave -color Gold sim:${CORE}/execute_i/csr_we_o;
+add wave -color Gold sim:${CORE}/execute_i/is_csr_o;
 add wave -color Turquoise sim:${CORE}/execute_i/trap_o;
+add wave -color Gold sim:${CORE}/execute_i/pc_o;
+add wave -color Gold sim:${CORE}/execute_i/instr_valid_o;
+
 add wave -color Gold sim:${CORE}/execute_i/wb_use_mem_o;
 add wave -color Gold sim:${CORE}/execute_i/write_rd_o;
 add wave -color Gold sim:${CORE}/execute_i/rd_addr_o;
 
+add wave sim:${CORE}/execute_i/operand1;
+add wave sim:${CORE}/execute_i/operand2;
 # ---------------------------------------------------------
 add wave -divider {MEM_RW}
 add wave sim:${CORE}/mem_rw_i/alu_result_i;
@@ -216,11 +240,26 @@ add wave -color Turquoise sim:${CORE}/controller_i/ex_mem_stall_o;
 add wave sim:${CORE}/controller_i/current_state;
 add wave sim:${CORE}/controller_i/next_state;
 
+add wave sim:${CORE}/controller_i/if_pc_i;
+add wave sim:${CORE}/controller_i/if_id_instr_valid_i;
+add wave sim:${CORE}/controller_i/if_id_pc_i;
+add wave sim:${CORE}/controller_i/id_ex_instr_valid_i;
+add wave sim:${CORE}/controller_i/id_ex_pc_i;
+add wave sim:${CORE}/controller_i/ex_mem_instr_valid_i;
+add wave sim:${CORE}/controller_i/ex_mem_pc_i;
+
+add wave sim:${CORE}/controller_i/id_is_csr_i;
+add wave sim:${CORE}/controller_i/ex_is_csr_i;
+add wave sim:${CORE}/controller_i/mem_is_csr_i;
+
 add wave sim:${CORE}/controller_i/new_pc_en_o;
 add wave sim:${CORE}/controller_i/pc_sel_o;
 add wave sim:${CORE}/controller_i/csr_mret_o;
 add wave sim:${CORE}/controller_i/csr_mcause_o;
 add wave sim:${CORE}/controller_i/is_trap_o;
+
+# ------------------------Rest of TB signals-------------------------
+add wave sim:*
 
 # disable creation of the transcript file
 transcript off

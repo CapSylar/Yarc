@@ -18,18 +18,19 @@ import csr_pkg::*;
     input rstn_i,
 
     // Core <-> Imem interface
-    output imem_read_o,
+    output imem_en_o,
     output [31:0] imem_raddr_o,
     input [31:0] imem_rdata_i,
 
-    // Core <-> Dmem interface
-    output [31:0] dmem_addr_o,
+    // Core <-> DMEM, peripherals...
+    output lsu_en_o,
+    output [31:0] lsu_addr_o,
     // read port
-    output dmem_read_o,
-    input [31:0] dmem_rdata_i,
+    output lsu_read_o,
+    input [31:0] lsu_rdata_i,
     // write port
-    output [3:0] dmem_wsel_byte_o,
-    output [31:0] dmem_wdata_o,
+    output [3:0] lsu_wsel_byte_o,
+    output [31:0] lsu_wdata_o,
 
     // interrupts
     input irq_timer_i,
@@ -153,7 +154,7 @@ simple_fetch simple_fetch_i
     .pc_sel_i(pc_sel),
 
     // Imem interface
-    .read_o(imem_read_o),
+    .read_o(imem_en_o),
     .raddr_o(imem_raddr_o),
     .rdata_i(imem_rdata_i)
 );
@@ -347,19 +348,20 @@ execute execute_i
 );
 
 // Memory Stage
-mem_rw mem_rw_i
+lsu lsu_i
 (
     .clk_i(clk_i),
     .rstn_i(rstn_i),
 
     // Mem-rw <-> Data Memory
     // read port
-    .rw_addr_o(dmem_addr_o),
-    .read_o(dmem_read_o),
-    .rdata_i(dmem_rdata_i),
+    .lsu_en_o(lsu_en_o),
+    .lsu_addr_o(lsu_addr_o),
+    .lsu_read_o(lsu_read_o),
+    .lsu_rdata_i(lsu_rdata_i),
     // write port
-    .wsel_byte_o(dmem_wsel_byte_o),
-    .wdata_o(dmem_wdata_o),
+    .lsu_wsel_byte_o(lsu_wsel_byte_o),
+    .lsu_wdata_o(lsu_wdata_o),
 
     // Mem-rw <-> CS Register File
     // write port

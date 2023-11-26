@@ -5,7 +5,7 @@ module sp_mem
 #(parameter WIDTH = 32, parameter ADDR_WIDTH = 30, parameter SIZE_POT = 10, parameter string MEMFILE = "")
 (
     input clk_i,
-    input ena_i,
+    input en_i,
 
     input read_i,
     input [ADDR_WIDTH-1:0] addr_i,
@@ -27,13 +27,13 @@ always_comb
 begin
     rdata_o = 32'b0;
 
-    if (ena_i & read_i)
+    if (en_i & read_i)
         rdata_o = mem[addr_i[SIZE_POT-1:0]];
 end
 
 always_ff @(posedge clk_i)
 begin : write_mem
-    if (ena_i)
+    if (en_i)
     begin
         // for each byte, if the corresponding bit in wsel_byte in 1, write it
         for (int i = 0; i < WIDTH/8 ; ++i)

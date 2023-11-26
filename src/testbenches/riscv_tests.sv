@@ -25,45 +25,45 @@ logic rstn, rstn_t;
 // Instantiate Core with Memories
 // ******************************************************************************************
 
+logic imem_en;
 logic [31:0] imem_raddr;
 logic [31:0] imem_rdata;
 logic [31:0] dmem_addr;
+logic dmem_en;
 logic dmem_read;
 logic [31:0] dmem_rdata;
 logic [3:0] dmem_wsel_byte;
 logic [31:0] dmem_wdata;
 
-core_top core_i
+yarc_platform yarc_platform_i
 (
     .clk_i(clk),
     .rstn_i(rstn),
 
-    .imem_read_o(),
+    // Core <-> Imem interface
+    .imem_en_o(imem_en),
     .imem_raddr_o(imem_raddr),
     .imem_rdata_i(imem_rdata),
 
+    // Core <-> Dmem interface
+    .dmem_en_o(dmem_en),
     .dmem_addr_o(dmem_addr),
+    // read port
     .dmem_read_o(dmem_read),
     .dmem_rdata_i(dmem_rdata),
+    // write port
     .dmem_wsel_byte_o(dmem_wsel_byte),
-    .dmem_wdata_o(dmem_wdata),
-
-    // interrupts
-    .irq_timer_i('0),
-    .irq_external_i('0)
+    .dmem_wdata_o(dmem_wdata)
 );
 
 exc_t trap;
-assign trap = core_i.mem_trap;
+assign trap = yarc_platform_i.core_i.mem_trap;
 
 logic stop_sim;
 
 always_ff @(posedge clk, negedge rstn)
     if (!rstn) stop_sim <= '0;
     else stop_sim <= (trap == ECALL_MMODE || trap == ECALL_UMODE);
-
-wire imem_en = imem_raddr[31]; // starts at 0x8000_0000
-wire dmem_en = dmem_addr[31]; // start at 0x8000_0000
 
 localparam DEPTH = 14;
 
@@ -96,9 +96,9 @@ task automatic eval_result(output success);
         if (stop_sim)
         begin
             // test has stopped, check if the test passed or failed
-            if (core_i.reg_file_i.regf[3] == 1 && 
-                core_i.reg_file_i.regf[17] == 93 &&
-                core_i.reg_file_i.regf[10] == 0 )
+            if (yarc_platform_i.core_i.reg_file_i.regf[3] == 1 && 
+                yarc_platform_i.core_i.reg_file_i.regf[17] == 93 &&
+                yarc_platform_i.core_i.reg_file_i.regf[10] == 0 )
             begin
                 success = 1;
             end

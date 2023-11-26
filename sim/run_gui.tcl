@@ -1,7 +1,7 @@
 
 global env
 set TOP $env(SIM_TOP)
-set CORE ${TOP}/core_i
+set CORE ${TOP}/yarc_platform_i/core_i
 
 add wave sim:${CORE}/clk_i;
 add wave sim:${CORE}/rstn_i;
@@ -184,31 +184,32 @@ add wave -color Gold sim:${CORE}/execute_i/rd_addr_o;
 add wave sim:${CORE}/execute_i/operand1;
 add wave sim:${CORE}/execute_i/operand2;
 # ---------------------------------------------------------
-add wave -divider {MEM_RW}
-add wave sim:${CORE}/mem_rw_i/alu_result_i;
-add wave sim:${CORE}/mem_rw_i/alu_oper2_i;
-add wave sim:${CORE}/mem_rw_i/mem_oper_i;
-add wave sim:${CORE}/mem_rw_i/trap_i;
-add wave sim:${CORE}/mem_rw_i/wb_use_mem_i;
-add wave sim:${CORE}/mem_rw_i/write_rd_i;
-add wave sim:${CORE}/mem_rw_i/rd_addr_i;
+add wave -divider {LSU}
+add wave sim:${CORE}/lsu_i/alu_result_i;
+add wave sim:${CORE}/lsu_i/alu_oper2_i;
+add wave sim:${CORE}/lsu_i/mem_oper_i;
+add wave sim:${CORE}/lsu_i/trap_i;
+add wave sim:${CORE}/lsu_i/wb_use_mem_i;
+add wave sim:${CORE}/lsu_i/write_rd_i;
+add wave sim:${CORE}/lsu_i/rd_addr_i;
 
-add wave sim:${CORE}/mem_rw_i/rw_addr_o;
-add wave sim:${CORE}/mem_rw_i/read_o;
-add wave sim:${CORE}/mem_rw_i/rdata_i;
-add wave sim:${CORE}/mem_rw_i/wsel_byte_o;
-add wave sim:${CORE}/mem_rw_i/wdata_o;
+add wave sim:${CORE}/lsu_i/lsu_en_o;
+add wave sim:${CORE}/lsu_i/lsu_addr_o;
+add wave sim:${CORE}/lsu_i/lsu_read_o;
+add wave sim:${CORE}/lsu_i/lsu_rdata_i;
+add wave sim:${CORE}/lsu_i/lsu_wsel_byte_o;
+add wave sim:${CORE}/lsu_i/lsu_wdata_o;
 
-add wave sim:${CORE}/mem_rw_i/csr_wdata_o;
-add wave sim:${CORE}/mem_rw_i/csr_waddr_o;
-add wave sim:${CORE}/mem_rw_i/csr_we_o;
+add wave sim:${CORE}/lsu_i/csr_wdata_o;
+add wave sim:${CORE}/lsu_i/csr_waddr_o;
+add wave sim:${CORE}/lsu_i/csr_we_o;
 
-add wave -color Gold sim:${CORE}/mem_rw_i/wb_use_mem_o;
-add wave -color Gold sim:${CORE}/mem_rw_i/write_rd_o;
-add wave -color Gold sim:${CORE}/mem_rw_i/rd_addr_o;
-add wave -color Gold sim:${CORE}/mem_rw_i/alu_result_o;
-add wave -color Gold sim:${CORE}/mem_rw_i/dmem_rdata_o;
-add wave -color Turquoise sim:${CORE}/mem_rw_i/trap_o;
+add wave -color Gold sim:${CORE}/lsu_i/wb_use_mem_o;
+add wave -color Gold sim:${CORE}/lsu_i/write_rd_o;
+add wave -color Gold sim:${CORE}/lsu_i/rd_addr_o;
+add wave -color Gold sim:${CORE}/lsu_i/alu_result_o;
+add wave -color Gold sim:${CORE}/lsu_i/dmem_rdata_o;
+add wave -color Turquoise sim:${CORE}/lsu_i/trap_o;
 
 # ---------------------------------------------------------
 add wave -divider {WRITE BACK}

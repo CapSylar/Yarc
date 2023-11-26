@@ -1,21 +1,22 @@
-// mem_rw module
+// lsu module
 
-module mem_rw
+module lsu
 import riscv_pkg::*;
 (
     input clk_i,
     input rstn_i,
 
-    // Mem-rw <-> Data Memory
+    // Load Store Unit <-> Data Memory
+    output lsu_en_o,
     // read port
-    output [31:0] rw_addr_o,
-    output read_o,
-    input [31:0] rdata_i,
+    output [31:0] lsu_addr_o,
+    output lsu_read_o,
+    input [31:0] lsu_rdata_i,
     // write port
-    output [3:0] wsel_byte_o,
-    output [31:0] wdata_o,
+    output [3:0] lsu_wsel_byte_o,
+    output [31:0] lsu_wdata_o,
 
-    // Mem-rw <-> CS Register File
+    // Load Store Unit <-> CS Register File
     // write port
     output [31:0] csr_wdata_o,
     output [11:0] csr_waddr_o,
@@ -51,7 +52,7 @@ assign csr_wdata_o = csr_wdata_i;
 assign trap_o = trap_i; // rerouted here just for cleanliness
 
 // TODO: handle unaligned loads and stores, signal an error in this case
-wire [31:0] addr = rw_addr_o;
+wire [31:0] addr = lsu_addr_o;
 wire [31:0] to_write = alu_oper2_i;
 logic [31:0] rdata;
 logic [3:0] wsel_byte;
@@ -73,30 +74,30 @@ begin
             read = 1;
             // for (int i = 0 ; i < 4; ++i) Good, but ugly, keep it
             //     if (i[1:0] == addr[1:0])
-            //         rdata = 32'(signed'(rdata_i[8*(i+1)-1 -:8]));
+            //         rdata = 32'(signed'(lsu_rdata_i[8*(i+1)-1 -:8]));
             case (addr[1:0])
-                2'b00: rdata = 32'(signed'(rdata_i[(8*1)-1 -:8]));
-                2'b01: rdata = 32'(signed'(rdata_i[(8*2)-1 -:8]));
-                2'b10: rdata = 32'(signed'(rdata_i[(8*3)-1 -:8]));
-                2'b11: rdata = 32'(signed'(rdata_i[(8*4)-1 -:8]));
+                2'b00: rdata = 32'(signed'(lsu_rdata_i[(8*1)-1 -:8]));
+                2'b01: rdata = 32'(signed'(lsu_rdata_i[(8*2)-1 -:8]));
+                2'b10: rdata = 32'(signed'(lsu_rdata_i[(8*3)-1 -:8]));
+                2'b11: rdata = 32'(signed'(lsu_rdata_i[(8*4)-1 -:8]));
             endcase
         end
         MEM_LBU:
         begin
             read = 1;
             case (addr[1:0])
-                2'b00: rdata = 32'(rdata_i[(8*1)-1 -:8]);
-                2'b01: rdata = 32'(rdata_i[(8*2)-1 -:8]);
-                2'b10: rdata = 32'(rdata_i[(8*3)-1 -:8]);
-                2'b11: rdata = 32'(rdata_i[(8*4)-1 -:8]);
+                2'b00: rdata = 32'(lsu_rdata_i[(8*1)-1 -:8]);
+                2'b01: rdata = 32'(lsu_rdata_i[(8*2)-1 -:8]);
+                2'b10: rdata = 32'(lsu_rdata_i[(8*3)-1 -:8]);
+                2'b11: rdata = 32'(lsu_rdata_i[(8*4)-1 -:8]);
             endcase 
         end
         MEM_LH:
         begin
             read = 1;
             case (addr[1])
-                1'b0: rdata = 32'(signed'(rdata_i[(16*1)-1 -:16]));
-                1'b1: rdata = 32'(signed'(rdata_i[(16*2)-1 -:16]));
+                1'b0: rdata = 32'(signed'(lsu_rdata_i[(16*1)-1 -:16]));
+                1'b1: rdata = 32'(signed'(lsu_rdata_i[(16*2)-1 -:16]));
             endcase
         end
 
@@ -104,14 +105,14 @@ begin
         begin
             read = 1;
             case (addr[1])
-                1'b0: rdata = 32'(rdata_i[(16*1)-1 -:16]);
-                1'b1: rdata = 32'(rdata_i[(16*2)-1 -:16]);
+                1'b0: rdata = 32'(lsu_rdata_i[(16*1)-1 -:16]);
+                1'b1: rdata = 32'(lsu_rdata_i[(16*2)-1 -:16]);
             endcase
         end
         MEM_LW:
         begin
             read = 1;
-            rdata = rdata_i;
+            rdata = lsu_rdata_i;
         end
 
         // STORES
@@ -140,10 +141,11 @@ end
 
 // pipeline registers and outputs
 
-assign rw_addr_o = (mem_oper_i != MEM_NOP) ? alu_result_i : 0;
-assign wdata_o = wdata;
-assign wsel_byte_o = wsel_byte;
-assign read_o = read;
+assign lsu_en_o = (mem_oper_i != MEM_NOP);
+assign lsu_addr_o = lsu_en_o ? alu_result_i : 0;
+assign lsu_wdata_o = wdata;
+assign lsu_wsel_byte_o = wsel_byte;
+assign lsu_read_o = read;
 
 always_ff @(posedge clk_i, negedge rstn_i)
 begin
@@ -165,4 +167,4 @@ begin
     end
 end
 
-endmodule: mem_rw
+endmodule: lsu

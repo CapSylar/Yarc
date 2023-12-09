@@ -25,8 +25,12 @@ module yarc_platform
     output logic dmem_read_o,
     input [31:0] dmem_rdata_i,
     output logic [3:0] dmem_wsel_byte_o,
-    output logic [31:0] dmem_wdata_o
+    output logic [31:0] dmem_wdata_o,
+
+    // Platform <-> Peripherals
+    output logic [7:0] led_status_o
 );
+
 import platform_pkg::*;
 
 logic lsu_en_o;
@@ -57,11 +61,32 @@ timer timer_i
     .timer_int_o(irq_timer)
 );
 
+// led driver lines
+logic led_driver_en;
+logic [31:0] led_driver_rdata;
+
+// led driver
+led_driver led_driver_i
+(
+    .clk_i(clk_i),
+    .rstn_i(rstn_i),
+
+    .en_i(led_driver_en),
+    .read_i(lsu_read_o),
+    .addr_i(lsu_addr_o),
+    .rdata_o(led_driver_rdata),
+
+    .wdata_i(lsu_wdata_o),
+    
+    .led_status_o(led_status_o)
+);
+
 // address decoder for LSU lines
 always_comb begin: decoder
 
     dmem_en_o = '0;
     timer_en = '0;
+    led_driver_en = '0;
 
     if (lsu_en_o)
     begin
@@ -70,6 +95,9 @@ always_comb begin: decoder
         
         if ((lsu_addr_o & MTIMER_MASK) == MTIMER_BASE_ADDR)
             timer_en = 1'b1;
+
+        if ((lsu_addr_o & LED_DRIVER_MASK) == LED_DRIVER_BASE_ADDR)
+            led_driver_en = 1'b1;
     end
 end
 
@@ -80,6 +108,7 @@ always_comb begin: rdata_mux
     unique case (1'b1)
         dmem_en_o: lsu_rdata_i = dmem_rdata_i;
         timer_en: lsu_rdata_i = timer_rdata;
+        led_driver_en: lsu_rdata_i = led_driver_rdata;
         default:;
     endcase
 end

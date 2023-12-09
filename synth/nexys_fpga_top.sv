@@ -1,39 +1,21 @@
-// contains the core with memories
-// instantiated by testbenches
+// top wrapper for the nexys video fpga board
 
-module core_with_mem
-#(parameter string DMEMFILE = "", parameter string IMEMFILE = "") ();
+module nexys_fpga_top
+#(parameter string DMEMFILE = "/home/robin/workdir/yarc_os/build/yarc.dvmem",
+ parameter string IMEMFILE = "/home/robin/workdir/yarc_os/build/yarc.ivmem")
+(
+    input clk,
+    input btnc, // active low
 
-// clk generation
-logic clk;
+    output [7:0] led // active low
+);
 
-// drive clock
-initial
+// create the reset signal from btnc
+logic rstn;
+logic [2:0] ff_sync;
+always_ff@(posedge clk)
 begin
-    clk = 0;
-    forever
-    begin
-        #5;
-        clk = ~clk;
-    end
-end
-
-logic rstn, rstn_t;
-always @(posedge clk)
-begin
-    rstn <= rstn_t;    
-end
-
-initial
-begin
-    rstn_t = 1'b1;
-    @(posedge clk);
-    rstn_t = 1'b0;
-    repeat(2) @(posedge clk);
-    rstn_t = 1'b1;
-
-    repeat(100000) @(posedge clk);
-    $finish;
+    {rstn, ff_sync} <= {ff_sync, btnc};
 end
 
 logic imem_en;
@@ -75,6 +57,7 @@ sp_mem #(.MEMFILE(DMEMFILE), .SIZE_POT(15)) dmem
     .wdata_i(dmem_wdata)
 );
 
+// yarc platform
 yarc_platform yarc_platform_i
 (
     .clk_i(clk),
@@ -96,7 +79,7 @@ yarc_platform yarc_platform_i
     .dmem_wdata_o(dmem_wdata),
 
     // Platform <-> Peripherals
-    .led_status_o()
+    .led_status_o(led)
 );
 
-endmodule: core_with_mem
+endmodule: nexys_fpga_top

@@ -3,9 +3,9 @@
 +incdir+${PRJ_DIR}/core/includes/
 
 // packages
-${PRJ_DIR}/core/includes/riscv_pkg.svh
+${PRJ_DIR}/core/includes/riscv_pkg.sv
 ${PRJ_DIR}/core/includes/csr_pkg.sv
-${PRJ_DIR}/platform/includes/platform_pkg.svh
+${PRJ_DIR}/platform/includes/platform_pkg.sv
 
 // core
 ${PRJ_DIR}/core/core_top.sv
@@ -22,6 +22,7 @@ ${PRJ_DIR}/core/csr.sv
 
 // platform
 ${PRJ_DIR}/platform/timer.sv
+${PRJ_DIR}/platform/led_driver.sv
 ${PRJ_DIR}/platform/yarc_platform.sv
 
 // memories

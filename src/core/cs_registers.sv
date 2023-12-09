@@ -410,8 +410,6 @@ always_comb begin: csr_write
                     m_timer: csr_wdata_i[CSR_MTI_BIT],
                     m_external: csr_wdata_i[CSR_MEI_BIT]
                 };
-
-                mie_d = csr_wdata_i;
             end
             CSR_MEPC:
             begin

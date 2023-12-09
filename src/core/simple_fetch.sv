@@ -117,8 +117,11 @@ begin : pfetch_sm
             valid_o = 1'b0;
             next_state = CONT_PC;
 
-            // if (!stall_i)
-            //     pc = pc + 4;
+            if (new_pc_en_i)
+            begin
+                pc = new_pc;
+                next_state = NEW_PC;
+            end
         end
 
         STALLED:

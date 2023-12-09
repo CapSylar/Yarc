@@ -264,10 +264,16 @@ begin
                 // that the one that will retire in this cycle
                 if (id_ex_instr_valid_i)
                     exc_pc_o = id_ex_pc_i;
-                else if (if_id_instr_valid_i)
-                    exc_pc_o = if_id_pc_i;
+
+                // FIXME: due to the current way simple_fetch is implemented
+                // and due to the way we respond to interrupts
+                // we can rely on if_pc_i to be the correct pc of the upcoming
+                // intstruction even if valid_o is not yet high
+
+                // else if (if_id_instr_valid_i)
+                //     exc_pc_o = if_id_pc_i;
                 else
-                    exc_pc_o = if_pc_i;
+                    exc_pc_o = if_id_pc_i;
             end
             else if (ex_new_pc_en_i) // EX determined that the branch was taken
             begin

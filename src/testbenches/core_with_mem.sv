@@ -32,7 +32,7 @@ begin
     repeat(2) @(posedge clk);
     rstn_t = 1'b1;
 
-    repeat(100) @(posedge clk);
+    repeat(10000) @(posedge clk);
     $finish;
 end
 
@@ -41,7 +41,7 @@ logic [31:0] imem_raddr;
 logic [31:0] imem_rdata;
 
 // Instruction Memory
-sp_mem #(.MEMFILE(IMEMFILE)) imem
+sp_mem #(.MEMFILE(IMEMFILE), .SIZE_POT(15)) imem
 (
     .clk_i(clk),
     .en_i(imem_en),
@@ -62,7 +62,7 @@ logic [31:0] dmem_wdata;
 logic dmem_en;
 
 // Data Memory
-sp_mem #(.MEMFILE(DMEMFILE)) dmem
+sp_mem #(.MEMFILE(DMEMFILE), .SIZE_POT(15)) dmem
 (
     .clk_i(clk),
     .en_i(dmem_en),

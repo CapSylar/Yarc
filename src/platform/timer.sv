@@ -22,7 +22,7 @@ logic [63:0] mtime_q, mtime_d;
 logic [63:0] mtimecmp_q, mtimecmp_d;
 
 logic [31:0] rdata;
-wire [1:0] addr = addr_i;
+wire [1:0] addr = addr_i[4:2]; // the two LSBs are don't cares, 4-byte granularity
 
 // combinational reads
 always_comb

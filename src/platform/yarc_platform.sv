@@ -81,34 +81,64 @@ led_driver led_driver_i
     .led_status_o(led_status_o)
 );
 
+typedef enum
+{
+    DMEM,
+    TIMER,
+    LED_DRIVER,
+    NOTHING
+} addressed_e;
+
+addressed_e addressed_d, addressed_q;
+
+always_ff @(posedge clk_i, negedge rstn_i)
+begin
+    if (!rstn_i) addressed_q <= NOTHING;
+    else addressed_q <= addressed_d;
+end
+
 // address decoder for LSU lines
 always_comb begin: decoder
 
-    dmem_en_o = '0;
-    timer_en = '0;
-    led_driver_en = '0;
+    // dmem_en_o = '0;
+    // timer_en = '0;
+    // led_driver_en = '0;
+    addressed_d = NOTHING;
 
     if (lsu_en_o)
     begin
         if ((lsu_addr_o & DMEM_MASK) == DMEM_BASE_ADDR)
-            dmem_en_o = 1'b1;
+        begin
+            addressed_d = DMEM;
+            // dmem_en_o = 1'b1;
+        end
         
         if ((lsu_addr_o & MTIMER_MASK) == MTIMER_BASE_ADDR)
-            timer_en = 1'b1;
+        begin
+            // timer_en = 1'b1;
+            addressed_d = TIMER;
+        end
 
         if ((lsu_addr_o & LED_DRIVER_MASK) == LED_DRIVER_BASE_ADDR)
-            led_driver_en = 1'b1;
+        begin
+            // led_driver_en = 1'b1;
+            addressed_d = LED_DRIVER;
+        end
     end
 end
+
+assign dmem_en_o = (addressed_d == DMEM);
+assign timer_en = (addressed_d == TIMER);
+assign led_driver_en = (addressed_d == LED_DRIVER);
 
 // address mux
 always_comb begin: rdata_mux
     lsu_rdata_i = '0;
 
-    unique case (1'b1)
-        dmem_en_o: lsu_rdata_i = dmem_rdata_i;
-        timer_en: lsu_rdata_i = timer_rdata;
-        led_driver_en: lsu_rdata_i = led_driver_rdata;
+    unique case (addressed_q)
+        DMEM: lsu_rdata_i = dmem_rdata_i;
+        TIMER: lsu_rdata_i = timer_rdata;
+        LED_DRIVER: lsu_rdata_i = led_driver_rdata;
         default:;
     endcase
 end

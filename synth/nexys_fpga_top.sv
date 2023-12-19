@@ -5,17 +5,30 @@ module nexys_fpga_top
  parameter string IMEMFILE = "/home/robin/workdir/yarc_os/build/yarc.ivmem")
 (
     input clk,
-    input btnc, // active low
+    input cpu_resetn, // active low
 
-    output [7:0] led // active low
+    output logic [7:0] led
 );
+
+logic sys_clk;
+
+// generate a 50Mhz clock
+clk_wiz_0 clk_wiz_0_i
+(
+    .clk_in1(clk),
+    .reset('0),
+    .locked(),
+    .clk_out1(sys_clk)
+);
+
+wire external_resetn = cpu_resetn;
 
 // create the reset signal from btnc
 logic rstn;
 logic [2:0] ff_sync;
-always_ff@(posedge clk)
+always_ff@(posedge sys_clk)
 begin
-    {rstn, ff_sync} <= {ff_sync, btnc};
+    {rstn, ff_sync} <= {ff_sync, external_resetn};
 end
 
 logic imem_en;
@@ -25,7 +38,7 @@ logic [31:0] imem_rdata;
 // Instruction Memory
 sp_mem #(.MEMFILE(IMEMFILE), .SIZE_POT(15)) imem
 (
-    .clk_i(clk),
+    .clk_i(sys_clk),
     .en_i(imem_en),
 
     .read_i(1'b1),
@@ -46,7 +59,7 @@ logic dmem_en;
 // Data Memory
 sp_mem #(.MEMFILE(DMEMFILE), .SIZE_POT(15)) dmem
 (
-    .clk_i(clk),
+    .clk_i(sys_clk),
     .en_i(dmem_en),
 
     .read_i(dmem_read),
@@ -60,7 +73,7 @@ sp_mem #(.MEMFILE(DMEMFILE), .SIZE_POT(15)) dmem
 // yarc platform
 yarc_platform yarc_platform_i
 (
-    .clk_i(clk),
+    .clk_i(sys_clk),
     .rstn_i(rstn),
 
     // Core <-> Imem interface

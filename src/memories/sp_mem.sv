@@ -1,5 +1,6 @@
-// crude single port memory
-// reading is asynchronous, data read out is assumed to be ready in less than a clock cycle
+// single port memory
+// reading and writing are both synchronous operations
+// should map into xilinx's BRAM
 
 module sp_mem
 #(parameter WIDTH = 32, parameter ADDR_WIDTH = 30, parameter SIZE_POT = 10, parameter string MEMFILE = "")
@@ -16,6 +17,7 @@ module sp_mem
 );
 
 logic [WIDTH-1:0] mem [2**SIZE_POT];
+logic [WIDTH-1:0] rdata_q, rdata_d;
 
 // load memory image
 initial
@@ -25,10 +27,10 @@ end
 
 always_comb
 begin
-    rdata_o = 32'b0;
+    rdata_d = rdata_q;
 
     if (en_i & read_i)
-        rdata_o = mem[addr_i[SIZE_POT-1:0]];
+        rdata_d = mem[addr_i[SIZE_POT-1:0]];
 end
 
 always_ff @(posedge clk_i)
@@ -41,5 +43,13 @@ begin : write_mem
                 mem[addr_i[SIZE_POT-1:0]][(i+1)*8 -1 -:8] <= wdata_i[(i+1)*8 -1 -:8];
     end
 end
+
+always_ff @(posedge clk_i)
+begin
+    rdata_q <= rdata_d;
+end
+
+// assign outputs
+assign rdata_o = rdata_q;
 
 endmodule: sp_mem

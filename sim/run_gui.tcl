@@ -9,22 +9,26 @@ add wave ${CORE}/rstn_i;
 
 # ---------------------------------------------------------
 add wave -divider {FETCH}
-add wave -color Gold ${CORE}/simple_fetch_i/valid_o;
-add wave -color Gold ${CORE}/simple_fetch_i/instr_o;
-add wave -color Gold ${CORE}/simple_fetch_i/pc_o;
-add wave ${CORE}/simple_fetch_i/stall_i;
-add wave ${CORE}/simple_fetch_i/new_pc_en_i;
-add wave ${CORE}/simple_fetch_i/pc_sel_i;
-add wave ${CORE}/simple_fetch_i/branch_target_i;
-add wave ${CORE}/simple_fetch_i/csr_mepc_i;
-add wave ${CORE}/simple_fetch_i/mcause_i;
-add wave ${CORE}/simple_fetch_i/mtvec_i;
+# add wave -color Gold ${CORE}/simple_fetch_i/valid_o;
+# add wave -color Gold ${CORE}/simple_fetch_i/instr_o;
+# add wave -color Gold ${CORE}/simple_fetch_i/pc_o;
+# add wave ${CORE}/simple_fetch_i/stall_i;
+# add wave ${CORE}/simple_fetch_i/flush_i;
+# add wave ${CORE}/simple_fetch_i/new_pc_en_i;
+# add wave ${CORE}/simple_fetch_i/pc_sel_i;
+# add wave ${CORE}/simple_fetch_i/branch_target_i;
+# add wave ${CORE}/simple_fetch_i/csr_mepc_i;
+# add wave ${CORE}/simple_fetch_i/mcause_i;
+# add wave ${CORE}/simple_fetch_i/mtvec_i;
 
-add wave ${CORE}/simple_fetch_i/raddr_o;
-add wave ${CORE}/simple_fetch_i/rdata_i;
-add wave ${CORE}/simple_fetch_i/current_state;
-add wave ${CORE}/simple_fetch_i/next_state;
-add wave ${CORE}/simple_fetch_i/exc_target_addr;
+# add wave ${CORE}/simple_fetch_i/read_o;
+# add wave ${CORE}/simple_fetch_i/raddr_o;
+# add wave ${CORE}/simple_fetch_i/rdata_i;
+
+# add wave ${CORE}/simple_fetch_i/current_state;
+# add wave ${CORE}/simple_fetch_i/next_state;
+# add wave ${CORE}/simple_fetch_i/exc_target_addr;
+add wave ${CORE}/simple_fetch_i/*;
 
 # ---------------------------------------------------------
 add wave -divider {REGISTER FILE}

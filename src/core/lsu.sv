@@ -62,7 +62,7 @@ logic read;
 // handle loads and stores
 always_comb
 begin
-    rdata = 0;
+    // rdata = 0;
     wsel_byte = 0;
     wdata = 0;
     read = 0;
@@ -75,44 +75,44 @@ begin
             // for (int i = 0 ; i < 4; ++i) Good, but ugly, keep it
             //     if (i[1:0] == addr[1:0])
             //         rdata = 32'(signed'(lsu_rdata_i[8*(i+1)-1 -:8]));
-            case (addr[1:0])
-                2'b00: rdata = 32'(signed'(lsu_rdata_i[(8*1)-1 -:8]));
-                2'b01: rdata = 32'(signed'(lsu_rdata_i[(8*2)-1 -:8]));
-                2'b10: rdata = 32'(signed'(lsu_rdata_i[(8*3)-1 -:8]));
-                2'b11: rdata = 32'(signed'(lsu_rdata_i[(8*4)-1 -:8]));
-            endcase
+            // case (addr[1:0])
+            //     2'b00: rdata = 32'(signed'(lsu_rdata_i[(8*1)-1 -:8]));
+            //     2'b01: rdata = 32'(signed'(lsu_rdata_i[(8*2)-1 -:8]));
+            //     2'b10: rdata = 32'(signed'(lsu_rdata_i[(8*3)-1 -:8]));
+            //     2'b11: rdata = 32'(signed'(lsu_rdata_i[(8*4)-1 -:8]));
+            // endcase
         end
         MEM_LBU:
         begin
             read = 1;
-            case (addr[1:0])
-                2'b00: rdata = 32'(lsu_rdata_i[(8*1)-1 -:8]);
-                2'b01: rdata = 32'(lsu_rdata_i[(8*2)-1 -:8]);
-                2'b10: rdata = 32'(lsu_rdata_i[(8*3)-1 -:8]);
-                2'b11: rdata = 32'(lsu_rdata_i[(8*4)-1 -:8]);
-            endcase 
+            // case (addr[1:0])
+            //     2'b00: rdata = 32'(lsu_rdata_i[(8*1)-1 -:8]);
+            //     2'b01: rdata = 32'(lsu_rdata_i[(8*2)-1 -:8]);
+            //     2'b10: rdata = 32'(lsu_rdata_i[(8*3)-1 -:8]);
+            //     2'b11: rdata = 32'(lsu_rdata_i[(8*4)-1 -:8]);
+            // endcase 
         end
         MEM_LH:
         begin
             read = 1;
-            case (addr[1])
-                1'b0: rdata = 32'(signed'(lsu_rdata_i[(16*1)-1 -:16]));
-                1'b1: rdata = 32'(signed'(lsu_rdata_i[(16*2)-1 -:16]));
-            endcase
+            // case (addr[1])
+            //     1'b0: rdata = 32'(signed'(lsu_rdata_i[(16*1)-1 -:16]));
+            //     1'b1: rdata = 32'(signed'(lsu_rdata_i[(16*2)-1 -:16]));
+            // endcase
         end
 
         MEM_LHU:
         begin
             read = 1;
-            case (addr[1])
-                1'b0: rdata = 32'(lsu_rdata_i[(16*1)-1 -:16]);
-                1'b1: rdata = 32'(lsu_rdata_i[(16*2)-1 -:16]);
-            endcase
+            // case (addr[1])
+            //     1'b0: rdata = 32'(lsu_rdata_i[(16*1)-1 -:16]);
+            //     1'b1: rdata = 32'(lsu_rdata_i[(16*2)-1 -:16]);
+            // endcase
         end
         MEM_LW:
         begin
             read = 1;
-            rdata = lsu_rdata_i;
+            // rdata = lsu_rdata_i;
         end
 
         // STORES
@@ -139,6 +139,55 @@ begin
     endcase
 end
 
+mem_oper_t mem_oper_q;
+logic [31:0] lsu_addr_q;
+
+// format the read data correctly
+always_comb
+begin : format_rdata
+    rdata = '0;
+
+    case(mem_oper_q)
+        MEM_LB:
+        begin
+            case (lsu_addr_q[1:0])
+                2'b00: rdata = 32'(signed'(lsu_rdata_i[(8*1)-1 -:8]));
+                2'b01: rdata = 32'(signed'(lsu_rdata_i[(8*2)-1 -:8]));
+                2'b10: rdata = 32'(signed'(lsu_rdata_i[(8*3)-1 -:8]));
+                2'b11: rdata = 32'(signed'(lsu_rdata_i[(8*4)-1 -:8]));
+            endcase
+        end
+        MEM_LBU:
+        begin
+            case (lsu_addr_q[1:0])
+                2'b00: rdata = 32'(lsu_rdata_i[(8*1)-1 -:8]);
+                2'b01: rdata = 32'(lsu_rdata_i[(8*2)-1 -:8]);
+                2'b10: rdata = 32'(lsu_rdata_i[(8*3)-1 -:8]);
+                2'b11: rdata = 32'(lsu_rdata_i[(8*4)-1 -:8]);
+            endcase 
+        end
+        MEM_LH:
+        begin
+            case (lsu_addr_q[1])
+                1'b0: rdata = 32'(signed'(lsu_rdata_i[(16*1)-1 -:16]));
+                1'b1: rdata = 32'(signed'(lsu_rdata_i[(16*2)-1 -:16]));
+            endcase
+        end
+
+        MEM_LHU:
+        begin
+            case (lsu_addr_q[1])
+                1'b0: rdata = 32'(lsu_rdata_i[(16*1)-1 -:16]);
+                1'b1: rdata = 32'(lsu_rdata_i[(16*2)-1 -:16]);
+            endcase
+        end
+        MEM_LW:
+        begin
+            rdata = lsu_rdata_i;
+        end
+    endcase
+end
+
 // pipeline registers and outputs
 
 assign lsu_en_o = (mem_oper_i != MEM_NOP);
@@ -155,7 +204,7 @@ begin
         write_rd_o <= 0;
         rd_addr_o <= 0;
         alu_result_o <= 0;
-        dmem_rdata_o <= 0;
+        // dmem_rdata_o <= 0;
     end
     else
     begin
@@ -163,7 +212,24 @@ begin
         write_rd_o <= write_rd_i;
         rd_addr_o <= rd_addr_i;
         alu_result_o <= alu_result_i;
-        dmem_rdata_o <= rdata;
+        // dmem_rdata_o <= rdata;
+    end
+end
+
+assign dmem_rdata_o = rdata;
+
+// pipe 
+always_ff @(posedge clk_i, negedge rstn_i)
+begin
+    if (!rstn_i)
+    begin
+        mem_oper_q <= MEM_NOP;
+        lsu_addr_q <= '0;
+    end
+    else
+    begin
+        mem_oper_q <= mem_oper_i;
+        lsu_addr_q <= lsu_addr_o;
     end
 end
 

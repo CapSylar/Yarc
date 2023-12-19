@@ -322,7 +322,7 @@ assign csr_raddr_o = csr_addr;
 assign csr_re_o = csr_re;
 assign id_is_csr_o = is_csr;
 
-always_ff @(posedge clk_i, negedge rstn_i)
+always_ff @(posedge clk_i)
 begin : id_ex_pip
     if (!rstn_i || flush_i || !instr_valid_i)
     begin

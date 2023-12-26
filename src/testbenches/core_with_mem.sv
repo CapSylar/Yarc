@@ -54,25 +54,27 @@ sp_mem #(.MEMFILE(IMEMFILE), .SIZE_POT(15)) imem
     .wdata_i('0)
 );
 
-logic [31:0] dmem_addr;
-logic dmem_read;
-logic [31:0] dmem_rdata;
-logic [3:0] dmem_wsel_byte;
-logic [31:0] dmem_wdata;
-logic dmem_en;
+wishbone_if wb_if();
 
 // Data Memory
-sp_mem #(.MEMFILE(DMEMFILE), .SIZE_POT(15)) dmem
+sp_mem_wb #(.MEMFILE(DMEMFILE), .SIZE_POT(15)) dmem
 (
     .clk_i(clk),
-    .en_i(dmem_en),
 
-    .read_i(dmem_read),
-    .addr_i(dmem_addr[31:2]), // 4-byte addressable
-    .rdata_o(dmem_rdata),
+    .cyc_i(wb_if.cyc),
+    .stb_i(wb_if.stb),
+    .lock_i(wb_if.lock),
 
-    .wsel_byte_i(dmem_wsel_byte),
-    .wdata_i(dmem_wdata)
+    .we_i(wb_if.we),
+    .addr_i(wb_if.addr[31:2]), // 4-byte addressable
+    .sel_i(wb_if.sel),
+    .wdata_i(wb_if.wdata),
+
+    .rdata_o(wb_if.rdata),
+    .rty_o(wb_if.rty),
+    .ack_o(wb_if.ack),
+    .stall_o(wb_if.stall),
+    .err_o(wb_if.err)
 );
 
 yarc_platform yarc_platform_i
@@ -86,14 +88,7 @@ yarc_platform yarc_platform_i
     .imem_rdata_i(imem_rdata),
 
     // Core <-> Dmem interface
-    .dmem_en_o(dmem_en),
-    .dmem_addr_o(dmem_addr),
-    // read port
-    .dmem_read_o(dmem_read),
-    .dmem_rdata_i(dmem_rdata),
-    // write port
-    .dmem_wsel_byte_o(dmem_wsel_byte),
-    .dmem_wdata_o(dmem_wdata),
+    .wb_if(wb_if.MASTER),
 
     // Platform <-> Peripherals
     .led_status_o()

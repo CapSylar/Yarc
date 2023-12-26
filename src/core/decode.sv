@@ -54,7 +54,6 @@ import csr_pkg::*;
     output logic csr_we_o,
 
     // for the WB stage
-    output logic wb_use_mem_o,
     output logic write_rd_o,
     output logic [4:0] rd_addr_o,
 
@@ -99,7 +98,6 @@ alu_oper1_src_t alu_oper1_src;
 alu_oper2_src_t alu_oper2_src;
 
 bnj_oper_t bnj_oper;
-logic wb_use_mem; // use memory data out to write back to the register file
 mem_oper_t mem_oper; // memory operation if any
 
 exc_t trap;
@@ -117,7 +115,6 @@ begin : main_decode
     write_rd = '0;
     curr_imm = '0;
     bnj_oper = BNJ_NO; // no branch
-    wb_use_mem = '0;
     mem_oper = MEM_NOP;
 
     trap = NO_TRAP;
@@ -179,7 +176,6 @@ begin : main_decode
                 curr_imm = imm_i;
 
                 write_rd = 1;
-                wb_use_mem = 1;
 
                 mem_oper = mem_oper_t'({1'b0, func3});
             end
@@ -342,7 +338,6 @@ begin : id_ex_pip
         csr_waddr_o <= 0;
         csr_we_o <= 0;
 
-        wb_use_mem_o <= 0;
         write_rd_o <= 0;
         rd_addr_o <= 0;
 
@@ -369,7 +364,6 @@ begin : id_ex_pip
         csr_waddr_o <= csr_addr;
         csr_we_o <= csr_we;
 
-        wb_use_mem_o <= wb_use_mem;
         write_rd_o <= write_rd;
         rd_addr_o <= rd;
 

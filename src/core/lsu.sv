@@ -1,4 +1,4 @@
-// lsu module
+// Load Store Unit, Interract with the subsystem through Wishbone Pipeline B4
 
 module lsu
 import riscv_pkg::*;
@@ -6,231 +6,127 @@ import riscv_pkg::*;
     input clk_i,
     input rstn_i,
 
-    // Load Store Unit <-> Data Memory
-    output lsu_en_o,
-    // read port
-    output [31:0] lsu_addr_o,
-    output lsu_read_o,
-    input [31:0] lsu_rdata_i,
-    // write port
-    output [3:0] lsu_wsel_byte_o,
-    output [31:0] lsu_wdata_o,
+    // <-> Data Port
+    wishbone_if.MASTER wb_if,
 
-    // Load Store Unit <-> CS Register File
-    // write port
-    output [31:0] csr_wdata_o,
-    output [11:0] csr_waddr_o,
-    output csr_we_o,
+    // <-> LSU unit
+    input req_i,
+    input we_i,
+    input [31:0] addr_i,
+    input [3:0] wsel_byte_i,
+    input [31:0] wdata_i,
 
-    output exc_t trap_o,
+    output logic req_done_o,
+    output logic [31:0] rdata_o,
 
-    // from EX/MEM
-    input [31:0] alu_result_i,
-    input [31:0] alu_oper2_i,
-    input mem_oper_t mem_oper_i,
-    input [31:0] csr_wdata_i,
-    input [11:0] csr_waddr_i,
-    input csr_we_i,
-    input exc_t trap_i,
-
-    // for WB stage exclusively
-    input wb_use_mem_i,
-    input write_rd_i,
-    input [4:0] rd_addr_i,
-
-    // MEM/WB pipeline registers
-    output logic wb_use_mem_o,
-    output logic write_rd_o,
-    output logic [4:0] rd_addr_o,
-    output logic [31:0] alu_result_o,
-    output logic [31:0] dmem_rdata_o
+    output logic req_stall_o // current request needs to be held
 );
 
-assign csr_we_o = csr_we_i;
-assign csr_waddr_o = csr_waddr_i;
-assign csr_wdata_o = csr_wdata_i;
-assign trap_o = trap_i; // rerouted here just for cleanliness
+// TODO: need this ?
+logic [1:0] outstanding = '0;
 
-// TODO: handle unaligned loads and stores, signal an error in this case
-wire [31:0] addr = lsu_addr_o;
-wire [31:0] to_write = alu_oper2_i;
-logic [31:0] rdata;
-logic [3:0] wsel_byte;
-logic [31:0] wdata;
-logic read;
+logic wb_cyc;
+logic wb_stb;
+logic wb_lock;
+logic wb_we;
+logic [31:0] wb_addr;
+logic [3:0] wb_sel;
+logic [31:0] wb_wdata;
 
-// handle loads and stores
+assign wb_lock = '0;
+
+// wishbone master logic
+typedef enum
+{
+    IDLE,
+    BUS_REQ,
+    BUS_WAIT
+} wb_state_e;
+
+wb_state_e current, next;
+
+always_ff @(posedge clk_i)
+    if (!rstn_i) current <= IDLE;
+    else current <= next;
+
+// next state logic
 always_comb
-begin
-    // rdata = 0;
-    wsel_byte = 0;
-    wdata = 0;
-    read = 0;
+begin : next_state
 
-    case(mem_oper_i)
-        // LOADS
-        MEM_LB:
+    req_stall_o = '0;
+    wb_cyc = '0;
+    wb_stb = 0;
+
+    case (current)
+        IDLE:
         begin
-            read = 1;
-            // for (int i = 0 ; i < 4; ++i) Good, but ugly, keep it
-            //     if (i[1:0] == addr[1:0])
-            //         rdata = 32'(signed'(lsu_rdata_i[8*(i+1)-1 -:8]));
-            // case (addr[1:0])
-            //     2'b00: rdata = 32'(signed'(lsu_rdata_i[(8*1)-1 -:8]));
-            //     2'b01: rdata = 32'(signed'(lsu_rdata_i[(8*2)-1 -:8]));
-            //     2'b10: rdata = 32'(signed'(lsu_rdata_i[(8*3)-1 -:8]));
-            //     2'b11: rdata = 32'(signed'(lsu_rdata_i[(8*4)-1 -:8]));
-            // endcase
-        end
-        MEM_LBU:
-        begin
-            read = 1;
-            // case (addr[1:0])
-            //     2'b00: rdata = 32'(lsu_rdata_i[(8*1)-1 -:8]);
-            //     2'b01: rdata = 32'(lsu_rdata_i[(8*2)-1 -:8]);
-            //     2'b10: rdata = 32'(lsu_rdata_i[(8*3)-1 -:8]);
-            //     2'b11: rdata = 32'(lsu_rdata_i[(8*4)-1 -:8]);
-            // endcase 
-        end
-        MEM_LH:
-        begin
-            read = 1;
-            // case (addr[1])
-            //     1'b0: rdata = 32'(signed'(lsu_rdata_i[(16*1)-1 -:16]));
-            //     1'b1: rdata = 32'(signed'(lsu_rdata_i[(16*2)-1 -:16]));
-            // endcase
+            if (req_i)
+                next = BUS_REQ;
         end
 
-        MEM_LHU:
+        // actively requesting
+        BUS_REQ:
         begin
-            read = 1;
-            // case (addr[1])
-            //     1'b0: rdata = 32'(lsu_rdata_i[(16*1)-1 -:16]);
-            //     1'b1: rdata = 32'(lsu_rdata_i[(16*2)-1 -:16]);
-            // endcase
-        end
-        MEM_LW:
-        begin
-            read = 1;
-            // rdata = lsu_rdata_i;
+            wb_cyc = 1'b1;
+            wb_stb = 1'b1;
+
+            if (wb_if.stall)
+                req_stall_o = 1'b1;
+            else if (!req_i)
+                next = BUS_WAIT;
         end
 
-        // STORES
-        MEM_SB:
+        // only waiting for an ack to return
+        BUS_WAIT:
         begin
-            wsel_byte = 4'b0001 << addr[1:0];
-            wdata = to_write << (addr[1:0] * 8);
-        end
+            wb_cyc = 1'b1;
 
-        MEM_SH:
-        begin
-            wsel_byte = 4'b0011 << (addr[1] * 2);
-            wdata = to_write << (addr[1] * 16);
-        end
-
-        MEM_SW:
-        begin
-            wsel_byte = 4'b1111;
-            wdata = to_write;
-        end
-
-        default:
-        begin end
-    endcase
-end
-
-mem_oper_t mem_oper_q;
-logic [31:0] lsu_addr_q;
-
-// format the read data correctly
-always_comb
-begin : format_rdata
-    rdata = '0;
-
-    case(mem_oper_q)
-        MEM_LB:
-        begin
-            case (lsu_addr_q[1:0])
-                2'b00: rdata = 32'(signed'(lsu_rdata_i[(8*1)-1 -:8]));
-                2'b01: rdata = 32'(signed'(lsu_rdata_i[(8*2)-1 -:8]));
-                2'b10: rdata = 32'(signed'(lsu_rdata_i[(8*3)-1 -:8]));
-                2'b11: rdata = 32'(signed'(lsu_rdata_i[(8*4)-1 -:8]));
-            endcase
-        end
-        MEM_LBU:
-        begin
-            case (lsu_addr_q[1:0])
-                2'b00: rdata = 32'(lsu_rdata_i[(8*1)-1 -:8]);
-                2'b01: rdata = 32'(lsu_rdata_i[(8*2)-1 -:8]);
-                2'b10: rdata = 32'(lsu_rdata_i[(8*3)-1 -:8]);
-                2'b11: rdata = 32'(lsu_rdata_i[(8*4)-1 -:8]);
-            endcase 
-        end
-        MEM_LH:
-        begin
-            case (lsu_addr_q[1])
-                1'b0: rdata = 32'(signed'(lsu_rdata_i[(16*1)-1 -:16]));
-                1'b1: rdata = 32'(signed'(lsu_rdata_i[(16*2)-1 -:16]));
-            endcase
-        end
-
-        MEM_LHU:
-        begin
-            case (lsu_addr_q[1])
-                1'b0: rdata = 32'(lsu_rdata_i[(16*1)-1 -:16]);
-                1'b1: rdata = 32'(lsu_rdata_i[(16*2)-1 -:16]);
-            endcase
-        end
-        MEM_LW:
-        begin
-            rdata = lsu_rdata_i;
+            if (req_i)
+                next = BUS_REQ;
+            else if (outstanding == '0 && wb_if.ack)
+                next = IDLE;
         end
     endcase
 end
 
-// pipeline registers and outputs
-
-assign lsu_en_o = (mem_oper_i != MEM_NOP);
-assign lsu_addr_o = lsu_en_o ? alu_result_i : 0;
-assign lsu_wdata_o = wdata;
-assign lsu_wsel_byte_o = wsel_byte;
-assign lsu_read_o = read;
-
-always_ff @(posedge clk_i, negedge rstn_i)
+// drive the data/control out lines
+always_comb
 begin
-    if (!rstn_i)
+    wb_we = '0;
+    wb_addr = '0;
+    wb_wdata = '0;
+    wb_sel = '0;
+
+    // in this case, we simply translate the request combinationally
+    if (current == BUS_REQ)
     begin
-        wb_use_mem_o <= 0;
-        write_rd_o <= 0;
-        rd_addr_o <= 0;
-        alu_result_o <= 0;
-        // dmem_rdata_o <= 0;
-    end
-    else
-    begin
-        wb_use_mem_o <= wb_use_mem_i;
-        write_rd_o <= write_rd_i;
-        rd_addr_o <= rd_addr_i;
-        alu_result_o <= alu_result_i;
-        // dmem_rdata_o <= rdata;
+        wb_we = we_i;
+        wb_addr = addr_i;
+        wb_wdata = wdata_i;
+        wb_sel = we_i ? wsel_byte_i : 4'hf;
     end
 end
 
-assign dmem_rdata_o = rdata;
-
-// pipe 
-always_ff @(posedge clk_i, negedge rstn_i)
+// drive the request done signals
+always_comb
 begin
-    if (!rstn_i)
+    req_done_o = '0;
+    rdata_o = '0;
+
+    if (wb_if.ack)
     begin
-        mem_oper_q <= MEM_NOP;
-        lsu_addr_q <= '0;
-    end
-    else
-    begin
-        mem_oper_q <= mem_oper_i;
-        lsu_addr_q <= lsu_addr_o;
+        req_done_o = 1'b1;
+        rdata_o = wb_if.rdata;
     end
 end
+
+// assign signals to wishbone interface
+assign wb_if.cyc = wb_cyc;
+assign wb_if.stb = wb_stb;
+assign wb_if.lock = wb_lock;
+assign wb_if.we = wb_we;
+assign wb_if.addr = wb_addr;
+assign wb_if.sel = wb_sel;
+assign wb_if.wdata = wb_wdata;
 
 endmodule: lsu

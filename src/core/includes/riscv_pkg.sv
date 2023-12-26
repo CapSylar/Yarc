@@ -121,6 +121,10 @@ typedef enum logic [3:0]
     MEM_NOP = 4'b1111 // no operation
 } mem_oper_t;
 
+function logic is_mem_oper_load(mem_oper_t mem_oper);
+    return !mem_oper[3];
+endfunction: is_mem_oper_load
+
 typedef enum logic [4:0]
 {
     NO_TRAP = 5'b1_0000,

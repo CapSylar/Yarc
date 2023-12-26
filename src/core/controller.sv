@@ -17,49 +17,63 @@ import csr_pkg::*;
     input [4:0] id_ex_rs2_addr_i,
     input [4:0] id_ex_rd_addr_i,
     input id_ex_write_rd_i,
-    input id_ex_wb_use_mem_i,
+    input mem_oper_t id_ex_mem_oper_i,
 
     // EX stage
     input ex_new_pc_en_i,
 
-    // from EX/MEM
-    input [4:0] ex_mem_rd_addr_i,
-    input ex_mem_write_rd_i,
-    input ex_mem_wb_use_mem_i,
-    input [31:0] ex_mem_alu_result_i,
+    // from EX/MEM1
+    input [4:0] ex_mem1_rd_addr_i,
+    input ex_mem1_write_rd_i,
+    input mem_oper_t ex_mem1_mem_oper_i,
+    input [31:0] ex_mem1_alu_result_i,
 
-    // from MEM/WB
-    input [4:0] mem_wb_rd_addr_i,
-    input mem_wb_write_rd_i,
-    input mem_wb_use_mem_i,
-    input [31:0] mem_wb_alu_result_i,
-    input [31:0] mem_wb_dmem_rdata_i,
+    // from MEM1/MEM2
+    input [4:0] mem1_mem2_rd_addr_i,
+    input mem1_mem2_write_rd_i,
+    input mem_oper_t mem1_mem2_mem_oper_i,
+    input [31:0] mem1_mem2_alu_result_i,
+
+    // from MEM2/WB
+    input [4:0] mem2_wb_rd_addr_i,
+    input mem2_wb_write_rd_i,
+    input mem_oper_t mem2_wb_mem_oper_i,
+    input [31:0] mem2_wb_alu_result_i,
+    input [31:0] mem2_wb_lsu_rdata_i,
     input exc_t mem_trap_i,
 
-    // forward from EX/MEM stage to EX stage
-    output forward_ex_mem_rs1_o,
-    output forward_ex_mem_rs2_o,
-    output [31:0] forward_ex_mem_data_o,
-    // forward from MEM/WB stage to EX stage
-    output forward_mem_wb_rs1_o,
-    output forward_mem_wb_rs2_o,
-    output [31:0] forward_mem_wb_data_o,
+    // from LSU
+    input lsu_req_stall_i,
 
-    input [31:0] if_pc_i, // the IF PC
+    // forward from EX/MEM1 stage to EX stage
+    output logic forward_ex_mem1_rs1_o,
+    output logic forward_ex_mem1_rs2_o,
+    output logic [31:0] forward_ex_mem1_data_o,
+    // forward from MEM1/MEM2 stage to EX stage
+    output logic forward_mem1_mem2_rs1_o,
+    output logic forward_mem1_mem2_rs2_o,
+    output logic [31:0] forward_mem1_mem2_data_o,
+    // forward from MEM2/WB stage to EX stage
+    output logic forward_mem2_wb_rs1_o,
+    output logic forward_mem2_wb_rs2_o,
+    output logic [31:0] forward_mem2_wb_data_o,
 
-    input if_id_instr_valid_i,
-    input [31:0] if_id_pc_i,
+    // input [31:0] if_pc_i, // the IF PC
 
-    input id_ex_instr_valid_i,
-    input [31:0] id_ex_pc_i,
+    // input if_id_instr_valid_i,
+    // input [31:0] if_id_pc_i,
 
-    input ex_mem_instr_valid_i,
-    input [31:0] ex_mem_pc_i,
+    // input id_ex_instr_valid_i,
+    // input [31:0] id_ex_pc_i,
+
+    // input ex_mem_instr_valid_i,
+    // input [31:0] ex_mem_pc_i,
 
     // to handle CSR read/write side effects
     input id_is_csr_i,
     input ex_is_csr_i,
-    input mem_is_csr_i,
+    input mem1_is_csr_i,
+    input mem2_is_csr_i,
 
     // for interrupt handling
     input priv_lvl_e current_plvl_i,
@@ -84,9 +98,17 @@ import csr_pkg::*;
     output logic if_id_stall_o,
     output logic if_id_flush_o,
 
-    // flush/stall to EX/MEM
-    output logic ex_mem_stall_o,
-    output logic ex_mem_flush_o
+    // flush/stall to EX/MEM1
+    output logic ex_mem1_stall_o,
+    output logic ex_mem1_flush_o,
+
+    // flush/stalll to MEM1/MEM2
+    output logic mem1_mem2_stall_o,
+    output logic mem1_mem2_flush_o,
+
+    // flush/stall to MEM2/WB
+    output logic mem2_wb_stall_o,
+    output logic mem2_wb_flush_o
 );
 
 // forwarding to the EX stage happens when we are writing to a register that is sourced
@@ -94,19 +116,26 @@ import csr_pkg::*;
 
 // we can't forward from the EX stage if the instruction will load from memory
 // since the alu result is not the written value but the address to memory
-wire ex_mem_forward_possible = (ex_mem_rd_addr_i != 0) && ex_mem_write_rd_i && !ex_mem_wb_use_mem_i;
-wire mem_wb_forward_possible = (mem_wb_rd_addr_i != 0) && mem_wb_write_rd_i;
+wire ex_mem1_forward_possible = (ex_mem1_rd_addr_i != 0) && ex_mem1_write_rd_i && !is_mem_oper_load(ex_mem1_mem_oper_i);
+wire mem1_mem2_forward_possible = (mem1_mem2_rd_addr_i != 0) && mem1_mem2_write_rd_i;
+wire mem2_wb_forward_possible = (mem2_wb_rd_addr_i != 0) && mem2_wb_write_rd_i;
 
-logic forward_ex_mem_rs1;
-logic forward_ex_mem_rs2;
-logic forward_mem_wb_rs1;
-logic forward_mem_wb_rs2;
+logic forward_ex_mem1_rs1;
+logic forward_ex_mem1_rs2;
+logic forward_mem1_mem2_rs1;
+logic forward_mem1_mem2_rs2;
+logic forward_mem2_wb_rs1;
+logic forward_mem2_wb_rs2;
 
 always_comb begin : forwarding
-    forward_ex_mem_rs1 = 0;
-    forward_mem_wb_rs1 = 0;
-    forward_ex_mem_rs2 = 0;
-    forward_mem_wb_rs2 = 0;
+    forward_ex_mem1_rs1 = '0;
+    forward_ex_mem1_rs2 = '0;
+
+    forward_mem1_mem2_rs1 = '0;
+    forward_mem1_mem2_rs2 = '0;
+
+    forward_mem2_wb_rs1 = '0;
+    forward_mem2_wb_rs2 = '0;
 
     // Note: forwarding from the most recent stage takes priority
 
@@ -118,42 +147,61 @@ always_comb begin : forwarding
     // we must forward from the most recent stage which is EX/MEM since it contains the most up-to-date version of Rd
 
     // forward rs1
-    if (ex_mem_forward_possible && (ex_mem_rd_addr_i == id_ex_rs1_addr_i))
-        forward_ex_mem_rs1 = 1;
-    else if (mem_wb_forward_possible && (mem_wb_rd_addr_i == id_ex_rs1_addr_i))
-        forward_mem_wb_rs1 = 1;
+    if (ex_mem1_forward_possible && (ex_mem1_rd_addr_i == id_ex_rs1_addr_i))
+        forward_ex_mem1_rs1 = 1'b1;
+    else if (mem1_mem2_forward_possible && (mem1_mem2_rd_addr_i == id_ex_rs1_addr_i))
+        forward_mem1_mem2_rs1 = 1'b1;
+    else if (mem2_wb_forward_possible && (mem2_wb_rd_addr_i == id_ex_rs1_addr_i))
+        forward_mem2_wb_rs1 = 1'b1;
 
     // forward rs2
-    if (ex_mem_forward_possible && (ex_mem_rd_addr_i == id_ex_rs2_addr_i))
-        forward_ex_mem_rs2 = 1;
-    else if (mem_wb_forward_possible && (mem_wb_rd_addr_i == id_ex_rs2_addr_i))
-        forward_mem_wb_rs2 = 1;
+    if (ex_mem1_forward_possible && (ex_mem1_rd_addr_i == id_ex_rs2_addr_i))
+        forward_ex_mem1_rs2 = 1'b1;
+    else if (mem1_mem2_forward_possible && (mem1_mem2_rd_addr_i == id_ex_rs2_addr_i))
+        forward_mem1_mem2_rs2 = 1'b1;
+    else if (mem2_wb_forward_possible && (mem2_wb_rd_addr_i == id_ex_rs2_addr_i))
+        forward_mem2_wb_rs2 = 1'b1;
 end
 
 // outputs
-assign forward_ex_mem_rs1_o = forward_ex_mem_rs1;
-assign forward_ex_mem_rs2_o = forward_ex_mem_rs2;
-assign forward_mem_wb_rs1_o = forward_mem_wb_rs1;
-assign forward_mem_wb_rs2_o = forward_mem_wb_rs2;
+assign forward_ex_mem1_rs1_o = forward_ex_mem1_rs1;
+assign forward_ex_mem1_rs2_o = forward_ex_mem1_rs2;
+assign forward_mem1_mem2_rs1_o = forward_mem1_mem2_rs1;
+assign forward_mem1_mem2_rs2_o = forward_mem1_mem2_rs2;
+assign forward_mem2_wb_rs1_o = forward_mem2_wb_rs1;
+assign forward_mem2_wb_rs2_o = forward_mem2_wb_rs2;
 
-// data to be forwarded
-assign forward_ex_mem_data_o = ex_mem_alu_result_i; // through here just for cleanliness
+// data to be forwarded from EX/MEM1
+assign forward_ex_mem1_data_o = ex_mem1_alu_result_i; // through here just for cleanliness
+
+// data to be forwarded from MEM1/MEM2
+assign forward_mem1_mem2_data_o = mem1_mem2_alu_result_i; // through here just for cleanliness
 
 // 1- if the MEM stage loaded a value, we need this value to be forwarded not the alu result
 // the alu result has been used as the address to load from in this case
 // 2- if the MEM stage hasn't loaded, forward the alu result
-assign forward_mem_wb_data_o = mem_wb_use_mem_i ? mem_wb_dmem_rdata_i : mem_wb_alu_result_i;
+assign forward_mem2_wb_data_o = is_mem_oper_load(mem2_wb_mem_oper_i) ? mem2_wb_lsu_rdata_i : mem2_wb_alu_result_i;
 
 // Hazard Section
 
 // handle use after load hazard
-// In this case we will stall the instruction needing the loaded value for 1 cycle
-// after that, forwarding from the MEM/WB will let it proceed
+// due to the fact that the memory stage is split into 2
+// a use instruction that directly procedes a load instruction will need to stall for 2 cycles
+// the stalled instruction will be held in the Decode stage for 2 cycles
 
-// A load instruction is currently in the ex_mem stage
-wire id_ex_load = id_ex_write_rd_i && id_ex_wb_use_mem_i;
-wire load_use_hzrd = id_ex_load && ((id_ex_rd_addr_i == id_rs1_addr_i) ||
-    (id_ex_rd_addr_i == id_rs2_addr_i));
+// to detect this case, the use instruciton will be stalled in the EX stage until the forwarding pass
+// can satisfy its requirements
+
+// a load in mem1 has the value we need
+wire value_in_mem1 = is_mem_oper_load(ex_mem1_mem_oper_i) &&
+    ((ex_mem1_rd_addr_i == id_ex_rs1_addr_i) || (ex_mem1_rd_addr_i == id_ex_rs2_addr_i));
+// a load in mem2 has the value we need
+wire value_in_mem2 = is_mem_oper_load(mem1_mem2_mem_oper_i) &&
+    ((mem1_mem2_rd_addr_i == id_ex_rs1_addr_i) || (mem1_mem2_rd_addr_i == id_ex_rs2_addr_i));
+
+// we will stall the use instruction in EX only if the value is produced by a load in MEM1
+// or if the value is produced by a load in MEM2 but not when an instruction (non load) in MEM1 can produce the value
+wire load_use_hzrd = value_in_mem1 || (value_in_mem2 && !ex_mem1_forward_possible);
 
 // For now, the cpu always predicts that the branch is not taken and continues
 // On a mispredict, flush the 2 instruction after the branch and continue from the new PC
@@ -206,7 +254,7 @@ begin
     csr_mret_o = '0;
 
     // for exceptions
-    exc_pc_o = ex_mem_pc_i;
+    // exc_pc_o = ex_mem_pc_i;
     csr_mcause_o = '{
         irq: 1'b0,
         trap_code: mem_trap_i[3:0]
@@ -215,11 +263,17 @@ begin
     id_ex_flush_o = load_use_hzrd;
     id_ex_stall_o = '0;
 
-    if_id_stall_o = load_use_hzrd || ex_is_csr_i || mem_is_csr_i;
-    if_id_flush_o = id_is_csr_i || ex_is_csr_i || mem_is_csr_i;
+    if_id_stall_o = load_use_hzrd || ex_is_csr_i || mem1_is_csr_i || mem2_is_csr_i;
+    if_id_flush_o = id_is_csr_i || ex_is_csr_i || mem1_is_csr_i || mem2_is_csr_i;
 
-    ex_mem_stall_o = '0;
-    ex_mem_flush_o = '0;
+    ex_mem1_stall_o = lsu_req_stall_i;
+    ex_mem1_flush_o = '0;
+
+    mem1_mem2_stall_o = '0;
+    mem1_mem2_flush_o = '0;
+
+    mem2_wb_stall_o = '0;
+    mem2_wb_flush_o = lsu_req_stall_i;
 
     unique case (current_state)
         DECODE:
@@ -228,7 +282,7 @@ begin
             if (mem_trap_i != NO_TRAP)
             begin
                 id_ex_flush_o = 1'b1;
-                ex_mem_flush_o = 1'b1;
+                ex_mem1_flush_o = 1'b1;
 
                 // MRET
                 if (mem_trap_i == MRET)
@@ -250,7 +304,7 @@ begin
                 // but the EX_MEM and ID_EX pipeline registers must be flushed
 
                 id_ex_flush_o = 1'b1;
-                ex_mem_flush_o = 1'b1;
+                ex_mem1_flush_o = 1'b1;
                 pc_sel_o = PC_TRAP;
                 new_pc_en_o = 1'b1;
                 is_trap_o = 1'b1;
@@ -262,8 +316,8 @@ begin
 
                 // we need the pipeline to restart from the first valid instruction that is younger
                 // that the one that will retire in this cycle
-                if (id_ex_instr_valid_i)
-                    exc_pc_o = id_ex_pc_i;
+                // if (id_ex_instr_valid_i)
+                //     exc_pc_o = id_ex_pc_i;
 
                 // FIXME: due to the current way simple_fetch is implemented
                 // and due to the way we respond to interrupts
@@ -272,8 +326,8 @@ begin
 
                 // else if (if_id_instr_valid_i)
                 //     exc_pc_o = if_id_pc_i;
-                else
-                    exc_pc_o = if_id_pc_i;
+                // else
+                //     exc_pc_o = if_id_pc_i;
             end
             else if (ex_new_pc_en_i) // EX determined that the branch was taken
             begin

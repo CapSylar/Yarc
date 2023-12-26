@@ -18,15 +18,12 @@ import riscv_pkg::*;
     input bnj_oper_t bnj_oper_i,
     input is_csr_i,
     input instr_valid_i,
-
-    // forward to MEM stage
     input mem_oper_t mem_oper_i,
     input [11:0] csr_waddr_i,
     input csr_we_i,
     input exc_t trap_i,
     
     // forward to the WB stage
-    input wb_use_mem_i,
     input write_rd_i,
     input [4:0] rd_addr_i,
 
@@ -48,7 +45,6 @@ import riscv_pkg::*;
     output logic instr_valid_o,
 
     // for WB stage exclusively
-    output logic wb_use_mem_o,
     output logic write_rd_o,
     output logic [4:0] rd_addr_o,
 
@@ -57,13 +53,17 @@ import riscv_pkg::*;
     output logic [31:0] branch_target_o,
 
     // from forwarding logic
-    input forward_ex_mem_rs1_i,
-    input forward_ex_mem_rs2_i,
-    input [31:0] forward_ex_mem_data_i,
+    input forward_ex_mem1_rs1_i,
+    input forward_ex_mem1_rs2_i,
+    input [31:0] forward_ex_mem1_data_i,
 
-    input forward_mem_wb_rs1_i,
-    input forward_mem_wb_rs2_i,
-    input [31:0] forward_mem_wb_data_i
+    input forward_mem1_mem2_rs1_i,
+    input forward_mem1_mem2_rs2_i,
+    input [31:0] forward_mem1_mem2_data_i,
+
+    input forward_mem2_wb_rs1_i,
+    input forward_mem2_wb_rs2_i,
+    input [31:0] forward_mem2_wb_data_i
 );
 
 logic [31:0] rs1_data, rs2_data; // contain the most up to date values of the registers needed
@@ -74,16 +74,20 @@ begin : solve_forwarding
     rs2_data = rs2_data_i;
 
     // any forwarding active for rs1 ?
-    if (forward_ex_mem_rs1_i)
-        rs1_data = forward_ex_mem_data_i;
-    else if (forward_mem_wb_rs1_i)
-        rs1_data = forward_mem_wb_data_i;
+    if (forward_ex_mem1_rs1_i)
+        rs1_data = forward_ex_mem1_data_i;
+    else if (forward_mem1_mem2_rs1_i)
+        rs1_data = forward_mem1_mem2_data_i;
+    else if (forward_mem2_wb_rs1_i)
+        rs1_data = forward_mem2_wb_data_i;
 
     // any forwarding active for rs2 ?
-    if (forward_ex_mem_rs2_i)
-        rs2_data = forward_ex_mem_data_i;
-    else if (forward_mem_wb_rs2_i)
-        rs2_data = forward_mem_wb_data_i;
+    if (forward_ex_mem1_rs2_i)
+        rs2_data = forward_ex_mem1_data_i;
+    else if (forward_mem1_mem2_rs2_i)
+        rs2_data = forward_mem1_mem2_data_i;
+    else if (forward_mem2_wb_rs2_i)
+        rs2_data = forward_mem2_wb_data_i;
 end
 
 logic [31:0] operand1, operand2; // arithmetic operations are done on these
@@ -203,7 +207,6 @@ begin : ex_mem_pip
         pc_o <= '0;
         instr_valid_o <= '0;
         
-        wb_use_mem_o <= 0;
         write_rd_o <= 0;
         rd_addr_o <= 0;
     end
@@ -223,7 +226,6 @@ begin : ex_mem_pip
         pc_o <= pc_i;
         instr_valid_o <= instr_valid_i;
 
-        wb_use_mem_o <= wb_use_mem_i;
         write_rd_o <= write_rd_i;
         rd_addr_o <= rd_addr_i;
     end

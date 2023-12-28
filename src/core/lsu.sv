@@ -6,7 +6,7 @@ import riscv_pkg::*;
     input clk_i,
     input rstn_i,
 
-    // <-> Data Port
+    // LSU <-> Data Port
     wishbone_if.MASTER wb_if,
 
     // <-> LSU unit

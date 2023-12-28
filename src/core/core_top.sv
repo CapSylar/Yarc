@@ -17,13 +17,10 @@ import csr_pkg::*;
     input clk_i,
     input rstn_i,
 
-    // Core <-> Imem interface
-    output imem_en_o,
-    output [31:0] imem_raddr_o,
-    input [31:0] imem_rdata_i,
-
-    // Core WB Data interface
-    wishbone_if.MASTER wb_if,
+    // Core WB LSU interface
+    wishbone_if.MASTER lsu_wb_if,
+    // Core WB Instruction fetch interface
+    wishbone_if.MASTER instr_fetch_wb_if,
 
     // interrupts
     input irq_timer_i,
@@ -156,6 +153,9 @@ simple_fetch simple_fetch_i
     .clk_i(clk_i),
     .rstn_i(rstn_i),
 
+    // IMEM Wishbone interface
+    .wb_if(instr_fetch_wb_if),
+
     .valid_o(if_id_instr_valid),
     .instr_o(if_id_instr),
     .pc_o(if_id_pc),
@@ -170,12 +170,7 @@ simple_fetch simple_fetch_i
     .mtvec_i(csr_mtvec),
 
     .new_pc_en_i(new_pc_en),
-    .pc_sel_i(pc_sel),
-
-    // Imem interface
-    .read_o(imem_en_o),
-    .raddr_o(imem_raddr_o),
-    .rdata_i(imem_rdata_i)
+    .pc_sel_i(pc_sel)
 );
 
 // Register file
@@ -465,7 +460,7 @@ lsu lsu_i
     .rstn_i(rstn_i),
 
     // <-> Data Port
-    .wb_if(wb_if),
+    .wb_if(lsu_wb_if),
 
     // <-> LSU unit
     .req_i(lsu_req),

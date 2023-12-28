@@ -18,7 +18,8 @@ begin
     end
 end
 
-logic rstn, rstn_t;
+logic rstn = '0;
+logic rstn_t = '0;
 always @(posedge clk)
 begin
     rstn <= rstn_t;    
@@ -26,55 +27,58 @@ end
 
 initial
 begin
-    rstn_t = 1'b1;
-    @(posedge clk);
     rstn_t = 1'b0;
-    repeat(2) @(posedge clk);
+    repeat(5) @(posedge clk);
     rstn_t = 1'b1;
 
     repeat(100000) @(posedge clk);
     $finish;
 end
 
-logic imem_en;
-logic [31:0] imem_raddr;
-logic [31:0] imem_rdata;
+wishbone_if imem_wb_if();
 
 // Instruction Memory
-sp_mem #(.MEMFILE(IMEMFILE), .SIZE_POT(15)) imem
+sp_mem_wb #(.MEMFILE(IMEMFILE), .SIZE_POT(15)) imem
 (
     .clk_i(clk),
-    .en_i(imem_en),
 
-    .read_i(1'b1),
-    .addr_i(imem_raddr[31:2]), // 4-byte addressable
-    .rdata_o(imem_rdata),
+    .cyc_i(imem_wb_if.cyc),
+    .stb_i(imem_wb_if.stb),
+    .lock_i(imem_wb_if.lock),
 
-    .wsel_byte_i('0),
-    .wdata_i('0)
+    .we_i(imem_wb_if.we),
+    .addr_i(imem_wb_if.addr[31:2]), // 4-byte addressable
+    .sel_i(imem_wb_if.sel),
+    .wdata_i(imem_wb_if.wdata),
+
+    .rdata_o(imem_wb_if.rdata),
+    .rty_o(imem_wb_if.rty),
+    .ack_o(imem_wb_if.ack),
+    .stall_o(imem_wb_if.stall),
+    .err_o(imem_wb_if.err)
 );
 
-wishbone_if wb_if();
+wishbone_if dmem_wb_if();
 
 // Data Memory
 sp_mem_wb #(.MEMFILE(DMEMFILE), .SIZE_POT(15)) dmem
 (
     .clk_i(clk),
 
-    .cyc_i(wb_if.cyc),
-    .stb_i(wb_if.stb),
-    .lock_i(wb_if.lock),
+    .cyc_i(dmem_wb_if.cyc),
+    .stb_i(dmem_wb_if.stb),
+    .lock_i(dmem_wb_if.lock),
 
-    .we_i(wb_if.we),
-    .addr_i(wb_if.addr[31:2]), // 4-byte addressable
-    .sel_i(wb_if.sel),
-    .wdata_i(wb_if.wdata),
+    .we_i(dmem_wb_if.we),
+    .addr_i(dmem_wb_if.addr[31:2]), // 4-byte addressable
+    .sel_i(dmem_wb_if.sel),
+    .wdata_i(dmem_wb_if.wdata),
 
-    .rdata_o(wb_if.rdata),
-    .rty_o(wb_if.rty),
-    .ack_o(wb_if.ack),
-    .stall_o(wb_if.stall),
-    .err_o(wb_if.err)
+    .rdata_o(dmem_wb_if.rdata),
+    .rty_o(dmem_wb_if.rty),
+    .ack_o(dmem_wb_if.ack),
+    .stall_o(dmem_wb_if.stall),
+    .err_o(dmem_wb_if.err)
 );
 
 yarc_platform yarc_platform_i
@@ -82,13 +86,11 @@ yarc_platform yarc_platform_i
     .clk_i(clk),
     .rstn_i(rstn),
 
-    // Core <-> Imem interface
-    .imem_en_o(imem_en),
-    .imem_raddr_o(imem_raddr),
-    .imem_rdata_i(imem_rdata),
+    // Core <-> DMEM
+    .dmem_wb(dmem_wb_if.MASTER),
 
-    // Core <-> Dmem interface
-    .dmem_wb(wb_if.MASTER),
+    // Core <-> IMEM
+    .imem_wb(imem_wb_if.MASTER),
 
     // Platform <-> Peripherals
     .led_status_o()

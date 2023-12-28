@@ -13,22 +13,20 @@
 */                                                                                  
 
 module yarc_platform
+import platform_pkg::*;
 (
     input clk_i,
     input rstn_i,
 
-    // Platform <-> IMEM
-    output imem_en_o,
-    output [31:0] imem_raddr_o,
-    input [31:0] imem_rdata_i,
-
     // Platform <-> DMEM
     wishbone_if.MASTER dmem_wb,
+
+    // Platform <-> IMEM
+    wishbone_if.MASTER imem_wb,
 
     // Platform <-> Peripherals
     output logic [7:0] led_status_o
 );
-import platform_pkg::*;
 
 wishbone_if wb_if();
 wishbone_if led_wb_if();
@@ -203,13 +201,10 @@ core_top core_i
     .clk_i(clk_i),
     .rstn_i(rstn_i),
 
-    // Core <-> Imem interface
-    .imem_en_o(imem_en_o),
-    .imem_raddr_o(imem_raddr_o),
-    .imem_rdata_i(imem_rdata_i),
-
-    // Core WB Data Interface
-    .wb_if(wb_if.MASTER),
+    // Core WB LSU Interface
+    .lsu_wb_if(wb_if.MASTER),
+    // Core WB Instruction Fetch interface
+    .instr_fetch_wb_if(imem_wb),
 
     // interrupts
     .irq_timer_i(irq_timer),

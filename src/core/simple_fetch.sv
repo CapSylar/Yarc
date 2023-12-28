@@ -9,10 +9,13 @@ import csr_pkg::*;
     input clk_i,
     input rstn_i,
 
+    // FETCH <-> wishbone interface
+    wishbone_if.MASTER wb_if,
+
     // CPU <-> fetch interface
     output logic valid_o, // a valid instruction is presented
     output logic [31:0] instr_o, // the instruction, only valid when valid_o = 1
-    output [31:0] pc_o, // program counter of the instruction presented to the cpu
+    output logic [31:0] pc_o, // program counter of the instruction presented to the cpu
 
     input stall_i, // is the cpu stalled ?
     input flush_i,
@@ -24,12 +27,7 @@ import csr_pkg::*;
     input [31:0] branch_target_i,
     input [31:0] csr_mepc_i,
     input var mcause_t mcause_i, // comes from the controller, not csr module
-    input var mtvec_t mtvec_i,
-
-    // fetch <-> memory interface
-    output logic read_o,
-    output [31:0] raddr_o,
-    input [31:0] rdata_i
+    input var mtvec_t mtvec_i
 );
 
 logic [31:0] raddr_q, raddr_d;
@@ -38,6 +36,25 @@ logic [31:0] arch_pc_q, arch_pc_d;
 logic [31:0] new_pc;
 logic [31:0] instr_buffer_q, instr_buffer_d;
 logic present_buffer;
+logic stb, cyc;
+
+logic [2:0] out_acks_q, out_acks_d; // outstanding acks
+
+always_comb
+begin
+    out_acks_d = out_acks_q;
+
+    // if inc and dec at the same time, the counter stays the same
+    if (cyc & stb & !wb_if.stall) // a wb request is accepted
+        out_acks_d = out_acks_d + 1'b1;
+    
+    if (wb_if.ack)
+        out_acks_d = out_acks_d - 1'b1;
+end
+
+always_ff @(posedge clk_i)
+    if (!rstn_i) out_acks_q <= '0;
+    else         out_acks_q <= out_acks_d;
 
 // calculate the expection target address from mtvec and mcause
 logic [31:0] exc_target_addr;
@@ -65,7 +82,7 @@ begin
 end
 
 // fetch state machine
-enum {BOOT, ADDRESS_PHASE, CONT_PC, STALLED} current_state, next_state;
+enum {BOOT, REQUESTING, WAIT_ZERO_OUTSTANDING, STALLED} current_state, next_state;
 
 // next state logic
 always_ff @(posedge clk_i)
@@ -75,7 +92,9 @@ always_ff @(posedge clk_i)
 always_comb
 begin : pfetch_sm
     next_state = current_state;
-    read_o = '0;
+
+    cyc = '0;
+    stb = '0;
     valid_o = '0;
     raddr_d = raddr_q;
     present_buffer = '0;
@@ -85,65 +104,64 @@ begin : pfetch_sm
         BOOT:
         begin
             raddr_d = BOOT_PC;
-            next_state = ADDRESS_PHASE;
+            next_state = REQUESTING;
         end
 
-        ADDRESS_PHASE:
+        REQUESTING:
         begin
-            read_o = 1'b1;
-            valid_o = 1'b0;
-            next_state = CONT_PC;
+            cyc = 1'b1;
+            stb = 1'b1;
 
-            raddr_d = raddr_q + 4;
-        end
+            if (wb_if.ack)
+                valid_o = 1'b1;
 
-        CONT_PC:
-        begin
-            read_o = 1'b1;
-            valid_o = 1'b1;
+            // if wishbone can't take requests anymore, keep the current request asserted
+            if (wb_if.stall)
+                raddr_d = raddr_q;
+            else
+                raddr_d = raddr_q + 4;
 
             if (flush_i)
             begin
-                next_state = ADDRESS_PHASE;
+                raddr_d = arch_pc_q + 4; // re-fetch the pc after the r_addrq
+                next_state = WAIT_ZERO_OUTSTANDING;
             end
             else if (stall_i)
             begin
+                raddr_d = arch_pc_q + 4;
                 next_state = STALLED;
-                instr_buffer_d = rdata_i; // save it
+                instr_buffer_d = wb_if.rdata; // save it
             end
-            else
-                raddr_d = raddr_q + 4;
+        end
+
+        WAIT_ZERO_OUTSTANDING:
+        begin
+            cyc = 1'b1;
+
+            // wait for any outstanding transaction to finish
+            // then restart the pipeline
+
+            if (out_acks_q == '0)
+                next_state = REQUESTING;
         end
 
         STALLED:
         begin
+            cyc = 1'b1;
+
             valid_o = 1'b1;
             present_buffer = 1'b1;
 
             if (!stall_i)
-            begin
-                next_state = CONT_PC;
-                raddr_d = raddr_q + 4;
-            end
+                next_state = WAIT_ZERO_OUTSTANDING;
         end
     endcase
 
-    // if (flush_i)
-    // begin
-    //     next_state = ADDRESS_PHASE;
-    //     raddr_d = raddr_q;
-    // end
-    // else if (stall_i)
-    // begin
-    //     next_state = STALLED;
-    //     raddr_d = raddr_q;
-    //     instr_buffer_d = rdata_i; // save it
-    // end
     if (new_pc_en_i)
     begin
         // logic that override the next_state logic
         // should respond to a new_pc_en request irrespective of the state we are currently in
-        next_state = ADDRESS_PHASE;
+        next_state = WAIT_ZERO_OUTSTANDING;
         raddr_d = new_pc;
     end
 end
@@ -169,8 +187,25 @@ end
 assign arch_pc_d = raddr_q;
 
 // assign outputs
-assign raddr_o = raddr_q;
-assign instr_o = present_buffer ? instr_buffer_q : rdata_i;
 assign pc_o = arch_pc_q;
+
+always_comb
+begin
+    instr_o = '0;
+
+    if (present_buffer)
+        instr_o = instr_buffer_q;
+    else if (wb_if.ack)
+        instr_o = wb_if.rdata;
+end
+
+// assign wishbone interface outputs
+assign wb_if.cyc = cyc;
+assign wb_if.stb = stb;
+assign wb_if.addr = raddr_q;
+assign wb_if.we = '0;
+assign wb_if.lock = '0;
+assign wb_if.sel = 4'hf;
+assign wb_if.wdata = '0;
 
 endmodule :simple_fetch

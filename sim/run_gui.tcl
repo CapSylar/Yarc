@@ -21,9 +21,7 @@ add wave ${CORE}/simple_fetch_i/csr_mepc_i;
 add wave ${CORE}/simple_fetch_i/mcause_i;
 add wave ${CORE}/simple_fetch_i/mtvec_i;
 
-add wave ${CORE}/simple_fetch_i/read_o;
-add wave ${CORE}/simple_fetch_i/raddr_o;
-add wave ${CORE}/simple_fetch_i/rdata_i;
+add wave -group {FETCH WISHBONE} ${CORE}/simple_fetch_i/wb_if/*;
 
 add wave ${CORE}/simple_fetch_i/current_state;
 add wave ${CORE}/simple_fetch_i/next_state;
@@ -254,7 +252,8 @@ add wave -color Gold ${CORE}/stage_mem2_i/lsu_rdata_o;
 add wave -color Gold ${CORE}/stage_mem2_i/mem_oper_o;
 
 # ---------------------------------------------------------
-add wave -group {LSU} ${CORE}/lsu_i/wb_if/*;
+add wave -group {LSU WISHBONE} ${CORE}/lsu_i/wb_if/*;
+
 add wave -group {LSU} ${CORE}/lsu_i/req_i;
 add wave -group {LSU} ${CORE}/lsu_i/we_i;
 add wave -group {LSU} ${CORE}/lsu_i/addr_i;

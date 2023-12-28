@@ -69,9 +69,8 @@ import riscv_pkg::*;
 logic [31:0] rs1_data, rs2_data; // contain the most up to date values of the registers needed
 
 always_comb
-begin : solve_forwarding
+begin : solve_forwarding_rs1
     rs1_data = rs1_data_i;
-    rs2_data = rs2_data_i;
 
     // any forwarding active for rs1 ?
     if (forward_ex_mem1_rs1_i)
@@ -80,6 +79,11 @@ begin : solve_forwarding
         rs1_data = forward_mem1_mem2_data_i;
     else if (forward_mem2_wb_rs1_i)
         rs1_data = forward_mem2_wb_data_i;
+end
+
+always_comb
+begin: solve_forwarding_rs2
+    rs2_data = rs2_data_i;
 
     // any forwarding active for rs2 ?
     if (forward_ex_mem1_rs2_i)
@@ -95,6 +99,8 @@ logic [31:0] operand1, operand2; // arithmetic operations are done on these
 // determine operand1
 always_comb
 begin
+    operand1 = '0;
+
     unique case (alu_oper1_src_i)
         OPER1_RS1:
             operand1 = rs1_data;
@@ -104,14 +110,15 @@ begin
             operand1 = '0;
         OPER1_CSR_IMM:
             operand1 = imm_i;
-        default:
-            operand1 = rs1_data;
+        default:;
     endcase
 end
 
 // determine operand2
 always_comb
 begin
+    operand2 = '0;
+
     unique case (alu_oper2_src_i)
         OPER2_RS2:
             operand2 = rs2_data;
@@ -123,92 +130,146 @@ begin
             operand2 = csr_rdata_i;
         OPER2_ZERO:
             operand2 = '0;
-        default:
-            operand2 = rs2_data;
+        default:;
+    endcase
+end
+
+logic is_op2_neg;
+always_comb
+begin
+    is_op2_neg = '0;
+    unique case (alu_oper_i)
+        ALU_SUB,
+        ALU_SEQ, ALU_SNEQ,
+        ALU_SGE, ALU_SGEU,
+        ALU_SLT, ALU_SLTU: is_op2_neg = 1'b1;
+        default:;
+    endcase
+end
+
+// prepare both operands 1 and 2
+logic [32:0] adder_in_1, adder_in_2;
+logic [32:0] adder_result_ext;
+logic [31:0] adder_result;
+
+assign adder_in_1 = {operand1,1'b1};
+assign adder_in_2 = is_op2_neg ? ~{operand2,1'b0} : {operand2,1'b0};
+
+assign adder_result_ext = $unsigned(adder_in_1) + $unsigned(adder_in_2);
+assign adder_result = adder_result_ext[32:1];
+
+// produce the comparison values
+logic is_equal, is_greater_equal;
+
+assign is_equal = (adder_result == '0);
+
+logic cmp_signed;
+always_comb
+begin: determine_if_signed
+    cmp_signed = '0;
+    unique case (alu_oper_i)
+        ALU_SGE,
+        ALU_SLT: cmp_signed = 1'b1;
+        default:;
+    endcase
+end
+
+// calculate greater or equal
+always_comb
+begin
+    // if both operands have the same sign (++ or --), then if a - b is positive then a > b
+    if ((operand1[31] ^ operand2[31]) == '0)
+        is_greater_equal = (adder_result[31] == '0);
+
+        // the operands' signs are not equal:
+        // 1- if the cmp is signed, the one with the + sign is greater
+        // 2- if the cmp is not signed, the operand with the MSB is greater
+    else
+        is_greater_equal = (operand1[31] ^ cmp_signed);
+end
+
+logic cmp_result;
+// generate the comparison result
+always_comb
+begin
+    cmp_result = '0;
+    unique case (alu_oper_i)
+        ALU_SEQ:            cmp_result = is_equal;
+        ALU_SNEQ:           cmp_result = ~is_equal;
+        ALU_SGE, ALU_SGEU:  cmp_result = is_greater_equal;
+        ALU_SLT, ALU_SLTU:  cmp_result = ~is_greater_equal;
+        default:;
     endcase
 end
 
 logic [31:0] alu_result;
 wire [4:0] shift_amount = operand2[4:0];
 
-// alu result
+// alu result mux
 always_comb
 begin
+    alu_result = '0;
     unique case (alu_oper_i)
-        ALU_ADD: alu_result = operand1 + operand2;
-        ALU_SUB: alu_result = operand1 - operand2;
+        ALU_ADD, ALU_SUB: alu_result = adder_result;
 
-        ALU_SEQ: alu_result = {31'd0, operand1 == operand2};
-        ALU_SNEQ: alu_result = {31'd0, operand1 != operand2};
+        // comparsion operations
+        ALU_SEQ, ALU_SNEQ,
+        ALU_SLT, ALU_SLTU,
+        ALU_SGE, ALU_SGEU: alu_result = {31'd0, cmp_result};
 
-        ALU_SLT: alu_result = {31'd0, $signed(operand1) < $signed(operand2)};
-        ALU_SGE: alu_result = {31'd0, $signed(operand1) >= $signed(operand2)};
-
-        ALU_SLTU: alu_result = {31'd0, operand1 < operand2};
-        ALU_SGEU: alu_result = {31'd0, operand1 >= operand2};
-
+        // bitwise operations
         ALU_XOR: alu_result = operand1 ^ operand2;
-        ALU_OR: alu_result = operand1 | operand2;
+        ALU_OR:  alu_result = operand1 | operand2;
         ALU_AND: alu_result = operand1 & operand2;
 
+        // shift operations
         ALU_SLL: alu_result = operand1 << shift_amount;
-
         ALU_SRL: alu_result = operand1 >> shift_amount;
         ALU_SRA: alu_result = $signed(operand1) >>> shift_amount;
 
-        default:
-            alu_result = operand1 + operand2;
+        default:;
     endcase
 end
 
 // handle branches and jumps
 always_comb
 begin
+    new_pc_en_o = '0;
+    branch_target_o = '0;
+
     unique case (bnj_oper_i)
         BNJ_JAL:
         begin
-            new_pc_en_o = 1;
+            new_pc_en_o = 1'b1;
             branch_target_o = pc_i + imm_i;
         end
 
         BNJ_JALR:
         begin
-            new_pc_en_o = 1;
+            new_pc_en_o = 1'b1;
             branch_target_o = rs1_data + imm_i;
         end
 
         BNJ_BRANCH:
         begin
-            new_pc_en_o = alu_result[0];
+            new_pc_en_o = cmp_result;
             branch_target_o = pc_i + imm_i;
         end
-        default:
-        begin
-            new_pc_en_o = 0;
-            branch_target_o = 0;
-        end
+        default:;
     endcase
 end
 
 // pipeline registers and outputs
-
-always_ff @(posedge clk_i, negedge rstn_i)
+always_ff @(posedge clk_i)
 begin : ex_mem_pip
     if (!rstn_i || flush_i)
     begin
-        alu_result_o <= 0;
-        alu_oper2_o <= 0;
         mem_oper_o <= MEM_NOP;
-        csr_wdata_o <= '0;
-        csr_waddr_o <= '0;
         csr_we_o <= '0;
         is_csr_o <= '0;
         trap_o <= NO_TRAP;
-        pc_o <= '0;
         instr_valid_o <= '0;
-        
         write_rd_o <= 0;
-        rd_addr_o <= 0;
     end
     else if (!stall_i)
     begin

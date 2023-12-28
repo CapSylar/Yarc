@@ -35,7 +35,12 @@ import riscv_pkg::*;
     output logic [31:0] lsu_rdata_o,
     output mem_oper_t mem_oper_o,
 
-    output stall_o
+    // goes to controller
+    output stall_o,
+    output exc_t trap_o,
+
+    input stall_i,
+    input flush_i
 );
 
 logic mem2_stalled;
@@ -98,12 +103,12 @@ end
 
 always_ff @(posedge clk_i)
 begin
-    if (!rstn_i || mem2_stalled)
+    if (!rstn_i || flush_i)
     begin
         write_rd_o <= '0;
         mem_oper_o <= MEM_NOP;
     end
-    else
+    else if (!stall_i)
     begin
         write_rd_o <= write_rd_i;
         mem_oper_o <= mem_oper_i;
@@ -120,5 +125,6 @@ assign csr_waddr_o = csr_waddr_i;
 assign csr_wdata_o = csr_wdata_i;
 
 assign stall_o = mem2_stalled;
+assign trap_o = trap_i;
 
 endmodule: stage_mem2

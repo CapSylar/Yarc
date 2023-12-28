@@ -113,6 +113,7 @@ mem_oper_t mem2_wb_mem_oper;
 logic [31:0] csr_wdata;
 logic [11:0] csr_waddr;
 logic csr_we;
+exc_t mem2_trap;
 
 // Driven by the WB Data Interface
 logic lsu_req_stall;
@@ -411,8 +412,8 @@ stage_mem1 stage_mem1_i
     .mem_oper_o(mem1_mem2_mem_oper),
     .trap_o(mem1_mem2_trap),
     
-    .stall_i('0),
-    .flush_i('0)
+    .stall_i(mem1_mem2_stall),
+    .flush_i(mem1_mem2_flush)
 );
 
 // MEM2 Stage (Waiting for Memory Request to Finish)
@@ -450,7 +451,11 @@ stage_mem2 stage_mem2_i
     .lsu_rdata_o(mem2_wb_lsu_rdata),
     .mem_oper_o(mem2_wb_mem_oper),
 
-    .stall_o()
+    .stall_o(mem2_stall_needed),
+    .trap_o(mem2_trap),
+
+    .stall_i(mem2_wb_stall),
+    .flush_i(mem2_wb_flush)
 );
 
 // Load Store Unit
@@ -526,12 +531,13 @@ controller controller_i
     .mem1_mem2_alu_result_i(mem1_mem2_alu_result),
 
     // from MEM2/WB
-    .mem2_wb_rd_addr_i(mem1_mem2_rd_addr),
-    .mem2_wb_write_rd_i(mem1_mem2_write_rd),
+    .mem2_wb_rd_addr_i(mem2_wb_rd_addr),
+    .mem2_wb_write_rd_i(mem2_wb_write_rd),
     .mem2_wb_mem_oper_i(mem2_wb_mem_oper),
     .mem2_wb_alu_result_i(mem2_wb_alu_result),
     .mem2_wb_lsu_rdata_i(mem2_wb_lsu_rdata),
-    .mem_trap_i(mem1_mem2_trap),
+    .mem2_stall_needed_i(mem2_stall_needed),
+    .mem_trap_i(mem2_trap),
 
     // from LSU
     .lsu_req_stall_i(lsu_req_stall),

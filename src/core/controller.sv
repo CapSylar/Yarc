@@ -40,6 +40,7 @@ import csr_pkg::*;
     input mem_oper_t mem2_wb_mem_oper_i,
     input [31:0] mem2_wb_alu_result_i,
     input [31:0] mem2_wb_lsu_rdata_i,
+    input mem2_stall_needed_i,
     input exc_t mem_trap_i,
 
     // from LSU
@@ -116,9 +117,9 @@ import csr_pkg::*;
 
 // we can't forward from the EX stage if the instruction will load from memory
 // since the alu result is not the written value but the address to memory
-wire ex_mem1_forward_possible = (ex_mem1_rd_addr_i != 0) && ex_mem1_write_rd_i && !is_mem_oper_load(ex_mem1_mem_oper_i);
-wire mem1_mem2_forward_possible = (mem1_mem2_rd_addr_i != 0) && mem1_mem2_write_rd_i;
-wire mem2_wb_forward_possible = (mem2_wb_rd_addr_i != 0) && mem2_wb_write_rd_i;
+wire ex_mem1_forward_possible = (ex_mem1_rd_addr_i != '0) && ex_mem1_write_rd_i && !is_mem_oper_load(ex_mem1_mem_oper_i);
+wire mem1_mem2_forward_possible = (mem1_mem2_rd_addr_i != '0) && mem1_mem2_write_rd_i;
+wire mem2_wb_forward_possible = (mem2_wb_rd_addr_i != '0) && mem2_wb_write_rd_i;
 
 logic forward_ex_mem1_rs1;
 logic forward_ex_mem1_rs2;
@@ -127,41 +128,26 @@ logic forward_mem1_mem2_rs2;
 logic forward_mem2_wb_rs1;
 logic forward_mem2_wb_rs2;
 
-always_comb begin : forwarding
-    forward_ex_mem1_rs1 = '0;
-    forward_ex_mem1_rs2 = '0;
+// Note: forwarding from the most recent stage takes priority
+// consider this example where we could forward from EX/MEM and from MEM/WB
+// add x3,x3,x4
+// add x3,x3,x5
+// add x3,x3,x4
+// in this case all Rd is the same for the 3 instructions
+// we must forward from the most recent stage which is EX/MEM
+// since it contains the most up-to-date version of Rd
 
-    forward_mem1_mem2_rs1 = '0;
-    forward_mem1_mem2_rs2 = '0;
+// several forward_*_rs1 could be high at the same time, the ex module
+// will take the most recent result
 
-    forward_mem2_wb_rs1 = '0;
-    forward_mem2_wb_rs2 = '0;
-
-    // Note: forwarding from the most recent stage takes priority
-
-    // consider this example where we could forward from EX/MEM and from MEM/WB
-    // add x3,x3,x4
-    // add x3,x3,x5
-    // add x3,x3,x4
-    // in this case all Rd is the same for the 3 instructions
-    // we must forward from the most recent stage which is EX/MEM since it contains the most up-to-date version of Rd
-
-    // forward rs1
-    if (ex_mem1_forward_possible && (ex_mem1_rd_addr_i == id_ex_rs1_addr_i))
-        forward_ex_mem1_rs1 = 1'b1;
-    else if (mem1_mem2_forward_possible && (mem1_mem2_rd_addr_i == id_ex_rs1_addr_i))
-        forward_mem1_mem2_rs1 = 1'b1;
-    else if (mem2_wb_forward_possible && (mem2_wb_rd_addr_i == id_ex_rs1_addr_i))
-        forward_mem2_wb_rs1 = 1'b1;
-
-    // forward rs2
-    if (ex_mem1_forward_possible && (ex_mem1_rd_addr_i == id_ex_rs2_addr_i))
-        forward_ex_mem1_rs2 = 1'b1;
-    else if (mem1_mem2_forward_possible && (mem1_mem2_rd_addr_i == id_ex_rs2_addr_i))
-        forward_mem1_mem2_rs2 = 1'b1;
-    else if (mem2_wb_forward_possible && (mem2_wb_rd_addr_i == id_ex_rs2_addr_i))
-        forward_mem2_wb_rs2 = 1'b1;
-end
+// rs1
+assign forward_ex_mem1_rs1 = ex_mem1_forward_possible && (ex_mem1_rd_addr_i == id_ex_rs1_addr_i);
+assign forward_mem1_mem2_rs1 = mem1_mem2_forward_possible && (mem1_mem2_rd_addr_i == id_ex_rs1_addr_i);
+assign forward_mem2_wb_rs1 = mem2_wb_forward_possible && (mem2_wb_rd_addr_i == id_ex_rs1_addr_i);
+// rs2
+assign forward_ex_mem1_rs2 = ex_mem1_forward_possible && (ex_mem1_rd_addr_i == id_ex_rs2_addr_i);
+assign forward_mem1_mem2_rs2 = mem1_mem2_forward_possible && (mem1_mem2_rd_addr_i == id_ex_rs2_addr_i);
+assign forward_mem2_wb_rs2 = mem2_wb_forward_possible && (mem2_wb_rd_addr_i == id_ex_rs2_addr_i);
 
 // outputs
 assign forward_ex_mem1_rs1_o = forward_ex_mem1_rs1;
@@ -211,7 +197,6 @@ wire load_use_hzrd = value_in_mem1 || (value_in_mem2 && !ex_mem1_forward_possibl
 // 2- There is a CSR instruction in the pipeline
 
 // handle interrupts
-
 logic interrupt_en;
 logic handle_irq;
 // Global interrupt enable or In U mode since MIE is a don't care in U mode
@@ -260,25 +245,25 @@ begin
         trap_code: mem_trap_i[3:0]
     };
 
-    id_ex_flush_o = load_use_hzrd;
-    id_ex_stall_o = '0;
-
     if_id_stall_o = load_use_hzrd || ex_is_csr_i || mem1_is_csr_i || mem2_is_csr_i;
     if_id_flush_o = id_is_csr_i || ex_is_csr_i || mem1_is_csr_i || mem2_is_csr_i;
 
-    ex_mem1_stall_o = lsu_req_stall_i;
-    ex_mem1_flush_o = '0;
+    id_ex_flush_o = '0;
+    id_ex_stall_o = load_use_hzrd;
 
-    mem1_mem2_stall_o = '0;
-    mem1_mem2_flush_o = '0;
+    ex_mem1_stall_o = lsu_req_stall_i;
+    ex_mem1_flush_o = load_use_hzrd;
+
+    mem1_mem2_stall_o = mem2_stall_needed_i;
+    mem1_mem2_flush_o = lsu_req_stall_i;
 
     mem2_wb_stall_o = '0;
-    mem2_wb_flush_o = lsu_req_stall_i;
+    mem2_wb_flush_o = mem2_stall_needed_i;
 
     unique case (current_state)
         DECODE:
         begin
-            // instruction in the MEM stage raised a trap
+            // instruction in the MEM2 stage raised a trap
             if (mem_trap_i != NO_TRAP)
             begin
                 id_ex_flush_o = 1'b1;

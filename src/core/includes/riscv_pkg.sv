@@ -58,7 +58,7 @@ typedef enum logic [3:0]
     ALU_SRA =   4'b1101
 } alu_oper_t;
 
-typedef enum logic [1:0]
+typedef enum
 {
     OPER1_RS1,
     OPER1_ZERO,
@@ -66,7 +66,7 @@ typedef enum logic [1:0]
     OPER1_CSR_IMM
 } alu_oper1_src_t;
 
-typedef enum logic [2:0]
+typedef enum
 {
     OPER2_RS2,
     OPER2_IMM,

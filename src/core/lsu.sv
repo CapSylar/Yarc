@@ -53,6 +53,7 @@ always_ff @(posedge clk_i)
 always_comb
 begin : next_state
 
+    next = current;
     req_stall_o = '0;
     wb_cyc = '0;
     wb_stb = 0;

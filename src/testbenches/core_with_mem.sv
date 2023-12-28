@@ -88,7 +88,7 @@ yarc_platform yarc_platform_i
     .imem_rdata_i(imem_rdata),
 
     // Core <-> Dmem interface
-    .wb_if(wb_if.MASTER),
+    .dmem_wb(wb_if.MASTER),
 
     // Platform <-> Peripherals
     .led_status_o()

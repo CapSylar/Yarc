@@ -68,7 +68,7 @@ end
 enum {BOOT, ADDRESS_PHASE, CONT_PC, STALLED} current_state, next_state;
 
 // next state logic
-always_ff @(posedge clk_i, negedge rstn_i)
+always_ff @(posedge clk_i)
     if (!rstn_i) current_state <= BOOT;
     else current_state <= next_state;
 
@@ -148,7 +148,7 @@ begin : pfetch_sm
     end
 end
 
-always_ff @(posedge clk_i, negedge rstn_i)
+always_ff @(posedge clk_i)
 begin
     if (!rstn_i)
     begin

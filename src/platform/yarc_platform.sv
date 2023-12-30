@@ -19,38 +19,49 @@ import platform_pkg::*;
     input rstn_i,
 
     // Platform <-> DMEM
-    wishbone_if.MASTER dmem_wb,
+    wishbone_if.MASTER dmem_wb_if,
 
     // Platform <-> IMEM
-    wishbone_if.MASTER imem_wb,
+    wishbone_if.MASTER instr_fetch_wb_if,
 
     // Platform <-> Peripherals
     output logic [7:0] led_status_o
 );
 
-wishbone_if wb_if();
+wishbone_if lsu_wb_if();
 wishbone_if led_wb_if();
 
-// timer lines
-// logic timer_en;
-// logic irq_timer;
-// logic [31:0] timer_rdata;
+// Wb interconnect
+wishbone_if slave_wb_if [NUM_SLAVES]();
 
-// timer
-// timer timer_i
-// (
-//     .clk_i(clk_i),
-//     .rstn_i(rstn_i),
+wb_interconnect
+#(.NUM_SLAVES(NUM_SLAVES), .START_ADDRESS(START_ADDRESS), .MASK(MASK))
+wb_interconnect_i
+(
+    .clk_i(clk_i),
+    .rstn_i(rstn_i),
 
-//     .en_i(timer_en),
-//     .read_i(lsu_read_o),
-//     .addr_i(lsu_addr_o),
-//     .rdata_o(timer_rdata),
+    // interconnect <-> Master
+    .intercon_if(lsu_wb_if),
+    // interconnect <-> Slaves
+    .wb_if(slave_wb_if)
+);
 
-//     .wdata_i(lsu_wdata_o),
-    
-//     .timer_int_o(irq_timer)
-// );
+// dmem
+// assign signals to dmem_wb
+assign dmem_wb_if.cyc = slave_wb_if[DMEM_SLAVE_INDEX].cyc;
+assign dmem_wb_if.stb = slave_wb_if[DMEM_SLAVE_INDEX].stb;
+assign dmem_wb_if.lock = slave_wb_if[DMEM_SLAVE_INDEX].lock;
+assign dmem_wb_if.we = slave_wb_if[DMEM_SLAVE_INDEX].we;
+assign dmem_wb_if.addr = slave_wb_if[DMEM_SLAVE_INDEX].addr;
+assign dmem_wb_if.sel = slave_wb_if[DMEM_SLAVE_INDEX].sel;
+assign dmem_wb_if.wdata = slave_wb_if[DMEM_SLAVE_INDEX].wdata;
+
+assign slave_wb_if[DMEM_SLAVE_INDEX].rdata = dmem_wb_if.rdata;
+assign slave_wb_if[DMEM_SLAVE_INDEX].rty = dmem_wb_if.rty;
+assign slave_wb_if[DMEM_SLAVE_INDEX].ack = dmem_wb_if.ack;
+assign slave_wb_if[DMEM_SLAVE_INDEX].stall = dmem_wb_if.stall;
+assign slave_wb_if[DMEM_SLAVE_INDEX].err = dmem_wb_if.err;
 
 // led driver
 led_driver led_driver_i
@@ -58,142 +69,10 @@ led_driver led_driver_i
     .clk_i(clk_i),
     .rstn_i(rstn_i),
 
-    .wb_if(led_wb_if.SLAVE),
+    .wb_if(slave_wb_if[LED_DRIVER_SLAVE_INDEX]),
     
     .led_status_o(led_status_o)
 );
-
-typedef enum
-{
-    DMEM,
-    TIMER,
-    LED_DRIVER,
-    NOTHING
-} addressed_e;
-
-addressed_e addressed_d, addressed_q;
-
-always_ff @(posedge clk_i)
-begin
-    if (!rstn_i) addressed_q <= NOTHING;
-    else addressed_q <= addressed_d;
-end
-
-// address decoder for LSU lines
-always_comb begin: decoder
-
-    addressed_d = NOTHING;
-
-    if (wb_if.cyc)
-    begin
-        if ((wb_if.addr & DMEM_MASK) == DMEM_BASE_ADDR)
-        begin
-            addressed_d = DMEM;
-        end
-        
-        if ((wb_if.addr & MTIMER_MASK) == MTIMER_BASE_ADDR)
-        begin
-            addressed_d = TIMER;
-        end
-
-        if ((wb_if.addr & LED_DRIVER_MASK) == LED_DRIVER_BASE_ADDR)
-        begin
-            addressed_d = LED_DRIVER;
-        end
-    end
-end
-
-// assign dmem_en_o = (addressed_d == DMEM);
-// assign timer_en = (addressed_d == TIMER);
-// assign led_driver_en = (addressed_d == LED_DRIVER);
-
-// address mux
-// always_comb begin: rdata_mux
-//     lsu_rdata_i = '0;
-
-//     unique case (addressed_q)
-//         DMEM: lsu_rdata_i = dmem_rdata_i;
-//         TIMER: lsu_rdata_i = timer_rdata;
-//         LED_DRIVER: lsu_rdata_i = led_driver_rdata;
-//         default:;
-//     endcase
-// end
-
-always_comb
-begin
-    dmem_wb.cyc = '0;
-    dmem_wb.stb = '0;
-    dmem_wb.lock = '0;
-    dmem_wb.we = '0;
-    dmem_wb.addr = '0;
-    dmem_wb.sel = '0;
-    dmem_wb.wdata = '0;
-
-    led_wb_if.cyc = '0;
-    led_wb_if.stb = '0;
-    led_wb_if.lock = '0;
-    led_wb_if.we = '0;
-    led_wb_if.addr = '0;
-    led_wb_if.sel = '0;
-    led_wb_if.wdata = '0;
-
-    case (addressed_d)
-        DMEM:
-        begin
-            dmem_wb.cyc = wb_if.cyc;
-            dmem_wb.stb = wb_if.stb;
-            dmem_wb.lock = wb_if.lock;
-            dmem_wb.we = wb_if.we;
-            dmem_wb.addr = wb_if.addr;
-            dmem_wb.sel = wb_if.sel;
-            dmem_wb.wdata = wb_if.wdata;
-        end
-
-        LED_DRIVER:
-        begin
-            led_wb_if.cyc = wb_if.cyc;
-            led_wb_if.stb = wb_if.stb;
-            led_wb_if.lock = wb_if.lock;
-            led_wb_if.we = wb_if.we;
-            led_wb_if.addr = wb_if.addr;
-            led_wb_if.sel = wb_if.sel;
-            led_wb_if.wdata = wb_if.wdata;
-        end
-        default:;
-    endcase
-end
-
-// handle return signals
-always_comb
-begin
-    wb_if.rdata = '0;
-    wb_if.rty = '0;
-    wb_if.ack = '0;
-    wb_if.stall = '0;
-    wb_if.err = '0;
-
-    case (addressed_q)
-        DMEM:
-        begin
-            wb_if.rdata = dmem_wb.rdata;
-            wb_if.rty = dmem_wb.rty;
-            wb_if.ack = dmem_wb.ack;
-            wb_if.stall = dmem_wb.stall;
-            wb_if.err = dmem_wb.err;
-        end
-
-        LED_DRIVER:
-        begin
-            wb_if.rdata = led_wb_if.rdata;
-            wb_if.rty = led_wb_if.rty;
-            wb_if.ack = led_wb_if.ack;
-            wb_if.stall = led_wb_if.stall;
-            wb_if.err = led_wb_if.err;
-        end
-
-        default:;
-    endcase
-end
 
 // Core Top
 core_top core_i
@@ -202,9 +81,9 @@ core_top core_i
     .rstn_i(rstn_i),
 
     // Core WB LSU Interface
-    .lsu_wb_if(wb_if.MASTER),
+    .lsu_wb_if(lsu_wb_if),
     // Core WB Instruction Fetch interface
-    .instr_fetch_wb_if(imem_wb),
+    .instr_fetch_wb_if(instr_fetch_wb_if),
 
     // interrupts
     .irq_timer_i(irq_timer),

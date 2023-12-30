@@ -85,10 +85,10 @@ yarc_platform yarc_platform_i
     .rstn_i(rstn),
 
     // Core <-> DMEM
-    .dmem_wb(dmem_wb_if.MASTER),
+    .dmem_wb_if(dmem_wb_if),
 
     // Core <-> IMEM
-    .imem_wb(imem_wb_if.MASTER),
+    .instr_fetch_wb_if(imem_wb_if),
 
     // Platform <-> Peripherals
     .led_status_o(led)

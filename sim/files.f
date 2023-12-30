@@ -26,6 +26,7 @@ ${PRJ_DIR}/core/stage_mem2.sv
 ${PRJ_DIR}/core/lsu.sv
 
 // platform
+${PRJ_DIR}/platform/wb_interconnect.sv
 ${PRJ_DIR}/platform/timer.sv
 ${PRJ_DIR}/platform/led_driver.sv
 ${PRJ_DIR}/platform/yarc_platform.sv

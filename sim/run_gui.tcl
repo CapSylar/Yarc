@@ -326,7 +326,9 @@ add wave ${CORE}/controller_i/csr_mret_o;
 add wave ${CORE}/controller_i/csr_mcause_o;
 add wave ${CORE}/controller_i/is_trap_o;
 add wave ${CORE}/controller_i/exc_pc_o;
-
+# ---------------------------------------------------------
+add wave -divider {WB Interconnect}
+add wave ${PLATFORM}/wb_interconnect_i/*;
 # ---------------------------------------------------------
 # add wave -divider {Riscv Timer}
 # add wave ${PLATFORM}/timer_i/en_i;

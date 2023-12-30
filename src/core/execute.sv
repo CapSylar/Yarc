@@ -231,28 +231,29 @@ begin
     endcase
 end
 
+logic new_pc_en;
 // handle branches and jumps
 always_comb
 begin
-    new_pc_en_o = '0;
+    new_pc_en = '0;
     branch_target_o = '0;
 
     unique case (bnj_oper_i)
         BNJ_JAL:
         begin
-            new_pc_en_o = 1'b1;
+            new_pc_en = 1'b1;
             branch_target_o = pc_i + imm_i;
         end
 
         BNJ_JALR:
         begin
-            new_pc_en_o = 1'b1;
+            new_pc_en = 1'b1;
             branch_target_o = rs1_data + imm_i;
         end
 
         BNJ_BRANCH:
         begin
-            new_pc_en_o = cmp_result;
+            new_pc_en = cmp_result;
             branch_target_o = pc_i + imm_i;
         end
         default:;
@@ -291,5 +292,7 @@ begin : ex_mem_pip
         rd_addr_o <= rd_addr_i;
     end
 end
+
+assign new_pc_en_o = new_pc_en & !flush_i;
 
 endmodule: execute

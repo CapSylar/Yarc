@@ -1,7 +1,7 @@
 package platform_pkg;
 
 // The first half of the address space is for memories
-localparam logic [31:0] DMEM_BASE_ADDR =    32'h9000_0000;
+localparam logic [31:0] DMEM_BASE_ADDR =    32'h8000_0000;
 localparam logic [31:0] DMEM_MASK =         32'hF000_0000;
 
 // the second half for peripherals

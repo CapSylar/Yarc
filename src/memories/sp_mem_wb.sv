@@ -4,7 +4,7 @@
 // should map into xilinx's BRAM
 
 module sp_mem_wb
-#(parameter WIDTH = 32, parameter ADDR_WIDTH = 30, parameter SIZE_POT = 10, parameter string MEMFILE = "")
+#(parameter WIDTH = 32, parameter SIZE_POT = 10, parameter string MEMFILE = "")
 (
     input clk_i,
 
@@ -13,7 +13,7 @@ module sp_mem_wb
     input lock_i,
 
     input we_i,
-    input [ADDR_WIDTH-1:0] addr_i,
+    input [31:0] addr_i,
     input [WIDTH/8 -1:0] sel_i,
     input [WIDTH-1:0] wdata_i,
 
@@ -23,6 +23,10 @@ module sp_mem_wb
     output logic stall_o,
     output logic err_o
 );
+
+localparam ADDR_WIDTH = SIZE_POT;
+
+wire [ADDR_WIDTH-1:0] addr = addr_i[ADDR_WIDTH-1+2:2]; //  4-byte addressable memory
 
 logic [WIDTH-1:0] mem [2**SIZE_POT];
 logic [WIDTH-1:0] rdata_q, rdata_d;
@@ -41,7 +45,7 @@ begin: handle_reads
     rdata_d = rdata_q;
 
     if (is_addressed & !we_i)
-        rdata_d = mem[addr_i[SIZE_POT-1:0]];
+        rdata_d = mem[addr];
 end
 
 always_ff @(posedge clk_i)
@@ -51,7 +55,7 @@ begin : write_mem
         // for each byte, if the corresponding bit in wsel_byte in 1, write it
         for (int i = 0; i < WIDTH/8 ; ++i)
             if (sel_i[i])
-                mem[addr_i[SIZE_POT-1:0]][(i+1)*8 -1 -:8] <= wdata_i[(i+1)*8 -1 -:8];
+                mem[addr][(i+1)*8 -1 -:8] <= wdata_i[(i+1)*8 -1 -:8];
     end
 end
 

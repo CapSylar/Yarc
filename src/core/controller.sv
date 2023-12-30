@@ -181,13 +181,14 @@ assign forward_mem2_wb_data_o = is_mem_oper_load(mem2_wb_mem_oper_i) ? mem2_wb_l
 // a load in mem1 has the value we need
 wire value_in_mem1 = is_mem_oper_load(ex_mem1_mem_oper_i) &&
     ((ex_mem1_rd_addr_i == id_ex_rs1_addr_i) || (ex_mem1_rd_addr_i == id_ex_rs2_addr_i));
+
 // a load in mem2 has the value we need
-wire value_in_mem2 = is_mem_oper_load(mem1_mem2_mem_oper_i) &&
-    ((mem1_mem2_rd_addr_i == id_ex_rs1_addr_i) || (mem1_mem2_rd_addr_i == id_ex_rs2_addr_i));
+wire value_in_mem2_rs1 = is_mem_oper_load(mem1_mem2_mem_oper_i) && (mem1_mem2_rd_addr_i == id_ex_rs1_addr_i);
+wire value_in_mem2_rs2 = is_mem_oper_load(mem1_mem2_mem_oper_i) && (mem1_mem2_rd_addr_i == id_ex_rs2_addr_i);
 
 // we will stall the use instruction in EX only if the value is produced by a load in MEM1
 // or if the value is produced by a load in MEM2 but not when an instruction (non load) in MEM1 can produce the value
-wire load_use_hzrd = value_in_mem1 || (value_in_mem2 && !ex_mem1_forward_possible);
+wire load_use_hzrd = value_in_mem1 || (value_in_mem2_rs1 && !forward_ex_mem1_rs1) || (value_in_mem2_rs2 && !forward_ex_mem1_rs2);
 
 // For now, the cpu always predicts that the branch is not taken and continues
 // On a mispredict, flush the 2 instruction after the branch and continue from the new PC
@@ -245,20 +246,21 @@ begin
         trap_code: mem_trap_i[3:0]
     };
 
-    if_id_stall_o = load_use_hzrd || ex_is_csr_i || mem1_is_csr_i || mem2_is_csr_i;
-    if_id_flush_o = id_is_csr_i || ex_is_csr_i || mem1_is_csr_i || mem2_is_csr_i;
-
-    id_ex_flush_o = '0;
-    id_ex_stall_o = load_use_hzrd;
-
-    ex_mem1_stall_o = lsu_req_stall_i;
-    ex_mem1_flush_o = load_use_hzrd;
-
-    mem1_mem2_stall_o = mem2_stall_needed_i;
-    mem1_mem2_flush_o = lsu_req_stall_i;
-
+    // if stage N needs to stall, then so does stage N-1 and so on
     mem2_wb_stall_o = '0;
     mem2_wb_flush_o = mem2_stall_needed_i;
+
+    mem1_mem2_stall_o = mem2_stall_needed_i || mem2_wb_stall_o;
+    mem1_mem2_flush_o = lsu_req_stall_i;
+
+    ex_mem1_stall_o = lsu_req_stall_i || mem1_mem2_stall_o;
+    ex_mem1_flush_o = load_use_hzrd;
+
+    id_ex_stall_o = load_use_hzrd || ex_mem1_stall_o;
+    id_ex_flush_o = '0;
+
+    if_id_stall_o = ex_is_csr_i || mem1_is_csr_i || mem2_is_csr_i || id_ex_stall_o;
+    if_id_flush_o = id_is_csr_i || ex_is_csr_i || mem1_is_csr_i || mem2_is_csr_i;
 
     unique case (current_state)
         DECODE:

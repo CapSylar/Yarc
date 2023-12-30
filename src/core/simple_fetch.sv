@@ -141,7 +141,7 @@ begin : pfetch_sm
             // wait for any outstanding transaction to finish
             // then restart the pipeline
 
-            if (out_acks_q == '0)
+            if (out_acks_q == '0 && !flush_i && !stall_i)
                 next_state = REQUESTING;
         end
 

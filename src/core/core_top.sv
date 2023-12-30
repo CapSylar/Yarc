@@ -106,6 +106,7 @@ logic mem2_wb_write_rd;
 logic [4:0] mem2_wb_rd_addr;
 logic [31:0] mem2_wb_alu_result;
 logic [31:0] mem2_wb_lsu_rdata;
+logic mem2_stall_needed;
 mem_oper_t mem2_wb_mem_oper;
 logic [31:0] csr_wdata;
 logic [11:0] csr_waddr;

@@ -20,44 +20,46 @@ begin
     end
 end
 
-logic rstn, rstn_t;
+logic rstn = '0;
+logic rstn_t = '0;
 
 // Instantiate Core with Memories
 // ******************************************************************************************
 
-logic imem_en;
-logic [31:0] imem_raddr;
-logic [31:0] imem_rdata;
-logic [31:0] dmem_addr;
-logic dmem_en;
-logic dmem_read;
-logic [31:0] dmem_rdata;
-logic [3:0] dmem_wsel_byte;
-logic [31:0] dmem_wdata;
+wishbone_if imem_wb_if();
+wishbone_if dmem_wb_if();
+
+localparam SIZE_POT = 14;
+dp_mem_wb #(.WIDTH(32), .SIZE_POT(SIZE_POT), .MEMFILE(MEMFILE))
+mem_i
+(
+    .clk_i(clk),
+    .rstn_i(rstn),
+
+    // port1 - R
+    .wb_if1(imem_wb_if.SLAVE),
+
+    // port2 - R/W
+    .wb_if2(dmem_wb_if.SLAVE)
+);
 
 yarc_platform yarc_platform_i
 (
     .clk_i(clk),
     .rstn_i(rstn),
 
-    // Core <-> Imem interface
-    .imem_en_o(imem_en),
-    .imem_raddr_o(imem_raddr),
-    .imem_rdata_i(imem_rdata),
+    // Core <-> DMEM
+    .dmem_wb(dmem_wb_if.MASTER),
 
-    // Core <-> Dmem interface
-    .dmem_en_o(dmem_en),
-    .dmem_addr_o(dmem_addr),
-    // read port
-    .dmem_read_o(dmem_read),
-    .dmem_rdata_i(dmem_rdata),
-    // write port
-    .dmem_wsel_byte_o(dmem_wsel_byte),
-    .dmem_wdata_o(dmem_wdata)
+    // Core <-> IMEM
+    .imem_wb(imem_wb_if.MASTER),
+
+    // Platform <-> Peripherals
+    .led_status_o()
 );
 
 exc_t trap;
-assign trap = yarc_platform_i.core_i.mem_trap;
+assign trap = yarc_platform_i.core_i.mem2_trap;
 
 logic stop_sim;
 
@@ -65,23 +67,6 @@ always_ff @(posedge clk, negedge rstn)
     if (!rstn) stop_sim <= '0;
     else stop_sim <= (trap == ECALL_MMODE || trap == ECALL_UMODE);
 
-localparam DEPTH = 14;
-
-dp_mem #(.WIDTH(32), .DEPTH(DEPTH), .MEMFILE(MEMFILE))
-mem_i
-(
-    .clk_i(clk),
-
-    .en_a_i(imem_en),
-    .addr_a_i(imem_raddr[DEPTH+2-1:2]),
-    .rdata_a_o(imem_rdata),
-
-    .en_b_i(dmem_en),
-    .addr_b_i(dmem_addr[DEPTH+2-1:2]),
-    .rdata_b_o(dmem_rdata),
-    .wsel_byte_b_i(dmem_wsel_byte),
-    .wdata_b_i(dmem_wdata)
-);
 
 // ******************************************************************************************
 task automatic eval_result(output success);
@@ -119,11 +104,9 @@ end
 
 initial
 begin
-    rstn_t = 1;
-    @(posedge clk);
-    rstn_t = 0;
-    repeat(2) @(posedge clk);
-    rstn_t = 1;
+    rstn_t = 1'b0;
+    repeat(5) @(posedge clk);
+    rstn_t = 1'b1;
 
     $display("Running Riscv Tests!");
     run_test();
@@ -175,7 +158,7 @@ task automatic dump_sig();
     end
 
     i = 0;
-    for (bit [DEPTH+2-1:2] start = begin_signature[DEPTH+2-1:2]; start < end_signature[DEPTH+2-1:2]; start += 4)
+    for (bit [SIZE_POT+2-1:2] start = begin_signature[SIZE_POT+2-1:2]; start < end_signature[SIZE_POT+2-1:2]; start += 4)
     begin
         for (int i = 3; i >= 0; --i) // 4 32-bit words per line
         begin

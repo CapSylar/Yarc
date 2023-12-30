@@ -47,7 +47,7 @@ sp_mem_wb #(.MEMFILE(IMEMFILE), .SIZE_POT(15)) imem
     .lock_i(imem_wb_if.lock),
 
     .we_i(imem_wb_if.we),
-    .addr_i(imem_wb_if.addr[31:2]), // 4-byte addressable
+    .addr_i(imem_wb_if.addr), // 4-byte addressable
     .sel_i(imem_wb_if.sel),
     .wdata_i(imem_wb_if.wdata),
 
@@ -70,7 +70,7 @@ sp_mem_wb #(.MEMFILE(DMEMFILE), .SIZE_POT(15)) dmem
     .lock_i(dmem_wb_if.lock),
 
     .we_i(dmem_wb_if.we),
-    .addr_i(dmem_wb_if.addr[31:2]), // 4-byte addressable
+    .addr_i(dmem_wb_if.addr), // 4-byte addressable
     .sel_i(dmem_wb_if.sel),
     .wdata_i(dmem_wb_if.wdata),
 

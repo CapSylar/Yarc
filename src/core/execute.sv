@@ -293,6 +293,6 @@ begin : ex_mem_pip
     end
 end
 
-assign new_pc_en_o = new_pc_en & !flush_i;
+assign new_pc_en_o = new_pc_en & ~(flush_i | stall_i);
 
 endmodule: execute

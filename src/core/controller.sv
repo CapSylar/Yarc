@@ -175,7 +175,7 @@ assign forward_mem2_wb_data_o = is_mem_oper_load(mem2_wb_mem_oper_i) ? mem2_wb_l
 // a use instruction that directly procedes a load instruction will need to stall for 2 cycles
 // the stalled instruction will be held in the Decode stage for 2 cycles
 
-// to detect this case, the use instruciton will be stalled in the EX stage until the forwarding pass
+// to detect this case, the use instruction will be stalled in the EX stage until the forwarding pass
 // can satisfy its requirements
 
 // a load in mem1 has the value we need
@@ -254,7 +254,12 @@ begin
     mem1_mem2_flush_o = lsu_req_stall_i;
 
     ex_mem1_stall_o = lsu_req_stall_i || mem1_mem2_stall_o;
-    ex_mem1_flush_o = load_use_hzrd;
+
+    // let stall take priority over flushes, this fixes the case where an instruction say X is stuck in ex needing an operand which is yet to become ready
+    // normally we would stakk if - id and flush ex but if a later stage like mem1 or mem2 needs to stall, we can't flush ex since that
+    // would erase the instruction older than X
+
+    ex_mem1_flush_o = load_use_hzrd & !ex_mem1_stall_o;
 
     id_ex_stall_o = load_use_hzrd || ex_mem1_stall_o;
     id_ex_flush_o = '0;

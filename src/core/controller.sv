@@ -61,14 +61,11 @@ import csr_pkg::*;
 
     // input [31:0] if_pc_i, // the IF PC
 
-    // input if_id_instr_valid_i,
-    // input [31:0] if_id_pc_i,
-
-    // input id_ex_instr_valid_i,
-    // input [31:0] id_ex_pc_i,
-
-    // input ex_mem_instr_valid_i,
-    // input [31:0] ex_mem_pc_i,
+    input if_id_instr_valid_i,
+    input id_ex_instr_valid_i,
+    input ex_mem1_instr_valid_i,
+    input mem1_mem2_instr_valid_i,
+    input mem2_wb_instr_valid_i,
 
     // to handle CSR read/write side effects
     input id_is_csr_i,
@@ -217,22 +214,44 @@ begin
     endcase
 end
 
-typedef enum logic [1:0] 
+// any instruction still in the pipeline ?
+wire pipeline_empty = !(if_id_instr_valid_i ||
+                        id_ex_instr_valid_i ||
+                        ex_mem1_instr_valid_i ||
+                        mem1_mem2_instr_valid_i ||
+                        mem2_wb_instr_valid_i);
+
+logic int_acc_q, int_acc_d;
+logic int_acc_clear;
+
+always_ff @(posedge clk_i)
+begin
+    if (!rstn_i)
+        int_acc_q <= '0;
+    else if (handle_irq)
+    begin
+        int_acc_q <= 1'b1;
+    end
+    else if (int_acc_clear)
+    begin
+        int_acc_q <= '0;
+    end
+end
+
+enum
 {
     DECODE,
     IRQ_TAKEN
-} state_t;
-
-state_t current_state, next_state;
+} state, next;
 
 // next state logic
-always_ff @(posedge clk_i, negedge rstn_i)
-    if (!rstn_i) current_state <= DECODE;
-    else current_state <= next_state;
+always_ff @(posedge clk_i)
+    if (!rstn_i) state <= DECODE;
+    else state <= next;
 
 always_comb
 begin
-    next_state = current_state;
+    next = state;
 
     is_trap_o = '0;
     new_pc_en_o = '0;
@@ -256,7 +275,7 @@ begin
     ex_mem1_stall_o = lsu_req_stall_i || mem1_mem2_stall_o;
 
     // let stall take priority over flushes, this fixes the case where an instruction say X is stuck in ex needing an operand which is yet to become ready
-    // normally we would stakk if - id and flush ex but if a later stage like mem1 or mem2 needs to stall, we can't flush ex since that
+    // normally we would stall if - id and flush ex but if a later stage like mem1 or mem2 needs to stall, we can't flush ex since that
     // would erase the instruction older than X
 
     ex_mem1_flush_o = load_use_hzrd & !ex_mem1_stall_o;
@@ -267,12 +286,14 @@ begin
     if_id_stall_o = ex_is_csr_i || mem1_is_csr_i || mem2_is_csr_i || id_ex_stall_o;
     if_id_flush_o = id_is_csr_i || ex_is_csr_i || mem1_is_csr_i || mem2_is_csr_i;
 
-    unique case (current_state)
+    unique case (state)
         DECODE:
         begin
             // instruction in the MEM2 stage raised a trap
             if (mem_trap_i != NO_TRAP)
             begin
+                int_acc_clear = 1'b1;
+
                 id_ex_flush_o = 1'b1;
                 ex_mem1_flush_o = 1'b1;
 
@@ -290,21 +311,40 @@ begin
                     pc_sel_o = PC_TRAP;
                 end
             end
-            else if (handle_irq)
+            else if (int_acc_q)
             begin
+                // if_id_stall = 1'b1;
+                // // if_id_flush = 1'b1;
+
+                // // stall if, waiting for the entire pipeline to get cleared
+                // // then jump to the handler and adjust the core's state
+                // if (pipeline_empty)
+                // begin
+                //     pc_sel_o = PC_TRAP;
+                //     new_pc_en_o = 1'b1;
+                //     is_trap_o = 1'b1;
+
+                //     csr_mcause_o = '{
+                //         irq: 1'b1,
+                //         trap_code: interrupt_code
+                //     };
+
+                //     exc_pc_o = arch_pc;
+                // end
+
                 // the instruction currently commiting in the MEM stage will be allowed to finish
                 // but the EX_MEM and ID_EX pipeline registers must be flushed
 
-                id_ex_flush_o = 1'b1;
-                ex_mem1_flush_o = 1'b1;
-                pc_sel_o = PC_TRAP;
-                new_pc_en_o = 1'b1;
-                is_trap_o = 1'b1;
+                // id_ex_flush_o = 1'b1;
+                // ex_mem1_flush_o = 1'b1;
+                // pc_sel_o = PC_TRAP;
+                // new_pc_en_o = 1'b1;
+                // is_trap_o = 1'b1;
 
-                csr_mcause_o = '{
-                    irq: 1'b1,
-                    trap_code: interrupt_code
-                };
+                // csr_mcause_o = '{
+                //     irq: 1'b1,
+                //     trap_code: interrupt_code
+                // };
 
                 // we need the pipeline to restart from the first valid instruction that is younger
                 // that the one that will retire in this cycle
@@ -334,5 +374,13 @@ begin
         default:;
     endcase
 end
+
+// always_ff @(posedge clk_i)
+// begin
+//     if (!rstn_i)
+//         int_acc_q <= '0;
+//     else
+//         int_acc_d <= int_acc_q;
+// end
 
 endmodule: controller

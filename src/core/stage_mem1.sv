@@ -27,6 +27,7 @@ import riscv_pkg::*;
     input mem_oper_t mem_oper_i,
     input [31:0] csr_wdata_i,
     input [11:0] csr_waddr_i,
+    input instr_valid_i,
     input is_csr_i,
     input csr_we_i,
     input exc_t trap_i,
@@ -36,6 +37,7 @@ import riscv_pkg::*;
     input [4:0] rd_addr_i,
 
     // MEM1/MEM2 pipeline registers
+    output logic instr_valid_o,
     output logic is_csr_o,
     output logic csr_we_o,
     output logic [11:0] csr_waddr_o,
@@ -125,6 +127,7 @@ begin
         csr_we_o <= '0;
         mem_oper_o <= MEM_NOP;
         trap_o <= NO_TRAP;
+        instr_valid_o <= '0;
     end
     else if (!stall_i)
     begin
@@ -137,6 +140,7 @@ begin
         csr_waddr_o <= csr_waddr_i;
         csr_wdata_o <= csr_wdata_i;
         trap_o <= trap_i;
+        instr_valid_o <= instr_valid_i;
     end
 end
 

@@ -9,27 +9,30 @@ add wave ${CORE}/rstn_i;
 
 # ---------------------------------------------------------
 add wave -divider {FETCH}
-add wave -color Gold ${CORE}/simple_fetch_i/valid_o;
-add wave -color Gold ${CORE}/simple_fetch_i/instr_o;
-add wave -color Gold ${CORE}/simple_fetch_i/pc_o;
-add wave ${CORE}/simple_fetch_i/stall_i;
-add wave ${CORE}/simple_fetch_i/flush_i;
-add wave ${CORE}/simple_fetch_i/new_pc_en_i;
-add wave ${CORE}/simple_fetch_i/pc_sel_i;
-add wave ${CORE}/simple_fetch_i/branch_target_i;
-add wave ${CORE}/simple_fetch_i/csr_mepc_i;
-add wave ${CORE}/simple_fetch_i/mcause_i;
-add wave ${CORE}/simple_fetch_i/mtvec_i;
+add wave -color Gold ${CORE}/wb_prefetch_i/valid_o;
+add wave -color Gold ${CORE}/wb_prefetch_i/instr_o;
+add wave -color Gold ${CORE}/wb_prefetch_i/pc_o;
+add wave ${CORE}/wb_prefetch_i/stall_i;
+add wave ${CORE}/wb_prefetch_i/flush_cache_i;
+add wave ${CORE}/wb_prefetch_i/new_pc_en_i;
+add wave ${CORE}/wb_prefetch_i/pc_sel_i;
+add wave ${CORE}/wb_prefetch_i/branch_target_i;
+add wave ${CORE}/wb_prefetch_i/csr_mepc_i;
+add wave ${CORE}/wb_prefetch_i/mcause_i;
+add wave ${CORE}/wb_prefetch_i/mtvec_i;
 
-add wave -group {FETCH WISHBONE} -color Gold ${CORE}/simple_fetch_i/wb_if/*;
+add wave -group {FETCH WISHBONE} -color Gold ${CORE}/wb_prefetch_i/wb_if/*;
 
-add wave ${CORE}/simple_fetch_i/current_state;
-add wave ${CORE}/simple_fetch_i/next_state;
-add wave ${CORE}/simple_fetch_i/raddr_d;
-add wave ${CORE}/simple_fetch_i/raddr_q;
-add wave ${CORE}/simple_fetch_i/arch_pc_d;
-add wave ${CORE}/simple_fetch_i/arch_pc_q;
-add wave ${CORE}/simple_fetch_i/exc_target_addr;
+add wave ${CORE}/wb_prefetch_i/state;
+add wave ${CORE}/wb_prefetch_i/next;
+add wave ${CORE}/wb_prefetch_i/fetch_pc_d;
+add wave ${CORE}/wb_prefetch_i/fetch_pc_q;
+add wave ${CORE}/wb_prefetch_i/arch_pc_d;
+add wave ${CORE}/wb_prefetch_i/arch_pc_q;
+add wave ${CORE}/wb_prefetch_i/exc_target_addr;
+
+add wave ${CORE}/wb_prefetch_i/*;
+add wave ${CORE}/wb_prefetch_i/sync_fifo_i/*;
 
 # ---------------------------------------------------------
 add wave -divider {REGISTER FILE}
@@ -304,8 +307,8 @@ add wave -color Turquoise ${CORE}/controller_i/mem1_mem2_stall_o;
 add wave -color Turquoise ${CORE}/controller_i/mem2_wb_flush_o;
 add wave -color Turquoise ${CORE}/controller_i/mem2_wb_stall_o;
 
-add wave ${CORE}/controller_i/current_state;
-add wave ${CORE}/controller_i/next_state;
+add wave ${CORE}/controller_i/state;
+add wave ${CORE}/controller_i/next;
 
 # add wave ${CORE}/controller_i/if_pc_i;
 # add wave ${CORE}/controller_i/if_id_instr_valid_i;

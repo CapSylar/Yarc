@@ -13,6 +13,7 @@ import riscv_pkg::*;
     output csr_we_o,
 
     // from MEM1 stage
+    input instr_valid_i,
     input [31:0] alu_result_i,
     input mem_oper_t mem_oper_i,
     input [31:0] csr_wdata_i,
@@ -29,6 +30,7 @@ import riscv_pkg::*;
     input [31:0] lsu_rdata_i,
 
     // MEM/WB pipeline registers
+    output logic instr_valid_o,
     output logic write_rd_o,
     output logic [4:0] rd_addr_o,
     output logic [31:0] alu_result_o,
@@ -98,6 +100,7 @@ begin : format_rdata
         begin
             rdata = lsu_rdata_i;
         end
+        default:;
     endcase
 end
 
@@ -107,6 +110,7 @@ begin
     begin
         write_rd_o <= '0;
         mem_oper_o <= MEM_NOP;
+        instr_valid_o <= '0;
     end
     else if (!stall_i)
     begin
@@ -115,6 +119,7 @@ begin
         rd_addr_o <= rd_addr_i;
         alu_result_o <= alu_result_i;
         lsu_rdata_o <= rdata;
+        instr_valid_o <= instr_valid_i;
     end
 end
 

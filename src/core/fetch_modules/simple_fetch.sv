@@ -18,7 +18,7 @@ import csr_pkg::*;
     output logic [31:0] pc_o, // program counter of the instruction presented to the cpu
 
     input stall_i, // is the cpu stalled ?
-    input flush_i,
+    input flush_i, // flushes and re-fetches all instructions after pc_o
 
     input new_pc_en_i, // load a new pc
     input pc_sel_t pc_sel_i, // which pc to load from the addresses below
@@ -123,7 +123,7 @@ begin : pfetch_sm
 
             if (flush_i)
             begin
-                raddr_d = arch_pc_q + 4; // re-fetch the pc after the r_addrq
+                raddr_d = arch_pc_q + 4; // re-fetch the pc after the pc_o
                 next_state = WAIT_ZERO_OUTSTANDING;
             end
             else if (stall_i)

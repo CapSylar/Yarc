@@ -10,13 +10,19 @@ ${PRJ_DIR}/platform/includes/platform_pkg.sv
 // interfaces
 ${PRJ_DIR}/interfaces/wishbone_if.sv
 
+// utils
+${PRJ_DIR}/utils/sync_fifo.sv
+
+// fetch modules
+// ${PRJ_DIR}/core/simple_fetch.sv
+${PRJ_DIR}/core/fetch_modules/wb_prefetch.sv
+
 // core
 ${PRJ_DIR}/core/core_top.sv
 ${PRJ_DIR}/core/decode.sv
 ${PRJ_DIR}/core/controller.sv
 ${PRJ_DIR}/core/execute.sv
 ${PRJ_DIR}/core/reg_file.sv
-${PRJ_DIR}/core/simple_fetch.sv
 ${PRJ_DIR}/core/write_back.sv
 ${PRJ_DIR}/core/perf_counter.sv
 ${PRJ_DIR}/core/cs_registers.sv

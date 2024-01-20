@@ -97,12 +97,14 @@ logic [31:0] mem1_mem2_alu_result;
 logic [31:0] mem_wb_dmem_rdata;
 exc_t mem1_mem2_trap;
 logic mem1_mem2_is_csr;
+logic mem1_mem2_instr_valid;
 logic mem1_mem2_csr_we;
 logic [31:0] mem1_mem2_csr_wdata;
 logic [11:0] mem1_mem2_csr_waddr;
 
 // Driven by the Mem2 stage
 logic mem2_wb_write_rd;
+logic mem2_wb_instr_valid;
 logic [4:0] mem2_wb_rd_addr;
 logic [31:0] mem2_wb_alu_result;
 logic [31:0] mem2_wb_lsu_rdata;
@@ -149,7 +151,7 @@ logic is_trap;
 logic [31:0] exc_pc;
 
 // Fetch Stage
-simple_fetch simple_fetch_i
+wb_prefetch wb_prefetch_i
 (
     .clk_i(clk_i),
     .rstn_i(rstn_i),
@@ -162,7 +164,7 @@ simple_fetch simple_fetch_i
     .pc_o(if_id_pc),
 
     .stall_i(if_id_stall),
-    .flush_i(if_id_flush),
+    .flush_cache_i(if_id_flush),
 
     // target addresses
     .branch_target_i(branch_target),
@@ -388,6 +390,7 @@ stage_mem1 stage_mem1_i
 
     .csr_wdata_i(ex_mem1_csr_wdata),
     .csr_waddr_i(ex_mem1_csr_waddr),
+    .instr_valid_i(ex_mem1_instr_valid),
     .is_csr_i(ex_mem1_is_csr),
     .csr_we_i(ex_mem1_csr_we),
 
@@ -398,6 +401,7 @@ stage_mem1 stage_mem1_i
     .rd_addr_i(ex_mem1_rd_addr),
 
     // MEM1/MEM2 pipeline registers
+    .instr_valid_o(mem1_mem2_instr_valid),
     .is_csr_o(mem1_mem2_is_csr),
     .csr_we_o(mem1_mem2_csr_we),
     .csr_wdata_o(mem1_mem2_csr_wdata),
@@ -425,6 +429,7 @@ stage_mem2 stage_mem2_i
     .csr_we_o(csr_we),
     
     // from MEM1 stage
+    .instr_valid_i(mem1_mem2_instr_valid),
     .alu_result_i(mem1_mem2_alu_result),
     .mem_oper_i(mem1_mem2_mem_oper),
     .csr_wdata_i(mem1_mem2_csr_wdata),
@@ -441,6 +446,7 @@ stage_mem2 stage_mem2_i
     .lsu_rdata_i(lsu_rdata),
 
     // pipeline registers
+    .instr_valid_o(mem2_wb_instr_valid),
     .write_rd_o(mem2_wb_write_rd),
     .rd_addr_o(mem2_wb_rd_addr),
     .alu_result_o(mem2_wb_alu_result),
@@ -551,13 +557,11 @@ controller controller_i
     .forward_mem2_wb_rs2_o(forward_mem2_wb_rs2),
     .forward_mem2_wb_data_o(forward_mem2_wb_data),
 
-    // .if_pc_i(imem_raddr_o),
-    // .if_id_instr_valid_i(if_id_instr_valid),
-    // .if_id_pc_i(if_id_pc),
-    // .id_ex_instr_valid_i(id_ex_instr_valid),
-    // .id_ex_pc_i(id_ex_pc),
-    // .ex_mem1_instr_valid_i(ex_mem1_instr_valid),
-    // .ex_mem1_pc_i(ex_mem1_pc),
+    .if_id_instr_valid_i('0),
+    .id_ex_instr_valid_i('0),
+    .ex_mem1_instr_valid_i('0),
+    .mem1_mem2_instr_valid_i('0),
+    .mem2_wb_instr_valid_i('0),
 
     // to cs registers
     .csr_mret_o(is_mret),

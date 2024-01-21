@@ -1,5 +1,5 @@
 /*
-    2023 with love
+    2023-2024 with love
  __     __               _____                 _______          
  \ \   / /              / ____|               |__   __|         
   \ \_/ /_ _ _ __ ___  | |     ___  _ __ ___     | | ___  _ __  
@@ -30,9 +30,9 @@ import csr_pkg::*;
 // Signal definitions
 
 // Driven by the Fetch stage
-logic if_id_instr_valid;
-logic [31:0] if_id_instr;
-logic [31:0] if_id_pc;
+logic if_instr_valid;
+logic [31:0] if_instr;
+logic [31:0] if_pc;
 
 // Driven by the Register file
 logic [31:0] rs1_data, rs2_data;
@@ -133,8 +133,8 @@ logic forward_mem2_wb_rs2;
 logic [31:0] forward_ex_mem1_data;
 logic [31:0] forward_mem1_mem2_data;
 logic [31:0] forward_mem2_wb_data;
-logic if_id_stall;
-logic id_id_flush;
+logic if_stall;
+logic if_flush;
 logic id_ex_flush;
 logic id_ex_stall;
 logic ex_mem1_flush;
@@ -159,12 +159,12 @@ wb_prefetch wb_prefetch_i
     // IMEM Wishbone interface
     .wb_if(instr_fetch_wb_if),
 
-    .valid_o(if_id_instr_valid),
-    .instr_o(if_id_instr),
-    .pc_o(if_id_pc),
+    .valid_o(if_instr_valid),
+    .instr_o(if_instr),
+    .pc_o(if_pc),
 
-    .stall_i(if_id_stall),
-    .flush_cache_i(if_id_flush),
+    .stall_i(if_stall),
+    .flush_cache_i(if_flush),
 
     // target addresses
     .branch_target_i(branch_target),
@@ -238,7 +238,7 @@ decode decode_i
 (
     .clk_i(clk_i),
     .rstn_i(rstn_i),
-    .instr_valid_i(if_id_instr_valid),
+    .instr_valid_i(if_instr_valid),
 
     // from csr unit
     .current_plvl_i(current_plvl),
@@ -257,8 +257,8 @@ decode decode_i
     .csr_rdata_i(csr_rdata),
 
     // from IF stage
-    .instr_i(if_id_instr), // instruction
-    .pc_i(if_id_pc), // pc of the instruction
+    .instr_i(if_instr), // instruction
+    .pc_i(if_pc), // pc of the instruction
 
     // ID/EX pipeline registers ************************************************
 
@@ -506,6 +506,9 @@ controller controller_i
     .clk_i(clk_i),
     .rstn_i(rstn_i),
 
+    // from IF
+    .if_pc_i(if_pc),
+
     // from ID stage
     .id_rs1_addr_i(rs1_addr),
     .id_rs2_addr_i(rs2_addr),
@@ -521,6 +524,7 @@ controller controller_i
     .ex_new_pc_en_i(ex_new_pc_en),
 
     // from EX/MEM1
+    .ex_mem1_pc_i(ex_mem1_pc),
     .ex_mem1_rd_addr_i(ex_mem1_rd_addr),
     .ex_mem1_write_rd_i(ex_mem1_write_rd),
     .ex_mem1_mem_oper_i(ex_mem1_mem_oper),
@@ -557,11 +561,11 @@ controller controller_i
     .forward_mem2_wb_rs2_o(forward_mem2_wb_rs2),
     .forward_mem2_wb_data_o(forward_mem2_wb_data),
 
-    .if_id_instr_valid_i('0),
-    .id_ex_instr_valid_i('0),
-    .ex_mem1_instr_valid_i('0),
-    .mem1_mem2_instr_valid_i('0),
-    .mem2_wb_instr_valid_i('0),
+    .if_id_instr_valid_i(if_instr_valid),
+    .id_ex_instr_valid_i(id_ex_instr_valid),
+    .ex_mem1_instr_valid_i(ex_mem1_instr_valid),
+    .mem1_mem2_instr_valid_i(mem1_mem2_instr_valid),
+    .mem2_wb_instr_valid_i(mem2_wb_instr_valid),
 
     // to cs registers
     .csr_mret_o(is_mret),
@@ -588,9 +592,9 @@ controller controller_i
     .id_ex_flush_o(id_ex_flush),
     .id_ex_stall_o(id_ex_stall),
 
-    // hazard lines to IF/EX
-    .if_id_stall_o(if_id_stall),
-    .if_id_flush_o(if_id_flush),
+    // hazard lines to IF
+    .if_stall_o(if_stall),
+    .if_flush_o(if_flush),
 
     // flush/stall to EX/MEM1
     .ex_mem1_stall_o(ex_mem1_stall),

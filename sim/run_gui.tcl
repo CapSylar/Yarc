@@ -298,8 +298,8 @@ add wave -color Turquoise ${CORE}/controller_i/forward_mem2_wb_rs2_o;
 add wave -color Turquoise ${CORE}/controller_i/forward_mem2_wb_data_o;
 add wave -color Turquoise ${CORE}/controller_i/id_ex_flush_o;
 add wave -color Turquoise ${CORE}/controller_i/id_ex_stall_o;
-add wave -color Turquoise ${CORE}/controller_i/if_id_stall_o;
-add wave -color Turquoise ${CORE}/controller_i/if_id_flush_o;
+add wave -color Turquoise ${CORE}/controller_i/if_stall_o;
+add wave -color Turquoise ${CORE}/controller_i/if_flush_o;
 add wave -color Turquoise ${CORE}/controller_i/ex_mem1_flush_o;
 add wave -color Turquoise ${CORE}/controller_i/ex_mem1_stall_o;
 add wave -color Turquoise ${CORE}/controller_i/mem1_mem2_flush_o;
@@ -333,18 +333,12 @@ add wave ${CORE}/controller_i/exc_pc_o;
 add wave -divider {WB Interconnect}
 add wave ${PLATFORM}/wb_interconnect_i/*;
 # ---------------------------------------------------------
-# add wave -divider {Riscv Timer}
-# add wave ${PLATFORM}/timer_i/en_i;
-# add wave ${PLATFORM}/timer_i/read_i;
-# add wave ${PLATFORM}/timer_i/addr_i;
-# add wave ${PLATFORM}/timer_i/rdata_o;
-# add wave ${PLATFORM}/timer_i/wdata_i;
-# add wave ${PLATFORM}/timer_i/timer_int_o;
-
-# add wave ${PLATFORM}/timer_i/mtime_d;
-# add wave ${PLATFORM}/timer_i/mtime_q;
-# add wave ${PLATFORM}/timer_i/mtimecmp_d;
-# add wave ${PLATFORM}/timer_i/mtimecmp_q;
+add wave -divider {Riscv Timer}
+add wave ${PLATFORM}/mtimer_i/timer_int_o;
+add wave ${PLATFORM}/mtimer_i/mtime_d;
+add wave ${PLATFORM}/mtimer_i/mtime_q;
+add wave ${PLATFORM}/mtimer_i/mtimecmp_d;
+add wave ${PLATFORM}/mtimer_i/mtimecmp_q;
 
 # ---------------------------------------------------------
 add wave -divider {Platform}

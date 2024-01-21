@@ -56,6 +56,7 @@ next N acks */
 logic [INSTR_BUFFER_SIZE_POT:0] acks_to_ignore_q, acks_to_ignore_d;
 
 wire [INSTR_BUFFER_SIZE_POT:0] max_ff_count = {1'b1, {(INSTR_BUFFER_SIZE_POT){1'b0}}};
+
 wire wb_req_ok = stb && cyc && !wb_if.stall; // wishbone request accepted by the slave
 
 // instruction buffer fifo
@@ -103,8 +104,10 @@ begin
     endcase
 end
 
-enum {BOOT, REQUESTING, BUFFER_FULL} state, next;
+// fifo has reached max elements minus one
+wire ff_one_till_full = (req_pending_q + ff_fill_count == (max_ff_count-1));
 
+enum {BOOT, REQUESTING, BUFFER_FULL} state, next;
 always_ff @(posedge clk_i)
     if (!rstn_i) state <= BOOT;
     else         state <= next;
@@ -137,7 +140,7 @@ begin: wb_sm
 
             // only issue requests whose responses we have a place to store
             // else, we have to stop issuing requests
-            if ((req_pending_q + ff_fill_count == (max_ff_count-1)) && wb_req_ok)
+            if (ff_one_till_full && wb_req_ok && !ff_clear && !ff_rd)
                 next = BUFFER_FULL;
         end
         BUFFER_FULL:

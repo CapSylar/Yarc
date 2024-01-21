@@ -29,7 +29,6 @@ import platform_pkg::*;
 );
 
 wishbone_if lsu_wb_if();
-wishbone_if led_wb_if();
 
 // Wb interconnect
 wishbone_if slave_wb_if [NUM_SLAVES]();
@@ -62,6 +61,22 @@ assign slave_wb_if[DMEM_SLAVE_INDEX].rty = dmem_wb_if.rty;
 assign slave_wb_if[DMEM_SLAVE_INDEX].ack = dmem_wb_if.ack;
 assign slave_wb_if[DMEM_SLAVE_INDEX].stall = dmem_wb_if.stall;
 assign slave_wb_if[DMEM_SLAVE_INDEX].err = dmem_wb_if.err;
+
+// interrupt lines
+logic irq_timer;
+logic irq_external;
+assign irq_external = '0;
+
+// mtimer
+mtimer mtimer_i
+(
+    .clk_i(clk_i),
+    .rstn_i(rstn_i),
+
+    .wb_if(slave_wb_if[MTIMER_SLAVE_INDEX]),
+
+    .timer_int_o(irq_timer)
+);
 
 // led driver
 led_driver led_driver_i

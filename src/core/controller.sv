@@ -8,6 +8,9 @@ import csr_pkg::*;
     input clk_i,
     input rstn_i,
 
+    // from IF
+    input [31:0] if_pc_i,
+
     // ID stage
     input [4:0] id_rs1_addr_i,
     input [4:0] id_rs2_addr_i,
@@ -23,6 +26,7 @@ import csr_pkg::*;
     input ex_new_pc_en_i,
 
     // from EX/MEM1
+    input [31:0] ex_mem1_pc_i,
     input [4:0] ex_mem1_rd_addr_i,
     input ex_mem1_write_rd_i,
     input mem_oper_t ex_mem1_mem_oper_i,
@@ -59,8 +63,6 @@ import csr_pkg::*;
     output logic forward_mem2_wb_rs2_o,
     output logic [31:0] forward_mem2_wb_data_o,
 
-    // input [31:0] if_pc_i, // the IF PC
-
     input if_id_instr_valid_i,
     input id_ex_instr_valid_i,
     input ex_mem1_instr_valid_i,
@@ -93,8 +95,8 @@ import csr_pkg::*;
     output logic id_ex_stall_o,
 
     // flush/stall to IF/EX
-    output logic if_id_stall_o,
-    output logic if_id_flush_o,
+    output logic if_stall_o,
+    output logic if_flush_o,
 
     // flush/stall to EX/MEM1
     output logic ex_mem1_stall_o,
@@ -215,33 +217,18 @@ begin
 end
 
 // any instruction still in the pipeline ?
-wire pipeline_empty = !(if_id_instr_valid_i ||
-                        id_ex_instr_valid_i ||
+wire pipeline_empty = !(id_ex_instr_valid_i ||
                         ex_mem1_instr_valid_i ||
                         mem1_mem2_instr_valid_i ||
                         mem2_wb_instr_valid_i);
 
-logic int_acc_q, int_acc_d;
-logic int_acc_clear;
-
-always_ff @(posedge clk_i)
-begin
-    if (!rstn_i)
-        int_acc_q <= '0;
-    else if (handle_irq)
-    begin
-        int_acc_q <= 1'b1;
-    end
-    else if (int_acc_clear)
-    begin
-        int_acc_q <= '0;
-    end
-end
+wire trap_happened = (mem_trap_i != NO_TRAP);
+logic take_irq, take_exception;
 
 enum
 {
     DECODE,
-    IRQ_TAKEN
+    IRQ_WAIT // waiting for pipeline to clear to goto interrupt
 } state, next;
 
 // next state logic
@@ -250,21 +237,85 @@ always_ff @(posedge clk_i)
     else state <= next;
 
 always_comb
-begin
-    next = state;
+begin: core_sm
+    take_irq = '0;
 
+    unique case (state)
+    DECODE:
+    begin
+        if (handle_irq)
+            next = IRQ_WAIT;
+    end
+    IRQ_WAIT:
+    begin
+        /* when the pipeline is empty, we have to recheck the interrupt pending status.
+        It is possible that when we stalled if and waited for the in-flight instructions
+        to retire, that an interrupt disabling instruction was among them, in this case, we wasted
+        time and need to restart the pipeline as if nothing happened */
+
+        /* an in-flight instruction disabled interrupts or a trap happened */
+        if (!handle_irq || trap_happened)
+            next = DECODE;
+        else if (pipeline_empty)
+        begin
+            take_irq = 1'b1;
+            next = DECODE;
+        end
+    end
+    endcase
+end
+
+always_comb
+begin: if_steering
     is_trap_o = '0;
     new_pc_en_o = '0;
     pc_sel_o = PC_JUMP;
     csr_mret_o = '0;
 
     // for exceptions
-    // exc_pc_o = ex_mem_pc_i;
+    exc_pc_o = ex_mem1_pc_i;
     csr_mcause_o = '{
         irq: 1'b0,
         trap_code: mem_trap_i[3:0]
     };
 
+    if (take_exception)
+    begin
+        // MRET
+        if (mem_trap_i == MRET)
+        begin
+            new_pc_en_o = 1'b1;
+            pc_sel_o = PC_MEPC;
+            csr_mret_o = 1'b1; // triggers needed changes in cs_registers
+        end
+        else // regular exception
+        begin
+            new_pc_en_o = 1'b1;
+            pc_sel_o = PC_TRAP;
+            is_trap_o = 1'b1;
+        end
+    end
+    else if (take_irq)
+    begin
+        pc_sel_o = PC_TRAP;
+        new_pc_en_o = 1'b1;
+        is_trap_o = 1'b1;
+
+        exc_pc_o = if_pc_i;
+        csr_mcause_o = '{
+            irq: 1'b1,
+            trap_code: interrupt_code
+        };
+    end
+    else if (ex_new_pc_en_i)
+    begin
+        new_pc_en_o = 1'b1;
+    end
+end
+
+always_comb
+begin: pipeline_stage_control
+    // TODO: clean this shit up
     // if stage N needs to stall, then so does stage N-1 and so on
     mem2_wb_stall_o = '0;
     mem2_wb_flush_o = mem2_stall_needed_i;
@@ -281,106 +332,28 @@ begin
     ex_mem1_flush_o = load_use_hzrd & !ex_mem1_stall_o;
 
     id_ex_stall_o = load_use_hzrd || ex_mem1_stall_o;
-    id_ex_flush_o = '0;
 
-    if_id_stall_o = ex_is_csr_i || mem1_is_csr_i || mem2_is_csr_i || id_ex_stall_o;
-    if_id_flush_o = id_is_csr_i || ex_is_csr_i || mem1_is_csr_i || mem2_is_csr_i;
+    if_stall_o = ex_is_csr_i || mem1_is_csr_i || mem2_is_csr_i || id_ex_stall_o || (state == IRQ_WAIT);
+    if_flush_o = '0;
 
-    unique case (state)
-        DECODE:
-        begin
-            // instruction in the MEM2 stage raised a trap
-            if (mem_trap_i != NO_TRAP)
-            begin
-                int_acc_clear = 1'b1;
+    id_ex_flush_o = if_stall_o & !id_ex_stall_o; // need to flush id_ex if we are currently not accepting any instructions, but don't flush if a stall is requested
+    // since this could mean a general pipeline stall is requested and the instruction in id_ex is to be kept
 
-                id_ex_flush_o = 1'b1;
-                ex_mem1_flush_o = 1'b1;
+    take_exception = '0;
 
-                // MRET
-                if (mem_trap_i == MRET)
-                begin
-                    new_pc_en_o = 1'b1;
-                    pc_sel_o = PC_MEPC;
-                    csr_mret_o = 1'b1; // triggers needed changes in cs_registers
-                end
-                else // regular exception
-                begin
-                    is_trap_o = 1'b1;
-                    new_pc_en_o = 1'b1;
-                    pc_sel_o = PC_TRAP;
-                end
-            end
-            else if (int_acc_q)
-            begin
-                // if_id_stall = 1'b1;
-                // // if_id_flush = 1'b1;
-
-                // // stall if, waiting for the entire pipeline to get cleared
-                // // then jump to the handler and adjust the core's state
-                // if (pipeline_empty)
-                // begin
-                //     pc_sel_o = PC_TRAP;
-                //     new_pc_en_o = 1'b1;
-                //     is_trap_o = 1'b1;
-
-                //     csr_mcause_o = '{
-                //         irq: 1'b1,
-                //         trap_code: interrupt_code
-                //     };
-
-                //     exc_pc_o = arch_pc;
-                // end
-
-                // the instruction currently commiting in the MEM stage will be allowed to finish
-                // but the EX_MEM and ID_EX pipeline registers must be flushed
-
-                // id_ex_flush_o = 1'b1;
-                // ex_mem1_flush_o = 1'b1;
-                // pc_sel_o = PC_TRAP;
-                // new_pc_en_o = 1'b1;
-                // is_trap_o = 1'b1;
-
-                // csr_mcause_o = '{
-                //     irq: 1'b1,
-                //     trap_code: interrupt_code
-                // };
-
-                // we need the pipeline to restart from the first valid instruction that is younger
-                // that the one that will retire in this cycle
-                // if (id_ex_instr_valid_i)
-                //     exc_pc_o = id_ex_pc_i;
-
-                // FIXME: due to the current way simple_fetch is implemented
-                // and due to the way we respond to interrupts
-                // we can rely on if_pc_i to be the correct pc of the upcoming
-                // intstruction even if valid_o is not yet high
-
-                // else if (if_id_instr_valid_i)
-                //     exc_pc_o = if_id_pc_i;
-                // else
-                //     exc_pc_o = if_id_pc_i;
-            end
-            else if (ex_new_pc_en_i) // EX determined that the branch was taken
-            begin
-                new_pc_en_o = 1'b1;
-
-                // for now the branch is always predicted as not taken, hence if it's taken
-                // we must flush the wrong instruction currently in id_ex
-                id_ex_flush_o = 1'b1;
-                // pc_sel_o is already set
-            end
-        end
-        default:;
-    endcase
+    // instruction in the MEM2 stage raised a trap
+    if (trap_happened)
+    begin
+        id_ex_flush_o = 1'b1;
+        ex_mem1_flush_o = 1'b1;
+        take_exception = 1'b1;
+    end
+    else if (ex_new_pc_en_i) // EX determined that the branch was taken
+    begin
+        // for now the branch is always predicted as not taken, hence if it's taken
+        // we must flush the wrong instruction currently in id_ex
+        id_ex_flush_o = 1'b1;
+    end
 end
-
-// always_ff @(posedge clk_i)
-// begin
-//     if (!rstn_i)
-//         int_acc_q <= '0;
-//     else
-//         int_acc_d <= int_acc_q;
-// end
 
 endmodule: controller

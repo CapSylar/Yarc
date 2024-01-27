@@ -313,17 +313,19 @@ begin: if_steering
     end
 end
 
+
 always_comb
 begin: pipeline_stage_control
     // TODO: clean this shit up
     // if stage N needs to stall, then so does stage N-1 and so on
-    mem2_wb_stall_o = '0;
-    mem2_wb_flush_o = mem2_stall_needed_i;
+    // if an stall is caused by MEM1 or MEM2 we have to stall WB as well, to preserve any forwarding that is happending to EX from WB or MEM2 or MEM1
+    mem2_wb_stall_o = mem2_stall_needed_i || lsu_req_stall_i;
+    mem2_wb_flush_o = '0;
 
-    mem1_mem2_stall_o = mem2_stall_needed_i || mem2_wb_stall_o;
-    mem1_mem2_flush_o = lsu_req_stall_i;
+    mem1_mem2_stall_o = mem2_wb_stall_o;
+    mem1_mem2_flush_o = lsu_req_stall_i & !mem1_mem2_stall_o;
 
-    ex_mem1_stall_o = lsu_req_stall_i || mem1_mem2_stall_o;
+    ex_mem1_stall_o = mem1_mem2_stall_o;
 
     // let stall take priority over flushes, this fixes the case where an instruction say X is stuck in ex needing an operand which is yet to become ready
     // normally we would stall if - id and flush ex but if a later stage like mem1 or mem2 needs to stall, we can't flush ex since that
@@ -346,6 +348,7 @@ begin: pipeline_stage_control
     begin
         id_ex_flush_o = 1'b1;
         ex_mem1_flush_o = 1'b1;
+        mem1_mem2_flush_o = 1'b1;
         take_exception = 1'b1;
     end
     else if (ex_new_pc_en_i) // EX determined that the branch was taken

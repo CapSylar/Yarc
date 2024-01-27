@@ -145,6 +145,8 @@ begin: wb_sm
         end
         BUFFER_FULL:
         begin
+            if (new_pc_en_i)
+                fetch_pc_d = new_pc;
             // no request here, wait for some fifo space to clear up
             if (ff_rd || ff_clear)
                 next = REQUESTING;

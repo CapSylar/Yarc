@@ -2,15 +2,20 @@
 
 Yet Another RiscV Core, implements RV32I with support for additional extensions planned.
 
-## Microarchitecture
+## Yarc Platform Architecture
 
-Classic 5-stage Riscv Pipeline
+![My Image](misc/plaform_arch.png)
 
-## TODO
+## Core Microarchitecture
 
-- [ ] Zicsr
+TODO
+
+## Supported Extensions and Features
+
+- [X] Zicsr
+- [ ] M(multiplication/division)
 - [ ] Debug Module
 
 ## FPGA Synthesis
 
-Todo
+TODO

@@ -7,7 +7,10 @@ module nexys_fpga_top
     input clk,
     input cpu_resetn, // active low
 
-    output logic [7:0] led
+    output logic [7:0] led,
+
+    output uart_rx_out,
+    input uart_tx_in
 );
 
 logic sys_clk;
@@ -44,7 +47,7 @@ sp_mem_wb #(.MEMFILE(IMEMFILE), .SIZE_POT(15)) imem
     .lock_i(imem_wb_if.lock),
 
     .we_i(imem_wb_if.we),
-    .addr_i(imem_wb_if.addr[31:2]), // 4-byte addressable
+    .addr_i(imem_wb_if.addr), // 4-byte addressable
     .sel_i(imem_wb_if.sel),
     .wdata_i(imem_wb_if.wdata),
 
@@ -67,7 +70,7 @@ sp_mem_wb #(.MEMFILE(DMEMFILE), .SIZE_POT(15)) dmem
     .lock_i(dmem_wb_if.lock),
 
     .we_i(dmem_wb_if.we),
-    .addr_i(dmem_wb_if.addr[31:2]), // 4-byte addressable
+    .addr_i(dmem_wb_if.addr), // 4-byte addressable
     .sel_i(dmem_wb_if.sel),
     .wdata_i(dmem_wb_if.wdata),
 
@@ -91,7 +94,11 @@ yarc_platform yarc_platform_i
     .instr_fetch_wb_if(imem_wb_if),
 
     // Platform <-> Peripherals
-    .led_status_o(led)
+    .led_status_o(led),
+
+    // Platform <-> UART
+    .uart_rx_i(uart_tx_in),
+    .uart_tx_o(uart_rx_out)
 );
 
 endmodule: nexys_fpga_top

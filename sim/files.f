@@ -7,6 +7,12 @@ ${PRJ_DIR}/core/includes/riscv_pkg.sv
 ${PRJ_DIR}/core/includes/csr_pkg.sv
 ${PRJ_DIR}/platform/includes/platform_pkg.sv
 
+// peripherals
+${PRJ_DIR}/peripherals/wbuart32/rtl/ufifo.v
+${PRJ_DIR}/peripherals/wbuart32/rtl/rxuart.v
+${PRJ_DIR}/peripherals/wbuart32/rtl/txuart.v
+${PRJ_DIR}/peripherals/wbuart32/rtl/wbuart.v
+
 // interfaces
 ${PRJ_DIR}/interfaces/wishbone_if.sv
 

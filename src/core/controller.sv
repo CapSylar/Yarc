@@ -238,6 +238,7 @@ always_ff @(posedge clk_i)
 
 always_comb
 begin: core_sm
+    next = state;
     take_irq = '0;
 
     unique case (state)

@@ -115,7 +115,7 @@ assign intercon_if.err = error;
 generate
     for (genvar i = 0; i < NUM_SLAVES; ++i)
     begin: slave_connections
-        assign wb_if[i].cyc = intercon_if.cyc & addressed[i];
+        assign wb_if[i].cyc = intercon_if.cyc; // FIXME: works for now, not ideal
         assign wb_if[i].stb = intercon_if.stb & addressed[i];
         assign wb_if[i].lock = '0;
 

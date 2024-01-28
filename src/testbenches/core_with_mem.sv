@@ -93,7 +93,11 @@ yarc_platform yarc_platform_i
     .instr_fetch_wb_if(imem_wb_if),
 
     // Platform <-> Peripherals
-    .led_status_o()
+    .led_status_o(),
+
+    // Platform <-> UART
+    .uart_rx_i(1'b1),
+    .uart_tx_o()
 );
 
 endmodule: core_with_mem

@@ -25,7 +25,10 @@ import platform_pkg::*;
     wishbone_if.MASTER instr_fetch_wb_if,
 
     // Platform <-> Peripherals
-    output logic [7:0] led_status_o
+    output logic [7:0] led_status_o,
+
+    input logic uart_rx_i,
+    output logic uart_tx_o
 );
 
 wishbone_if lsu_wb_if();
@@ -88,6 +91,47 @@ led_driver led_driver_i
     
     .led_status_o(led_status_o)
 );
+
+logic uart_rx_int, uart_tx_int;
+logic uart_rxfifo_int, uart_txfifo_int;
+
+// wb_uart32
+wbuart 
+#(.INITIAL_SETUP(WBUART_INITIAL_SETUP),
+  .LGFLEN(WB_UART_LGFLEN),
+  .HARDWARE_FLOW_CONTROL_PRESENT(WB_UART_HW_FLOW_CTR_PR))
+wbuart_i
+(
+    .i_clk(clk_i),
+    .i_reset(~rstn_i),
+
+    // wishbone connections
+    .i_wb_cyc(slave_wb_if[WBUART_SLAVE_INDEX].cyc),
+    .i_wb_stb(slave_wb_if[WBUART_SLAVE_INDEX].stb),
+    .i_wb_we(slave_wb_if[WBUART_SLAVE_INDEX].we),
+    .i_wb_addr(slave_wb_if[WBUART_SLAVE_INDEX].addr[3:2]),
+    .i_wb_data(slave_wb_if[WBUART_SLAVE_INDEX].wdata),
+    .i_wb_sel(slave_wb_if[WBUART_SLAVE_INDEX].sel),
+    
+    .o_wb_stall(slave_wb_if[WBUART_SLAVE_INDEX].stall),
+    .o_wb_ack(slave_wb_if[WBUART_SLAVE_INDEX].ack),
+    .o_wb_data(slave_wb_if[WBUART_SLAVE_INDEX].rdata),
+
+    // uart connections
+    .i_uart_rx(uart_rx_i),
+    .o_uart_tx(uart_tx_o),
+    .i_cts_n(),
+    .o_rts_n(),
+
+    // uart interrupts
+    .o_uart_rx_int(uart_rx_int),
+    .o_uart_tx_int(uart_tx_int),
+    .o_uart_rxfifo_int(uart_rxfifo_int),
+    .o_uart_txfifo_int(uart_txfifo_int)
+);
+// zero out the rest of the control lines
+assign slave_wb_if[WBUART_SLAVE_INDEX].err = '0;
+assign slave_wb_if[WBUART_SLAVE_INDEX].rty = '0;
 
 // Core Top
 core_top core_i

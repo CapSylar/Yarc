@@ -47,4 +47,5 @@ ${PRJ_DIR}/platform/yarc_platform.sv
 ${PRJ_DIR}/memories/*
 
 // testbenches
+${PRJ_DIR}/peripherals/wbuart32/rtl/rxuartlite.v
 ${PRJ_DIR}/testbenches/*

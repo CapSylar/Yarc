@@ -411,7 +411,8 @@ stage_mem1 stage_mem1_i
     .alu_result_o(mem1_mem2_alu_result),
     .mem_oper_o(mem1_mem2_mem_oper),
     .trap_o(mem1_mem2_trap),
-    
+
+    .ex_mem1_flush_i(ex_mem1_flush),
     .stall_i(mem1_mem2_stall),
     .flush_i(mem1_mem2_flush)
 );

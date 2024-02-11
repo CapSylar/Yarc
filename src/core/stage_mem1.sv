@@ -47,6 +47,7 @@ import riscv_pkg::*;
     output logic [31:0] alu_result_o,
     output mem_oper_t mem_oper_o,
     
+    input ex_mem1_flush_i,
     input stall_i,
     input flush_i,
 
@@ -101,7 +102,7 @@ logic [31:0] lsu_addr_q;
 // so we must determine if a memory instruction currently in EX will be in MEM in the next cycle
 
 // when not to start a memory request
-wire cannot_issue_req = (ex_trap_i != NO_TRAP) || (trap_i != NO_TRAP) || flush_i || stall_i;
+wire cannot_issue_req = (ex_trap_i != NO_TRAP) || (trap_i != NO_TRAP) || ex_mem1_flush_i || flush_i || stall_i;
 
 always_comb
 begin

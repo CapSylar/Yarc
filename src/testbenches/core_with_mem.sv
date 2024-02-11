@@ -31,7 +31,7 @@ begin
     repeat(5) @(posedge clk);
     rstn_t = 1'b1;
 
-    repeat(100000) @(posedge clk);
+    repeat(500000) @(posedge clk);
     $finish;
 end
 
@@ -81,6 +81,8 @@ sp_mem_wb #(.MEMFILE(DMEMFILE), .SIZE_POT(15)) dmem
     .err_o(dmem_wb_if.err)
 );
 
+logic uart_tx;
+
 yarc_platform yarc_platform_i
 (
     .clk_i(clk),
@@ -97,7 +99,16 @@ yarc_platform yarc_platform_i
 
     // Platform <-> UART
     .uart_rx_i(1'b1),
-    .uart_tx_o()
+    .uart_tx_o(uart_tx)
+);
+
+// simulation Uart Rx
+rxuart_printer rxuart_printer_i
+(
+    .clk_i(clk),
+    .reset_i(~rstn),
+
+    .uart_rx_i(uart_tx)
 );
 
 endmodule: core_with_mem

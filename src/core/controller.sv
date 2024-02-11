@@ -319,7 +319,7 @@ always_comb
 begin: pipeline_stage_control
     // TODO: clean this shit up
     // if stage N needs to stall, then so does stage N-1 and so on
-    // if an stall is caused by MEM1 or MEM2 we have to stall WB as well, to preserve any forwarding that is happending to EX from WB or MEM2 or MEM1
+    // if a stall is caused by MEM1 or MEM2 we have to stall WB as well, to preserve any forwarding that is happending to EX from WB or MEM2 or MEM1
     mem2_wb_stall_o = mem2_stall_needed_i || lsu_req_stall_i;
     mem2_wb_flush_o = '0;
 

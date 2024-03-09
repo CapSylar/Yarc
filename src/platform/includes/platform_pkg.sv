@@ -20,18 +20,24 @@ localparam logic [31:0] LED_DRIVER_MASK =       32'hFFFF_FFFC;
 localparam logic [31:0] WBUART_BASE_ADDR =      32'hA000_0020;
 localparam logic [31:0] WBUART_MASK =           32'hFFFF_FFF0;
 
-localparam NUM_SLAVES = 4;
+// HDMI CORE
+// 2^20 bytes
+localparam logic [31:0] HDMI_BASE_ADDR =        32'hA010_0000;
+localparam logic [31:0] HDMI_MASK =             32'hFFF0_0000;
+
+localparam NUM_SLAVES = 5;
 
 localparam DMEM_SLAVE_INDEX = 0;
 localparam MTIMER_SLAVE_INDEX = 1;
 localparam LED_DRIVER_SLAVE_INDEX = 2;
 localparam WBUART_SLAVE_INDEX = 3;
+localparam HDMI_SLAVE_INDEX = 3;
 
 // make sure the index of the slaves in the following arrays match the indices above
 localparam bit [31:0] START_ADDRESS [NUM_SLAVES] = 
-    {DMEM_BASE_ADDR, MTIMER_BASE_ADDR, LED_DRIVER_BASE_ADDR, WBUART_BASE_ADDR};
+    {DMEM_BASE_ADDR, MTIMER_BASE_ADDR, LED_DRIVER_BASE_ADDR, WBUART_BASE_ADDR, HDMI_BASE_ADDR};
 localparam bit [31:0] MASK [NUM_SLAVES] = 
-    {DMEM_MASK, MTIMER_MASK, LED_DRIVER_MASK, WBUART_MASK};
+    {DMEM_MASK, MTIMER_MASK, LED_DRIVER_MASK, WBUART_MASK, HDMI_MASK};
 
 // wbuart32 config register
 typedef struct packed

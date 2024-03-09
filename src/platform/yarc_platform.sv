@@ -27,8 +27,17 @@ import platform_pkg::*;
     // Platform <-> Peripherals
     output logic [7:0] led_status_o,
 
+    // uart lines
     input logic uart_rx_i,
-    output logic uart_tx_o
+    output logic uart_tx_o,
+
+    input pixel_clk_i,
+    input pixel_clk_5x_i,
+    // hdmi lines
+	output hdmi_tx_clk_n_o,
+	output hdmi_tx_clk_p_o,
+	output [2:0] hdmi_tx_n_o,
+	output [2:0] hdmi_tx_p_o
 );
 
 wishbone_if lsu_wb_if();
@@ -132,6 +141,25 @@ wbuart_i
 // zero out the rest of the control lines
 assign slave_wb_if[WBUART_SLAVE_INDEX].err = '0;
 assign slave_wb_if[WBUART_SLAVE_INDEX].rty = '0;
+
+// hdmi frambuffer + hdmi video driver
+hdmi_core
+#()
+hdmi_core_i
+(
+    .clk_i(clk_i),
+    .rstn_i(rstn_i),
+
+    .pixel_clk_i(pixel_clk_i),
+    .pixel_clk_5x_i(pixel_clk_5x_i),
+
+    .wb_if(slave_wb_if[HDMI_SLAVE_INDEX]),
+
+    .hdmi_tx_clk_n_o(hdmi_tx_clk_n_o),
+    .hdmi_tx_clk_p_o(hdmi_tx_clk_p_o),
+    .hdmi_tx_n_o(hdmi_tx_n_o),
+    .hdmi_tx_p_o(hdmi_tx_p_o)
+);
 
 // Core Top
 core_top core_i

@@ -43,7 +43,7 @@ always_ff @(posedge clk_i)
 begin
     if (en_b_i)
     begin
-        // for each byte, if the corresponding bit in wsel_byte in 1, write it
+        // for each byte, if the corresponding bit in wsel_byte is 1, write it
         for (int i = 0; i < WIDTH/8 ; ++i)
             if (wsel_byte_b_i[i])
                 mem[addr_b_i][(i+1)*8 -1 -:8] <= wdata_b_i[(i+1)*8 -1 -:8];

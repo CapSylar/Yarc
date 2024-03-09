@@ -31,7 +31,7 @@ begin
     repeat(5) @(posedge clk);
     rstn_t = 1'b1;
 
-    repeat(500000) @(posedge clk);
+    repeat(5000000) @(posedge clk);
     $finish;
 end
 

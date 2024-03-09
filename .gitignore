@@ -3,3 +3,4 @@ sim/obj_dir
 sim/work
 sim/transcript
 sim/vsim.wlf
+sim/xilinx_libs_compiled/*

@@ -13,6 +13,8 @@ ${PRJ_DIR}/peripherals/wbuart32/rtl/rxuart.v
 ${PRJ_DIR}/peripherals/wbuart32/rtl/txuart.v
 ${PRJ_DIR}/peripherals/wbuart32/rtl/wbuart.v
 
+${PRJ_DIR}/peripherals/hdmi/hdmi_core.sv
+
 // interfaces
 ${PRJ_DIR}/interfaces/wishbone_if.sv
 

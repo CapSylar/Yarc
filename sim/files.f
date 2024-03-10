@@ -48,8 +48,11 @@ ${PRJ_DIR}/platform/led_driver.sv
 ${PRJ_DIR}/platform/yarc_platform.sv
 
 // memories
-${PRJ_DIR}/memories/*
+// ${PRJ_DIR}/memories/dp_mem_wb.sv
+${PRJ_DIR}/memories/sp_mem_wb.sv
+${PRJ_DIR}/memories/tdp_mem.sv
 
 // testbenches
 ${PRJ_DIR}/peripherals/wbuart32/rtl/rxuartlite.v
-${PRJ_DIR}/testbenches/*
+${PRJ_DIR}/testbenches/rxuart_printer.sv
+${PRJ_DIR}/testbenches/core_with_mem.sv

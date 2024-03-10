@@ -45,27 +45,21 @@ run_sim:
 
 # QUESTASIM ARGUMENTS
 LIB_NAME ?= work
-VSIM_ARGS := +begin_signature=${begin_signature} +end_signature=${end_signature} +sig_filename_o=${sig_filename_o}
+TOP_PARAMS += +begin_signature=${begin_signature} +end_signature=${end_signature} +sig_filename_o=${sig_filename_o}
 DO_FILE := ""
 
-ifeq ($(IS_GUI), 0)
-	VSIM_ARGS += -c  
-	DO_FILE := run.tcl
-else
+ifeq ($(IS_GUI), 1)
+	TOP_PARAMS += -gui=interactive 
 	DO_FILE := run_gui.tcl
+else
+	DO_FILE := run.tcl
 endif
 
-questa_compile:
-	vlib $(LIB_NAME)
-	vmap work ./work
-	vlog +acc -work $(LIB_NAME) -modelsimini modelsim.ini -f files.f -sv -sv12compat -timescale "1ns/1ps" -O5
-	vopt +acc $(TOPMOD) -o $(TOPMOD)_opt $(TOP_PARAMS)
-
-questa_run:
-	vsim -wlfopt -wlfdeleteonquit -do $(DO_FILE) $(TOPMOD)_opt $(VSIM_ARGS)
+questa:
+	qrun +acc -modelsimini modelsim.ini -f files.f -sv -sv12compat -timescale "1ns/1ps" -O5 -outdir questa_work -top $(TOPMOD) $(TOP_PARAMS) -do $(DO_FILE)
 
 questa_clean:
-	vdel -all -lib $(LIB_NAME)
+	qrun -clean
 
 clean:
 	rm -rf $(VDIRFB)/

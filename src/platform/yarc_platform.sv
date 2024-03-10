@@ -34,10 +34,8 @@ import platform_pkg::*;
     input pixel_clk_i,
     input pixel_clk_5x_i,
     // hdmi lines
-	output hdmi_tx_clk_n_o,
-	output hdmi_tx_clk_p_o,
-	output [2:0] hdmi_tx_n_o,
-	output [2:0] hdmi_tx_p_o
+	output logic hdmi_clk_o,
+	output logic [2:0] hdmi_data_o
 );
 
 wishbone_if lsu_wb_if();
@@ -155,10 +153,8 @@ hdmi_core_i
 
     .wb_if(slave_wb_if[HDMI_SLAVE_INDEX]),
 
-    .hdmi_tx_clk_n_o(hdmi_tx_clk_n_o),
-    .hdmi_tx_clk_p_o(hdmi_tx_clk_p_o),
-    .hdmi_tx_n_o(hdmi_tx_n_o),
-    .hdmi_tx_p_o(hdmi_tx_p_o)
+    .hdmi_clk_o(hdmi_clk_o),
+    .hdmi_data_o(hdmi_data_o)
 );
 
 // Core Top

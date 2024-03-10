@@ -13,6 +13,8 @@ ${PRJ_DIR}/peripherals/wbuart32/rtl/rxuart.v
 ${PRJ_DIR}/peripherals/wbuart32/rtl/txuart.v
 ${PRJ_DIR}/peripherals/wbuart32/rtl/wbuart.v
 
+${PRJ_DIR}/peripherals/hdmi/tmds_encoder.sv
+${PRJ_DIR}/peripherals/hdmi/serializer.sv
 ${PRJ_DIR}/peripherals/hdmi/hdmi_core.sv
 
 // interfaces

@@ -31,7 +31,7 @@ localparam DMEM_SLAVE_INDEX = 0;
 localparam MTIMER_SLAVE_INDEX = 1;
 localparam LED_DRIVER_SLAVE_INDEX = 2;
 localparam WBUART_SLAVE_INDEX = 3;
-localparam HDMI_SLAVE_INDEX = 3;
+localparam HDMI_SLAVE_INDEX = 4;
 
 // make sure the index of the slaves in the following arrays match the indices above
 localparam bit [31:0] START_ADDRESS [NUM_SLAVES] = 

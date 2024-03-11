@@ -3,6 +3,7 @@
 // prints out character using $display
 
 module rxuart_printer
+#(parameter CLKS_PER_BAUD)
 (
     input clk_i,
     input reset_i,
@@ -17,7 +18,7 @@ logic [7:0] rdata;
 byte character;
 
 rxuartlite
-#(.CLOCKS_PER_BAUD(694))
+#(.CLOCKS_PER_BAUD(CLKS_PER_BAUD))
 rxuartlite_i
 (
     .i_clk(clk_i),

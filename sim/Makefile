@@ -56,7 +56,7 @@ else
 endif
 
 questa:
-	qrun +acc -modelsimini modelsim.ini -f files.f -sv -sv12compat -timescale "1ns/1ps" -O5 -outdir questa_work -top $(TOPMOD) $(TOP_PARAMS) -do $(DO_FILE)
+	qrun -64 +acc -modelsimini modelsim.ini -f files.f -sv -sv12compat -timescale "1ns/1ps" -O5 -outdir questa_work -top $(TOPMOD) $(TOP_PARAMS) -do $(DO_FILE)
 
 questa_clean:
 	qrun -clean

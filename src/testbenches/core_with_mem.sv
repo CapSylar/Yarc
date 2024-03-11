@@ -4,7 +4,9 @@
 module core_with_mem
 #(parameter string DMEMFILE = "", parameter string IMEMFILE = "") ();
 
-localparam MAIN_CLK_HALF_PERIOD = 10ns / 2;
+import platform_pkg::*;
+
+localparam MAIN_CLK_HALF_PERIOD = 12.5ns / 2;
 localparam PIXEL_CLK_HALF_PERIOD = 29.6825ns / 2;
 localparam PIXEL_CLK_5X_HALF_PERIOD = PIXEL_CLK_HALF_PERIOD / 5;
 
@@ -125,7 +127,9 @@ yarc_platform yarc_platform_i
 );
 
 // simulation Uart Rx
-rxuart_printer rxuart_printer_i
+rxuart_printer
+#(.CLKS_PER_BAUD(CLKS_PER_BAUD))
+rxuart_printer_i
 (
     .clk_i(clk),
     .reset_i(~rstn),

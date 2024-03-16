@@ -1,36 +1,41 @@
 // contains the core with memories
 // instantiated by testbenches
 
-module core_with_mem
-#(parameter string DMEMFILE = "", parameter string IMEMFILE = "") ();
+module verilator_top
+#(parameter string DMEMFILE = "", parameter string IMEMFILE = "")
+(
+    input clk,
+    input pixel_clk,
+    input pixel_clk_5x
+);
 
 import platform_pkg::*;
 
-localparam MAIN_CLK_HALF_PERIOD = 12.5ns / 2;
-localparam PIXEL_CLK_HALF_PERIOD = 39.6825ns / 2;
-localparam PIXEL_CLK_5X_HALF_PERIOD = PIXEL_CLK_HALF_PERIOD / 5;
+// localparam MAIN_CLK_HALF_PERIOD = 12.5ns / 2;
+// localparam PIXEL_CLK_HALF_PERIOD = 29.6825ns / 2;
+// localparam PIXEL_CLK_5X_HALF_PERIOD = PIXEL_CLK_HALF_PERIOD / 5;
 
 // clk generation
-logic clk, pixel_clk, pixel_clk_5x;
+// logic clk, pixel_clk, pixel_clk_5x;
 
 // drive clock
-initial
-begin
-    clk = 0;
-    forever clk = #MAIN_CLK_HALF_PERIOD ~clk;
-end
+// initial
+// begin
+//     clk = 0;
+//     forever clk = #MAIN_CLK_HALF_PERIOD ~clk;
+// end
 
-initial
-begin
-    pixel_clk = 0;
-    forever pixel_clk = #PIXEL_CLK_HALF_PERIOD ~pixel_clk;
-end
+// initial
+// begin
+//     pixel_clk = 0;
+//     forever pixel_clk = #PIXEL_CLK_HALF_PERIOD ~pixel_clk;
+// end
 
-initial
-begin
-    pixel_clk_5x = 0;
-    forever pixel_clk_5x = #PIXEL_CLK_5X_HALF_PERIOD ~pixel_clk_5x;
-end
+// initial
+// begin
+//     pixel_clk_5x = 0;
+//     forever pixel_clk_5x = #PIXEL_CLK_5X_HALF_PERIOD ~pixel_clk_5x;
+// end
 
 
 logic rstn = '0;
@@ -46,7 +51,7 @@ begin
     repeat(5) @(posedge clk);
     rstn_t = 1'b1;
 
-    repeat(5000000) @(posedge clk);
+    repeat(500000) @(posedge clk);
     $finish;
 end
 
@@ -137,4 +142,14 @@ rxuart_printer_i
     .uart_rx_i(uart_tx)
 );
 
-endmodule: core_with_mem
+// Print some stuff as an example
+initial begin
+    if ($test$plusargs("trace") != 0) begin
+        $display("[%0t] Tracing to logs/vlt_dump.fst...\n", $time);
+        $dumpfile("logs/vlt_dump.fst");
+        $dumpvars();
+    end
+    $display("[%0t] Model running...\n", $time);
+end
+
+endmodule: verilator_top

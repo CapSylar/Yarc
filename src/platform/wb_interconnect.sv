@@ -45,7 +45,7 @@ begin
     for (int i = 0; i < NUM_SLAVES; ++i)
         if (addressed[i])
         begin
-            slave_index = i;
+            slave_index = i[$bits(slave_index)-1:0];
             break;
         end
 end

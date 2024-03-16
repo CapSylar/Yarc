@@ -314,31 +314,27 @@ begin: if_steering
     end
 end
 
+// if stage N needs to stall, then so does stage N-1 and so on
+// if a stall is caused by MEM1 or MEM2 we have to stall WB as well, to preserve any forwarding that is happending to EX from WB or MEM2 or MEM1
+assign mem2_wb_stall_o = mem2_stall_needed_i || lsu_req_stall_i;
+assign mem2_wb_flush_o = '0;
+
+assign mem1_mem2_stall_o = mem2_wb_stall_o;
+
+assign ex_mem1_stall_o = mem1_mem2_stall_o;
+// let stall take priority over flushes, this fixes the case where an instruction say X is stuck in ex needing an operand which is yet to become ready
+// normally we would stall if - id and flush ex but if a later stage like mem1 or mem2 needs to stall, we can't flush ex since that
+// would erase the instruction older than X
+
+assign id_ex_stall_o = load_use_hzrd || ex_mem1_stall_o;
+
+assign if_stall_o = ex_is_csr_i || mem1_is_csr_i || mem2_is_csr_i || id_ex_stall_o || (state == IRQ_WAIT);
+assign if_flush_o = '0;
 
 always_comb
 begin: pipeline_stage_control
-    // TODO: clean this shit up
-    // if stage N needs to stall, then so does stage N-1 and so on
-    // if a stall is caused by MEM1 or MEM2 we have to stall WB as well, to preserve any forwarding that is happending to EX from WB or MEM2 or MEM1
-    mem2_wb_stall_o = mem2_stall_needed_i || lsu_req_stall_i;
-    mem2_wb_flush_o = '0;
-
-    mem1_mem2_stall_o = mem2_wb_stall_o;
     mem1_mem2_flush_o = lsu_req_stall_i & !mem1_mem2_stall_o;
-
-    ex_mem1_stall_o = mem1_mem2_stall_o;
-
-    // let stall take priority over flushes, this fixes the case where an instruction say X is stuck in ex needing an operand which is yet to become ready
-    // normally we would stall if - id and flush ex but if a later stage like mem1 or mem2 needs to stall, we can't flush ex since that
-    // would erase the instruction older than X
-
     ex_mem1_flush_o = load_use_hzrd & !ex_mem1_stall_o;
-
-    id_ex_stall_o = load_use_hzrd || ex_mem1_stall_o;
-
-    if_stall_o = ex_is_csr_i || mem1_is_csr_i || mem2_is_csr_i || id_ex_stall_o || (state == IRQ_WAIT);
-    if_flush_o = '0;
-
     id_ex_flush_o = if_stall_o & !id_ex_stall_o; // need to flush id_ex if we are currently not accepting any instructions, but don't flush if a stall is requested
     // since this could mean a general pipeline stall is requested and the instruction in id_ex is to be kept
 

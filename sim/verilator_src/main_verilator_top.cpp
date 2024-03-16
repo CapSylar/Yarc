@@ -1,9 +1,14 @@
 
-#define TESTBENCH_TOP Vriscv_tests
+#define TESTBENCH_TOP Vverilator_top
 
+#include <iostream>
+#include <vector>
 #include <memory>
 #include <verilated.h>
-#include "Vriscv_tests.h"
+#include "Vverilator_top.h"
+#include "tb_clock.cpp"
+
+using namespace std;
 
 // Legacy function required only so linking works on Cygwin and MSVC++
 double sc_time_stamp() { return 0; }
@@ -45,6 +50,20 @@ int main(int argc, char** argv) {
     // "TOP" will be the hierarchical name of the module.
     const std::unique_ptr<TESTBENCH_TOP> top{new TESTBENCH_TOP{contextp.get(), "TOP"}};
 
+    vector<tb_clock> clocks;
+
+    for (int i = 0; i < 3; ++i)
+        clocks.push_back(tb_clock());
+
+    clocks[0].set_period_ps(12500);
+    clocks[1].set_period_ps(40000);
+    clocks[2].set_period_ps(8000);
+
+    top->clk = 0;
+    top->pixel_clk = 0;
+    top->pixel_clk_5x = 0;
+    top->eval();
+
     // Simulate until $finish
     while (!contextp->gotFinish()) {
         // Historical note, before Verilator 4.200 Verilated::gotFinish()
@@ -53,8 +72,19 @@ int main(int argc, char** argv) {
         // the Verilated:: versions just assume there's a single context
         // being used (per thread).  It's faster and clearer to use the
         // newer contextp-> versions.
-        contextp->timeInc(1);
 
+        uint64_t next_edge = numeric_limits<uint64_t>::max();
+        for (auto clock : clocks) {
+            uint64_t current = clock.get_time_to_edge();
+            if (current < next_edge) {
+                next_edge = current;
+            }
+        }
+
+        top->clk = clocks[0].advance(next_edge);
+        top->pixel_clk = clocks[1].advance(next_edge);
+        top->pixel_clk_5x = clocks[2].advance(next_edge);
+        contextp->timeInc(next_edge);
         top->eval();
     }
 

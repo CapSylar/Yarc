@@ -18,7 +18,7 @@ logic [7:0] rdata;
 byte character;
 
 rxuartlite
-#(.CLOCKS_PER_BAUD(CLKS_PER_BAUD))
+#(.CLOCKS_PER_BAUD(CLKS_PER_BAUD[9:0]))
 rxuartlite_i
 (
     .i_clk(clk_i),

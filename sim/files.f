@@ -56,3 +56,4 @@ ${PRJ_DIR}/memories/tdp_mem.sv
 ${PRJ_DIR}/peripherals/wbuart32/rtl/rxuartlite.v
 ${PRJ_DIR}/testbenches/rxuart_printer.sv
 ${PRJ_DIR}/testbenches/core_with_mem.sv
+${PRJ_DIR}/testbenches/verilator_top.sv

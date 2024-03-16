@@ -185,8 +185,8 @@ logic [31:0] mhpmcounter_incr;
 logic [4:0] mhpmcounter_ridx; // read index
 logic [4:0] mhpmcounter_widx; // write index
 
-assign mhpmcounter_ridx = csr_raddr_i;
-assign mhpmcounter_widx = csr_waddr_i;
+assign mhpmcounter_ridx = csr_raddr_i[4:0];
+assign mhpmcounter_widx = csr_waddr_i[4:0];
 
 always_comb
 begin
@@ -317,7 +317,6 @@ always_comb begin: csr_read
                 csr_rdata[CSR_MTI_BIT] = mip_d.m_timer;
                 csr_rdata[CSR_MEI_BIT] = mip_d.m_external;
             end
-            CSR_MEPC: csr_rdata = mepc_q;
             CSR_MCAUSE:
             begin
                 csr_rdata[CSR_MCAUSE_IRQ_BIT] = mcause_q.irq;

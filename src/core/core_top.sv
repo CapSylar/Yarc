@@ -87,6 +87,7 @@ logic ex_mem1_instr_valid;
 logic lsu_req;
 logic lsu_we;
 logic [31:0] lsu_addr;
+logic lsu_req_done;
 logic [31:0] lsu_rdata;
 logic [3:0] lsu_wsel_byte;
 logic [31:0] lsu_wdata;

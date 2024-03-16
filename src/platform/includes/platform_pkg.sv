@@ -46,7 +46,7 @@ typedef struct packed
   bit [1:0] bits_per_word; // 0 -> 8 bits per word
   bit num_stop_bits; // 0 -> 1 stop bit
   bit parity_used; // 0 -> no parity used
-  bit [2:0] parity_settings; // leave at 0 if parity is not used
+  bit [1:0] parity_settings; // leave at 0 if parity is not used
   bit [23:0] baud_clks; // clocks per baud
 } wbuart_conf_t;
 
@@ -59,7 +59,7 @@ localparam wbuart_conf_t WBUART_INITIAL_SETUP = '{
     bits_per_word: 2'b0,
     num_stop_bits: 1'b0,
     parity_used: 1'b0,
-    parity_settings: 3'b0,
+    parity_settings: 2'b0,
     baud_clks: CLKS_PER_BAUD
 };
 localparam [3:0] WB_UART_LGFLEN = 4;

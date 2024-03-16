@@ -87,7 +87,7 @@ begin
     exc_target_addr = '0;
     unique case (mtvec_i.mode)
         MTVEC_DIRECT: exc_target_addr = {mtvec_i.base, 2'b00};
-        MTVEC_VECTORED: exc_target_addr = {mtvec_i.base + mcause_i.trap_code, 2'b00};
+        MTVEC_VECTORED: exc_target_addr = {mtvec_i.base + 30'(mcause_i.trap_code), 2'b00};
         default:;
     endcase
 end
@@ -167,7 +167,7 @@ begin
     end
 end
 
-assign ff_wr = wb_if.ack & !acks_to_ignore_q;
+assign ff_wr = wb_if.ack & (acks_to_ignore_q == '0);
 assign ff_clear = new_pc_en_i | flush_cache_i;
 
 always_comb
@@ -178,7 +178,7 @@ begin
     // handle the req_pending & acks_to_ignore counters
     if (wb_if.ack)
     begin
-        if (acks_to_ignore_d)
+        if (acks_to_ignore_d != '0)
             acks_to_ignore_d = acks_to_ignore_d - 1;
         else
             req_pending_d = req_pending_d - 1;

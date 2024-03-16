@@ -84,8 +84,8 @@ always_comb
 begin
 	fetch_pixel = '0;
 
-	if ((y_counter == 'd524 || (y_counter >= '0 && y_counter < 'd479)) && // in correct Y
-		(x_counter == 'd799 || (x_counter >= '0 && x_counter < 'd638))) // in correct X
+	if ((y_counter == 'd524 || (y_counter < 'd479)) && // in correct Y
+		(x_counter == 'd799 || (x_counter < 'd638))) // in correct X
 	begin
 		if (!pixel_wait)
 			fetch_pixel = 1'b1;

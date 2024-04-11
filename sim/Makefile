@@ -54,7 +54,7 @@ LIB_NAME ?= work
 DO_FILE := ""
 
 ifeq ($(IS_GUI), 1)
-	# TOP_PARAMS += -gui=interactive 
+	TOP_PARAMS += -gui=interactive 
 	DO_FILE := run_gui.tcl
 else
 	DO_FILE := run.tcl

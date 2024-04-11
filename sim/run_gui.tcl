@@ -343,8 +343,8 @@ add wave ${PLATFORM}/mtimer_i/mtimecmp_q;
 # ---------------------------------------------------------
 add wave -divider {Platform}
 add wave ${PLATFORM}/*;
-add wave -divider {HDMI core}
-add wave ${PLATFORM}/hdmi_core_i/*;
+# add wave -divider {HDMI core}
+# add wave ${PLATFORM}/hdmi_core_i/*;
 
 # ---------------------------------------------------------
 # disable creation of the transcript file

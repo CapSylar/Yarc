@@ -7,11 +7,12 @@ module core_with_mem
 import platform_pkg::*;
 
 localparam MAIN_CLK_HALF_PERIOD = 12.5ns / 2;
-localparam PIXEL_CLK_HALF_PERIOD = 39.6825ns / 2;
-localparam PIXEL_CLK_5X_HALF_PERIOD = PIXEL_CLK_HALF_PERIOD / 5;
+// localparam PIXEL_CLK_HALF_PERIOD = 39.6825ns / 2;
+// localparam PIXEL_CLK_5X_HALF_PERIOD = PIXEL_CLK_HALF_PERIOD / 5;
 
 // clk generation
-logic clk, pixel_clk, pixel_clk_5x;
+logic clk;
+// logic pixel_clk, pixel_clk_5x;
 
 // drive clock
 initial
@@ -20,18 +21,17 @@ begin
     forever clk = #MAIN_CLK_HALF_PERIOD ~clk;
 end
 
-initial
-begin
-    pixel_clk = 0;
-    forever pixel_clk = #PIXEL_CLK_HALF_PERIOD ~pixel_clk;
-end
+// initial
+// begin
+//     pixel_clk = 0;
+//     forever pixel_clk = #PIXEL_CLK_HALF_PERIOD ~pixel_clk;
+// end
 
-initial
-begin
-    pixel_clk_5x = 0;
-    forever pixel_clk_5x = #PIXEL_CLK_5X_HALF_PERIOD ~pixel_clk_5x;
-end
-
+// initial
+// begin
+//     pixel_clk_5x = 0;
+//     forever pixel_clk_5x = #PIXEL_CLK_5X_HALF_PERIOD ~pixel_clk_5x;
+// end
 
 logic rstn = '0;
 logic rstn_t = '0;
@@ -117,13 +117,13 @@ yarc_platform yarc_platform_i
 
     // Platform <-> UART
     .uart_rx_i(1'b1),
-    .uart_tx_o(uart_tx),
+    .uart_tx_o(uart_tx)
 
     // Platform <-> HDMI
-    .pixel_clk_i(pixel_clk),
-    .pixel_clk_5x_i(pixel_clk_5x),
-    .hdmi_clk_o(hdmi_clk),
-    .hdmi_data_o(hdmi_data)
+    // .pixel_clk_i(pixel_clk),
+    // .pixel_clk_5x_i(pixel_clk_5x),
+    // .hdmi_clk_o(hdmi_clk),
+    // .hdmi_data_o(hdmi_data)
 );
 
 // simulation Uart Rx

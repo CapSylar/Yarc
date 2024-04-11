@@ -29,13 +29,14 @@ import platform_pkg::*;
 
     // uart lines
     input logic uart_rx_i,
-    output logic uart_tx_o,
+    output logic uart_tx_o
 
-    input pixel_clk_i,
-    input pixel_clk_5x_i,
+    // input pixel_clk_i,
+    // input pixel_clk_5x_i
+
     // hdmi lines
-	output logic hdmi_clk_o,
-	output logic [2:0] hdmi_data_o
+	// output logic hdmi_clk_o,
+	// output logic [2:0] hdmi_data_o
 );
 
 wishbone_if lsu_wb_if();
@@ -140,22 +141,23 @@ wbuart_i
 assign slave_wb_if[WBUART_SLAVE_INDEX].err = '0;
 assign slave_wb_if[WBUART_SLAVE_INDEX].rty = '0;
 
+// NOTE: development on the hdmi core is halted for now
 // hdmi frambuffer + hdmi video driver
-hdmi_core
-#()
-hdmi_core_i
-(
-    .clk_i(clk_i),
-    .rstn_i(rstn_i),
+// hdmi_core
+// #()
+// hdmi_core_i
+// (
+//     .clk_i(clk_i),
+//     .rstn_i(rstn_i),
 
-    .pixel_clk_i(pixel_clk_i),
-    .pixel_clk_5x_i(pixel_clk_5x_i),
+//     .pixel_clk_i(pixel_clk_i),
+//     .pixel_clk_5x_i(pixel_clk_5x_i),
 
-    .wb_if(slave_wb_if[HDMI_SLAVE_INDEX]),
+//     .wb_if(slave_wb_if[HDMI_SLAVE_INDEX]),
 
-    .hdmi_clk_o(hdmi_clk_o),
-    .hdmi_data_o(hdmi_data_o)
-);
+//     .hdmi_clk_o(hdmi_clk_o),
+//     .hdmi_data_o(hdmi_data_o)
+// );
 
 // Core Top
 core_top core_i

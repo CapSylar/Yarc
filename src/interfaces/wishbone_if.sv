@@ -2,7 +2,6 @@ interface wishbone_if;
 
 logic cyc;
 logic stb;
-logic lock;
 
 logic we;
 logic [31:0] addr;
@@ -17,7 +16,6 @@ logic err;
 
 modport MASTER (output cyc,
                 output stb,
-                output lock,
                 output we,
                 output addr,
                 output sel,
@@ -30,7 +28,6 @@ modport MASTER (output cyc,
 
 modport SLAVE (input cyc,
                input stb,
-               input lock,
                input we,
                input addr,
                input sel,

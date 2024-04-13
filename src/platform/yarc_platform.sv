@@ -44,24 +44,113 @@ wishbone_if lsu_wb_if();
 // Wb interconnect
 wishbone_if slave_wb_if [NUM_SLAVES]();
 
-wb_interconnect
-#(.NUM_SLAVES(NUM_SLAVES), .START_ADDRESS(START_ADDRESS), .MASK(MASK))
-wb_interconnect_i
-(
-    .clk_i(clk_i),
-    .rstn_i(rstn_i),
+localparam NUM_MASTERS = 1;
+localparam AW = 32;
+localparam DW = 32;
 
-    // interconnect <-> Master
-    .intercon_if(lsu_wb_if),
-    // interconnect <-> Slaves
-    .wb_if(slave_wb_if)
+// master interconnect lines
+logic [NUM_MASTERS-1:0] mcyc, mstb, mwe;
+logic [NUM_MASTERS*AW-1:0] maddr;
+logic [NUM_MASTERS*DW-1:0] mdata_o;
+logic [NUM_MASTERS*DW/8-1:0] msel;
+logic [NUM_MASTERS-1:0] mstall, mack, merr;
+logic [NUM_MASTERS*DW-1:0] mdata_i;
+
+// slave interconnect lines
+logic [NUM_SLAVES-1:0] scyc, sstb, swe;
+logic [NUM_SLAVES*AW-1:0] saddr;
+logic [NUM_SLAVES*DW-1:0] sdata_i;
+logic [NUM_SLAVES*DW/8-1:0] ssel;
+logic [NUM_SLAVES-1:0] sstall, sack, serr;
+logic [NUM_SLAVES*DW-1:0] sdata_o;
+
+// Zipcpu wishbone crossbar
+wbxbar
+#(.NM(NUM_MASTERS), .NS(NUM_SLAVES), .AW(AW), .DW(DW),
+    .SLAVE_ADDR(START_ADDRESSES), .SLAVE_MASK(MASKS),
+    .LGMAXBURST(6), .OPT_TIMEOUT(0),
+    .OPT_DBLBUFFER(0), .OPT_LOWPOWER(0))
+wbxbar_i
+(
+    .i_clk(clk_i),
+    .i_reset(~rstn_i),
+
+    // master bus inputs
+    .i_mcyc(mcyc),
+    .i_mstb(mstb),
+    .i_mwe(mwe),
+    .i_maddr(maddr),
+    .i_mdata(mdata_o),
+    .i_msel(msel),
+
+    // master return data
+    .o_mstall(mstall),
+    .o_mack(mack),
+    .o_mdata(mdata_i),
+    .o_merr(merr),
+
+    .o_scyc(scyc),
+    .o_sstb(sstb),
+    .o_swe(swe),
+    .o_saddr(saddr),
+    .o_sdata(sdata_i),
+    .o_ssel(ssel),
+
+    // slave return data
+    .i_sstall(sstall),
+    .i_sack(sack),
+    .i_sdata(sdata_o),
+    .i_serr(serr)
 );
+
+// connect the master wire side to the systemverilog interfaces
+assign mcyc = lsu_wb_if.cyc;
+assign mstb = lsu_wb_if.stb;
+assign mwe = lsu_wb_if.we;
+assign maddr = lsu_wb_if.addr;
+assign mdata_o = lsu_wb_if.wdata;
+assign msel = lsu_wb_if.sel;
+
+assign lsu_wb_if.stall = mstall;
+assign lsu_wb_if.ack = mack;
+assign lsu_wb_if.rdata = mdata_i;
+assign lsu_wb_if.err = merr;
+
+// connect the slave wire side to the systemverilog interfaces
+genvar i;
+generate
+    for (i = 0 ; i < NUM_SLAVES; ++i) begin: connect_slave_wb_ifs
+        assign slave_wb_if[i].cyc = scyc[i];
+        assign slave_wb_if[i].stb = sstb[i];
+        assign slave_wb_if[i].we = swe[i];
+        assign slave_wb_if[i].addr = saddr[i*AW +: AW];
+        assign slave_wb_if[i].wdata = sdata_i[i*DW +: DW];
+        assign slave_wb_if[i].sel = ssel[i*DW/8 +: DW/8];
+
+        assign sstall[i] = slave_wb_if[i].stall;
+        assign sack[i] = slave_wb_if[i].ack;
+        assign sdata_o[i*DW +: DW] = slave_wb_if[i].rdata;
+        assign serr[i] = slave_wb_if[i].err;
+    end
+endgenerate
+
+// wb_interconnect
+// #(.NUM_SLAVES(NUM_SLAVES), .START_ADDRESS(START_ADDRESS), .MASK(MASK))
+// wb_interconnect_i
+// (
+//     .clk_i(clk_i),
+//     .rstn_i(rstn_i),
+
+//     // interconnect <-> Master
+//     .intercon_if(lsu_wb_if),
+//     // interconnect <-> Slaves
+//     .wb_if(slave_wb_if)
+// );
 
 // dmem
 // assign signals to dmem_wb
 assign dmem_wb_if.cyc = slave_wb_if[DMEM_SLAVE_INDEX].cyc;
 assign dmem_wb_if.stb = slave_wb_if[DMEM_SLAVE_INDEX].stb;
-assign dmem_wb_if.lock = slave_wb_if[DMEM_SLAVE_INDEX].lock;
 assign dmem_wb_if.we = slave_wb_if[DMEM_SLAVE_INDEX].we;
 assign dmem_wb_if.addr = slave_wb_if[DMEM_SLAVE_INDEX].addr;
 assign dmem_wb_if.sel = slave_wb_if[DMEM_SLAVE_INDEX].sel;

@@ -64,7 +64,6 @@ sp_mem_wb #(.MEMFILE(IMEMFILE), .SIZE_POT(15)) imem
 
     .cyc_i(imem_wb_if.cyc),
     .stb_i(imem_wb_if.stb),
-    .lock_i(imem_wb_if.lock),
 
     .we_i(imem_wb_if.we),
     .addr_i(imem_wb_if.addr), // 4-byte addressable
@@ -87,7 +86,6 @@ sp_mem_wb #(.MEMFILE(DMEMFILE), .SIZE_POT(15)) dmem
 
     .cyc_i(dmem_wb_if.cyc),
     .stb_i(dmem_wb_if.stb),
-    .lock_i(dmem_wb_if.lock),
 
     .we_i(dmem_wb_if.we),
     .addr_i(dmem_wb_if.addr), // 4-byte addressable

@@ -10,7 +10,6 @@ module sp_mem_wb
 
     input cyc_i,
     input stb_i,
-    input lock_i,
 
     input we_i,
     input [31:0] addr_i,

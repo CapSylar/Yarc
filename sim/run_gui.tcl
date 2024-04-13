@@ -273,6 +273,11 @@ add wave -group {LSU} ${CORE}/lsu_i/req_done_o;
 add wave -group {LSU} ${CORE}/lsu_i/rdata_o;
 add wave -group {LSU} ${CORE}/lsu_i/req_stall_o;
 
+add wave -group {LSU} ${CORE}/lsu_i/current;
+add wave -group {LSU} ${CORE}/lsu_i/next;
+add wave -group {LSU} ${CORE}/lsu_i/ack_pending_d;
+add wave -group {LSU} ${CORE}/lsu_i/ack_pending_q;
+
 # ---------------------------------------------------------
 add wave -divider {WRITE BACK}
 add wave ${CORE}/write_back_i/mem_oper_i;
@@ -330,8 +335,8 @@ add wave ${CORE}/controller_i/csr_mcause_o;
 add wave ${CORE}/controller_i/is_trap_o;
 add wave ${CORE}/controller_i/exc_pc_o;
 # ---------------------------------------------------------
-add wave -divider {WB Interconnect}
-add wave ${PLATFORM}/wb_interconnect_i/*;
+# add wave -divider {WB Interconnect}
+# add wave ${PLATFORM}/wb_interconnect_i/*;
 # ---------------------------------------------------------
 add wave -divider {Riscv Timer}
 add wave ${PLATFORM}/mtimer_i/timer_int_o;
@@ -345,6 +350,12 @@ add wave -divider {Platform}
 add wave ${PLATFORM}/*;
 # add wave -divider {HDMI core}
 # add wave ${PLATFORM}/hdmi_core_i/*;
+
+add wave -group {IMEM interface} -color Gold ${PLATFORM}/instr_fetch_wb_if/*;
+add wave -group {DMEM WB Interface} -color Gold ${PLATFORM}/slave_wb_if[0]/*;
+add wave -group {MTIMER WB Interface} -color Gold ${PLATFORM}/slave_wb_if[1]/*;
+add wave -group {LED DRIVER WB Interface} -color Gold ${PLATFORM}/slave_wb_if[2]/*;
+add wave -group {WBUART WB Interface} -color Gold ${PLATFORM}/slave_wb_if[3]/*;
 
 # ---------------------------------------------------------
 # disable creation of the transcript file

@@ -22,8 +22,28 @@ import riscv_pkg::*;
     output logic req_stall_o // current request needs to be held
 );
 
-// TODO: need this ?
-logic [1:0] outstanding = '0;
+// count the number of pending acks that we must wait for before
+// terminating the bus cycle
+logic [1:0] ack_pending_d, ack_pending_q;
+
+always_comb
+begin
+    ack_pending_d = ack_pending_q;
+
+    if (wb_if.stb)
+        ack_pending_d = ack_pending_d + 1'b1;
+
+    if (wb_if.ack)
+        ack_pending_d = ack_pending_d - 1'b1;
+end
+
+always_ff @(posedge clk_i)
+begin
+    if (!rstn_i)
+        ack_pending_q <= '0;
+    else
+        ack_pending_q <= ack_pending_d;
+end
 
 logic wb_cyc;
 logic wb_stb;
@@ -84,7 +104,7 @@ begin : next_state
 
             if (req_i)
                 next = BUS_REQ;
-            else if (outstanding == '0 && wb_if.ack)
+            else if (wb_if.ack && (ack_pending_d == '0)) // nothing left to wait for
                 next = IDLE;
         end
     endcase
@@ -124,7 +144,6 @@ end
 // assign signals to wishbone interface
 assign wb_if.cyc = wb_cyc;
 assign wb_if.stb = wb_stb;
-assign wb_if.lock = wb_lock;
 assign wb_if.we = wb_we;
 assign wb_if.addr = wb_addr;
 assign wb_if.sel = wb_sel;

@@ -117,7 +117,6 @@ generate
     begin: slave_connections
         assign wb_if[i].cyc = intercon_if.cyc; // FIXME: works for now, not ideal
         assign wb_if[i].stb = intercon_if.stb & addressed[i];
-        assign wb_if[i].lock = '0;
 
         assign wb_if[i].we = intercon_if.we;
         assign wb_if[i].addr = intercon_if.addr;

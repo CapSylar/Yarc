@@ -250,7 +250,6 @@ assign wb_if.cyc = cyc;
 assign wb_if.stb = stb;
 assign wb_if.addr = fetch_pc_q;
 assign wb_if.we = '0;
-assign wb_if.lock = '0;
 assign wb_if.sel = 4'hf;
 assign wb_if.wdata = '0;
 

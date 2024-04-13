@@ -33,10 +33,10 @@ localparam LED_DRIVER_SLAVE_INDEX = 2;
 localparam WBUART_SLAVE_INDEX = 3;
 
 // make sure the index of the slaves in the following arrays match the indices above
-localparam bit [31:0] START_ADDRESS [NUM_SLAVES] = 
-    {DMEM_BASE_ADDR, MTIMER_BASE_ADDR, LED_DRIVER_BASE_ADDR, WBUART_BASE_ADDR};
-localparam bit [31:0] MASK [NUM_SLAVES] = 
-    {DMEM_MASK, MTIMER_MASK, LED_DRIVER_MASK, WBUART_MASK};
+localparam bit [32*NUM_SLAVES-1:0] START_ADDRESSES = 
+    {WBUART_BASE_ADDR, LED_DRIVER_BASE_ADDR, MTIMER_BASE_ADDR, DMEM_BASE_ADDR};
+localparam bit [32*NUM_SLAVES-1:0] MASKS = 
+    {WBUART_MASK, LED_DRIVER_MASK, MTIMER_MASK, DMEM_MASK};
 
 // wbuart32 config register
 typedef struct packed

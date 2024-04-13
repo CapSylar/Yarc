@@ -42,7 +42,10 @@ ${PRJ_DIR}/core/stage_mem2.sv
 ${PRJ_DIR}/core/lsu.sv
 
 // platform
-${PRJ_DIR}/platform/wb_interconnect.sv
+${PRJ_DIR}/interconnects/addrdecode.v
+${PRJ_DIR}/interconnects/skidbuffer.v
+${PRJ_DIR}/interconnects/wbxbar.v
+${PRJ_DIR}/interconnects/wb_interconnect.sv
 ${PRJ_DIR}/platform/mtimer.sv
 ${PRJ_DIR}/platform/led_driver.sv
 ${PRJ_DIR}/platform/yarc_platform.sv

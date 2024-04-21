@@ -1,14 +1,15 @@
-interface wishbone_if;
+interface wishbone_if
+#(parameter int ADDRESS_WIDTH = 32, parameter int DATA_WIDTH = 32);
 
 logic cyc;
 logic stb;
 
 logic we;
-logic [31:0] addr;
-logic [3:0] sel;
-logic [31:0] wdata;
+logic [ADDRESS_WIDTH-$clog2(DATA_WIDTH/8)-1:0] addr;
+logic [(DATA_WIDTH/8)-1:0] sel;
+logic [DATA_WIDTH-1:0] wdata;
 
-logic [31:0] rdata;
+logic [DATA_WIDTH-1:0] rdata;
 logic rty;
 logic ack;
 logic stall;

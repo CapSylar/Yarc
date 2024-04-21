@@ -1,11 +1,13 @@
 // include directories
 +incdir+${PRJ_DIR}/core/
 +incdir+${PRJ_DIR}/core/includes/
++incdir+${PRJ_DIR}/ddr3_mem_controller/includes/
 
 // packages
 ${PRJ_DIR}/core/includes/riscv_pkg.sv
 ${PRJ_DIR}/core/includes/csr_pkg.sv
 ${PRJ_DIR}/platform/includes/platform_pkg.sv
+${PRJ_DIR}/ddr3_mem_controller/ddr3_parameters_pkg.sv
 
 // peripherals
 ${PRJ_DIR}/peripherals/wbuart32/rtl/ufifo.v
@@ -22,6 +24,7 @@ ${PRJ_DIR}/interfaces/wishbone_if.sv
 
 // utils
 ${PRJ_DIR}/utils/sync_fifo.sv
+${PRJ_DIR}/utils/sfifo.v
 
 // fetch modules
 // ${PRJ_DIR}/core/simple_fetch.sv
@@ -42,10 +45,11 @@ ${PRJ_DIR}/core/stage_mem2.sv
 ${PRJ_DIR}/core/lsu.sv
 
 // platform
-${PRJ_DIR}/interconnects/addrdecode.v
-${PRJ_DIR}/interconnects/skidbuffer.v
-${PRJ_DIR}/interconnects/wbxbar.v
-${PRJ_DIR}/interconnects/wb_interconnect.sv
+${PRJ_DIR}/bus_components/addrdecode.v
+${PRJ_DIR}/bus_components/skidbuffer.v
+${PRJ_DIR}/bus_components/wbxbar.v
+${PRJ_DIR}/bus_components/wbupsz.v
+${PRJ_DIR}/bus_components/wb_interconnect.sv
 ${PRJ_DIR}/platform/mtimer.sv
 ${PRJ_DIR}/platform/led_driver.sv
 ${PRJ_DIR}/platform/yarc_platform.sv
@@ -54,6 +58,13 @@ ${PRJ_DIR}/platform/yarc_platform.sv
 // ${PRJ_DIR}/memories/dp_mem_wb.sv
 ${PRJ_DIR}/memories/sp_mem_wb.sv
 ${PRJ_DIR}/memories/tdp_mem.sv
+
+// ddr3 controller files
+${PRJ_DIR}/ddr3_mem_controller/ddr3_controller.v
+${PRJ_DIR}/ddr3_mem_controller/ddr3_phy.v
+${PRJ_DIR}/ddr3_mem_controller/ddr3_top.v
+${PRJ_DIR}/ddr3_mem_controller/yarc_ddr3_top.sv
+${PRJ_DIR}/ddr3_mem_controller/sim_files/ddr3_sim_model.sv
 
 // testbenches
 ${PRJ_DIR}/peripherals/wbuart32/rtl/rxuartlite.v

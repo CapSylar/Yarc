@@ -16,14 +16,21 @@ VDIRFB  := ./obj_dir
 DEFINES := -GIMEMFILE=\"$(IMEMFILE)\" -GDMEMFILE=\"$(DMEMFILE)\"
 TOP_PARAMS := $(DEFINES)
 
+VIVADO_SIM_FILES_PATH := /home/robin/workdir/xilinx_sims
+VIVADO_INSTALL_DIR_SRC_PATH := /home/robin/Tools/Xilinx/Vivado/2023.1
+VIVADO_COMPILE_COMMAND := -reflib $(VIVADO_SIM_FILES_PATH)/unisims_ver -reflib $(VIVADO_SIM_FILES_PATH)/secureip -reflib $(VIVADO_SIM_FILES_PATH)/unifast_ver \
+	-reflib $(VIVADO_SIM_FILES_PATH)/simprims_ver -reflib $(VIVADO_SIM_FILES_PATH)/unimacro_ver $(VIVADO_INSTALL_DIR_SRC_PATH)/data/verilog/src/glbl.v -top glbl
+
 PRJ_DIR := $(SRC_DIR)
 export PRJ_DIR
 export SIM_TOP = $(TOPMOD)
 export OBJCACHE = ccache
 
+TIMESCALE := -timescale "1ps/1ps"
+
 #verilator arguments
 VERILATOR=verilator
-VFLAGS= -cc --timing -f files.f $(TOP_PARAMS) --top-module $(TOPMOD) -O3 --noassert --x-assign fast --x-initial fast --timescale "1ns/1ps" --trace-fst
+VFLAGS= -cc --timing -f files.tcl $(TOP_PARAMS) --top-module $(TOPMOD) -O3 --noassert --x-assign fast --x-initial fast --timescale "1ns/1ps" --trace-fst
 
 # signature start and end
 begin_signature ?= 0
@@ -60,8 +67,10 @@ else
 	DO_FILE := run.tcl
 endif
 
+VIVODO_LIBS_COMMAND := 
+
 questa:
-	qrun -64 +acc -modelsimini modelsim.ini -f files.f -sv -sv12compat -timescale "1ns/1ps" -O5 -outdir questa_work -top $(TOPMOD) $(TOP_PARAMS) -do $(DO_FILE)
+	qrun -64 +acc -modelsimini modelsim.ini -f files.tcl -sv -sv12compat $(TIMESCALE) -O5 -outdir questa_work -top $(TOPMOD) $(TOP_PARAMS) -do $(DO_FILE) $(VIVADO_COMPILE_COMMAND)
 
 questa_clean:
 	qrun -clean

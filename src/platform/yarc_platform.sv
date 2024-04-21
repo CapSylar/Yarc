@@ -24,6 +24,9 @@ import platform_pkg::*;
     // Platform <-> IMEM
     wishbone_if.MASTER instr_fetch_wb_if,
 
+    // Platform <-> DDR3
+    wishbone_if.MASTER ddr3_wb_if,
+
     // Platform <-> Peripherals
     output logic [7:0] led_status_o,
 
@@ -161,6 +164,20 @@ assign slave_wb_if[DMEM_SLAVE_INDEX].rty = dmem_wb_if.rty;
 assign slave_wb_if[DMEM_SLAVE_INDEX].ack = dmem_wb_if.ack;
 assign slave_wb_if[DMEM_SLAVE_INDEX].stall = dmem_wb_if.stall;
 assign slave_wb_if[DMEM_SLAVE_INDEX].err = dmem_wb_if.err;
+
+// ddr3 interface signals
+assign ddr3_wb_if.cyc = slave_wb_if[DDR3_SLAVE_INDEX].cyc;
+assign ddr3_wb_if.stb = slave_wb_if[DDR3_SLAVE_INDEX].stb;
+assign ddr3_wb_if.we = slave_wb_if[DDR3_SLAVE_INDEX].we;
+assign ddr3_wb_if.addr = slave_wb_if[DDR3_SLAVE_INDEX].addr;
+assign ddr3_wb_if.sel = slave_wb_if[DDR3_SLAVE_INDEX].sel;
+assign ddr3_wb_if.wdata = slave_wb_if[DDR3_SLAVE_INDEX].wdata;
+
+assign slave_wb_if[DDR3_SLAVE_INDEX].rdata = ddr3_wb_if.rdata;
+assign slave_wb_if[DDR3_SLAVE_INDEX].rty = ddr3_wb_if.rty;
+assign slave_wb_if[DDR3_SLAVE_INDEX].ack = ddr3_wb_if.ack;
+assign slave_wb_if[DDR3_SLAVE_INDEX].stall = ddr3_wb_if.stall;
+assign slave_wb_if[DDR3_SLAVE_INDEX].err = ddr3_wb_if.err;
 
 // interrupt lines
 logic irq_timer;

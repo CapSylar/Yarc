@@ -315,14 +315,6 @@ add wave -color Turquoise ${CORE}/controller_i/mem2_wb_stall_o;
 add wave ${CORE}/controller_i/state;
 add wave ${CORE}/controller_i/next;
 
-# add wave ${CORE}/controller_i/if_pc_i;
-# add wave ${CORE}/controller_i/if_id_instr_valid_i;
-# add wave ${CORE}/controller_i/if_id_pc_i;
-# add wave ${CORE}/controller_i/id_ex_instr_valid_i;
-# add wave ${CORE}/controller_i/id_ex_pc_i;
-# add wave ${CORE}/controller_i/ex_mem_instr_valid_i;
-# add wave ${CORE}/controller_i/ex_mem_pc_i;
-
 add wave ${CORE}/controller_i/id_is_csr_i;
 add wave ${CORE}/controller_i/ex_is_csr_i;
 add wave ${CORE}/controller_i/mem1_is_csr_i;
@@ -335,9 +327,6 @@ add wave ${CORE}/controller_i/csr_mcause_o;
 add wave ${CORE}/controller_i/is_trap_o;
 add wave ${CORE}/controller_i/exc_pc_o;
 # ---------------------------------------------------------
-# add wave -divider {WB Interconnect}
-# add wave ${PLATFORM}/wb_interconnect_i/*;
-# ---------------------------------------------------------
 add wave -divider {Riscv Timer}
 add wave ${PLATFORM}/mtimer_i/timer_int_o;
 add wave ${PLATFORM}/mtimer_i/mtime_d;
@@ -346,16 +335,49 @@ add wave ${PLATFORM}/mtimer_i/mtimecmp_d;
 add wave ${PLATFORM}/mtimer_i/mtimecmp_q;
 
 # ---------------------------------------------------------
-add wave -divider {Platform}
-add wave ${PLATFORM}/*;
+# add wave -divider {Platform}
+# add wave ${PLATFORM}/*;
 # add wave -divider {HDMI core}
 # add wave ${PLATFORM}/hdmi_core_i/*;
 
+set ddr3_top ${TOP}/yarc_ddr3_top_i
+
 add wave -group {IMEM interface} -color Gold ${PLATFORM}/instr_fetch_wb_if/*;
 add wave -group {DMEM WB Interface} -color Gold ${PLATFORM}/slave_wb_if[0]/*;
-add wave -group {MTIMER WB Interface} -color Gold ${PLATFORM}/slave_wb_if[1]/*;
-add wave -group {LED DRIVER WB Interface} -color Gold ${PLATFORM}/slave_wb_if[2]/*;
-add wave -group {WBUART WB Interface} -color Gold ${PLATFORM}/slave_wb_if[3]/*;
+add wave -group {DDR3 WB Interface} -color Gold ${PLATFORM}/slave_wb_if[1]/*;
+add wave -group {MTIMER WB Interface} -color Gold ${PLATFORM}/slave_wb_if[2]/*;
+add wave -group {LED DRIVER WB Interface} -color Gold ${PLATFORM}/slave_wb_if[3]/*;
+add wave -group {WBUART WB Interface} -color Gold ${PLATFORM}/slave_wb_if[4]/*;
+
+add wave -group {DDR3 Controller} -divider {DDR3 Controller}
+add wave -group {DDR3 Controller} ${ddr3_top}/i_controller_clk;
+add wave -group {DDR3 Controller} ${ddr3_top}/i_ddr3_clk;
+add wave -group {DDR3 Controller} ${ddr3_top}/i_ref_clk;
+add wave -group {DDR3 Controller} ${ddr3_top}/i_ddr3_clk_90;
+add wave -group {DDR3 Controller} ${ddr3_top}/i_rst_n;
+add wave -group {DDR3 Controller} ${TOP}/wide_ddr3_wb_if/*;
+
+add wave -group {DDR3 External Interface} -divider {DDR3 External Interface}
+add wave -group {DDR3 External Interface} ${ddr3_top}/wb_if/*;
+add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_clk_p;
+add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_clk_n;
+add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_reset_n;
+add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_cke;
+add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_cs_n;
+add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_ras_n;
+add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_cas_n;
+add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_we_n;
+add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_addr;
+add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_ba_addr;
+add wave -group {DDR3 External Interface} ${ddr3_top}/io_ddr3_dq;
+add wave -group {DDR3 External Interface} ${ddr3_top}/io_ddr3_dqs;
+add wave -group {DDR3 External Interface} ${ddr3_top}/io_ddr3_dqs_n;
+add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_dm;
+add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_odt;
+
+add wave -group {DDR3 External Interface} ${ddr3_top}/ddr3_top/o_wb_stall;
+add wave -group {DDR3 External Interface} ${ddr3_top}/ddr3_top/o_wb_ack;
+add wave -group {DDR3 External Interface} ${ddr3_top}/ddr3_top/o_wb_data;
 
 # ---------------------------------------------------------
 # disable creation of the transcript file

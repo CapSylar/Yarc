@@ -8,36 +8,34 @@ import platform_pkg::*;
 import ddr3_parameters_pkg::*;
 
 // create clocks
-localparam MAIN_CLK_PERIOD = 12.5ns;
+localparam MAIN_CLK_PERIOD = 10.0ns;
 // localparam PIXEL_CLK_HALF_PERIOD = 39.6825ns / 2;
 // localparam PIXEL_CLK_5X_HALF_PERIOD = PIXEL_CLK_HALF_PERIOD / 5;
 
 // clk generation
 logic clk;
 // logic pixel_clk, pixel_clk_5x;
-logic controller_clk, ddr3_clk, ref_clk, ddr3_clk_90;
+logic ddr3_clk, ref_clk, ddr3_clk_90;
 
 // drive clock
 initial
 begin
-    clk = 0;
+    clk = 1;
     forever clk = #(MAIN_CLK_PERIOD/2) ~clk;
 end
 
 initial begin
-    controller_clk = 1;
     ddr3_clk = 1;
     ref_clk = 1;
 end
-always #(CONTROLLER_CLK_PERIOD*1000/2) controller_clk = ~controller_clk;
-always #(DDR3_CLK_PERIOD*1000/2) ddr3_clk = ~ddr3_clk;
-always #(CONTROLLER_REF_CLK*1000/2) ref_clk = ~ref_clk;
+always #(DDR3_CLK_PERIOD/2) ddr3_clk = ~ddr3_clk;
+always #(CONTROLLER_REF_CLK/2) ref_clk = ~ref_clk;
 
 initial begin
     ddr3_clk_90 = 1;
-    #(DDR3_CLK_PERIOD*1000/4);
+    #(DDR3_CLK_PERIOD/4);
     forever
-        #(DDR3_CLK_PERIOD*1000/2) ddr3_clk_90 = ~ddr3_clk_90;
+        #(DDR3_CLK_PERIOD/2) ddr3_clk_90 = ~ddr3_clk_90;
 end
 
 // initial
@@ -72,7 +70,7 @@ end
 wishbone_if #(.ADDRESS_WIDTH(32), .DATA_WIDTH(32)) imem_wb_if();
 
 // Instruction Memory
-sp_mem_wb #(.MEMFILE(IMEMFILE), .SIZE_POT_WORDS(IMEM_SIZE_WORDS_POT), .DATA_WIDTH(MEM_WIDTH)) imem
+sp_mem_wb #(.MEMFILE(IMEMFILE), .SIZE_POT_WORDS(IMEM_SIZE_WORDS_POT), .DATA_WIDTH(DATA_WIDTH)) imem
 (
     .clk_i(clk),
 
@@ -94,7 +92,7 @@ sp_mem_wb #(.MEMFILE(IMEMFILE), .SIZE_POT_WORDS(IMEM_SIZE_WORDS_POT), .DATA_WIDT
 wishbone_if #(.ADDRESS_WIDTH(32), .DATA_WIDTH(32)) dmem_wb_if();
 
 // Data Memory
-sp_mem_wb #(.MEMFILE(DMEMFILE), .SIZE_POT_WORDS(DMEM_SIZE_WORDS_POT), .DATA_WIDTH(MEM_WIDTH)) dmem
+sp_mem_wb #(.MEMFILE(DMEMFILE), .SIZE_POT_WORDS(DMEM_SIZE_WORDS_POT), .DATA_WIDTH(DATA_WIDTH)) dmem
 (
     .clk_i(clk),
 
@@ -189,11 +187,11 @@ wire [(NUM_DQ_BITS*LANES)/8-1:0] dqs, dqs_n;
 yarc_ddr3_top #() yarc_ddr3_top_i
 (
     // clock and reset
-    .i_controller_clk(controller_clk),
+    .i_controller_clk(clk),
     .i_ddr3_clk(ddr3_clk), //i_controller_clk has period of CONTROLLER_CLK_PERIOD, i_ddr3_clk has period of DDR3_CLK_PERIOD 
     .i_ref_clk(ref_clk),
     .i_ddr3_clk_90(ddr3_clk_90),
-    .i_rst_n(rstn_i && clk_locked), 
+    .i_rst_n(rstn && clk_locked), 
 
     // Wishbone inputs
     .wb_if(wide_ddr3_wb_if),
@@ -218,7 +216,7 @@ yarc_ddr3_top #() yarc_ddr3_top_i
 
 // DDR3 simulation model
 ddr3_sim_model ddr3_sim_model_i(
-    .rst_n(reset_n),
+    .rst_n(rstn),
     .ck(o_ddr3_clk_p),
     .ck_n(o_ddr3_clk_n),
     .cke(ck_en[0]),

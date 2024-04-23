@@ -145,7 +145,7 @@ end
 assign wb_if.cyc = wb_cyc;
 assign wb_if.stb = wb_stb;
 assign wb_if.we = wb_we;
-assign wb_if.addr = wb_addr;
+assign wb_if.addr = wb_addr[31:2];
 assign wb_if.sel = wb_sel;
 assign wb_if.wdata = wb_wdata;
 

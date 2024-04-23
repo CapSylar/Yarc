@@ -48,28 +48,26 @@ wishbone_if lsu_wb_if();
 wishbone_if slave_wb_if [NUM_SLAVES]();
 
 localparam NUM_MASTERS = 1;
-localparam AW = 32;
-localparam DW = 32;
 
 // master interconnect lines
 logic [NUM_MASTERS-1:0] mcyc, mstb, mwe;
-logic [NUM_MASTERS*AW-1:0] maddr;
-logic [NUM_MASTERS*DW-1:0] mdata_o;
-logic [NUM_MASTERS*DW/8-1:0] msel;
+logic [NUM_MASTERS*WB_AW-1:0] maddr;
+logic [NUM_MASTERS*WB_DW-1:0] mdata_o;
+logic [NUM_MASTERS*WB_DW/8-1:0] msel;
 logic [NUM_MASTERS-1:0] mstall, mack, merr;
-logic [NUM_MASTERS*DW-1:0] mdata_i;
+logic [NUM_MASTERS*WB_DW-1:0] mdata_i;
 
 // slave interconnect lines
 logic [NUM_SLAVES-1:0] scyc, sstb, swe;
-logic [NUM_SLAVES*AW-1:0] saddr;
-logic [NUM_SLAVES*DW-1:0] sdata_i;
-logic [NUM_SLAVES*DW/8-1:0] ssel;
+logic [NUM_SLAVES*WB_AW-1:0] saddr;
+logic [NUM_SLAVES*WB_DW-1:0] sdata_i;
+logic [NUM_SLAVES*WB_DW/8-1:0] ssel;
 logic [NUM_SLAVES-1:0] sstall, sack, serr;
-logic [NUM_SLAVES*DW-1:0] sdata_o;
+logic [NUM_SLAVES*WB_DW-1:0] sdata_o;
 
 // Zipcpu wishbone crossbar
 wbxbar
-#(.NM(NUM_MASTERS), .NS(NUM_SLAVES), .AW(AW), .DW(DW),
+#(.NM(NUM_MASTERS), .NS(NUM_SLAVES), .AW(WB_AW), .DW(WB_DW),
     .SLAVE_ADDR(START_ADDRESSES), .SLAVE_MASK(MASKS),
     .LGMAXBURST(6), .OPT_TIMEOUT(0),
     .OPT_DBLBUFFER(0), .OPT_LOWPOWER(0))
@@ -126,29 +124,16 @@ generate
         assign slave_wb_if[i].cyc = scyc[i];
         assign slave_wb_if[i].stb = sstb[i];
         assign slave_wb_if[i].we = swe[i];
-        assign slave_wb_if[i].addr = saddr[i*AW +: AW];
-        assign slave_wb_if[i].wdata = sdata_i[i*DW +: DW];
-        assign slave_wb_if[i].sel = ssel[i*DW/8 +: DW/8];
+        assign slave_wb_if[i].addr = saddr[i*WB_AW +: WB_AW];
+        assign slave_wb_if[i].wdata = sdata_i[i*WB_DW +: WB_DW];
+        assign slave_wb_if[i].sel = ssel[i*WB_DW/8 +: WB_DW/8];
 
         assign sstall[i] = slave_wb_if[i].stall;
         assign sack[i] = slave_wb_if[i].ack;
-        assign sdata_o[i*DW +: DW] = slave_wb_if[i].rdata;
+        assign sdata_o[i*WB_DW +: WB_DW] = slave_wb_if[i].rdata;
         assign serr[i] = slave_wb_if[i].err;
     end
 endgenerate
-
-// wb_interconnect
-// #(.NUM_SLAVES(NUM_SLAVES), .START_ADDRESS(START_ADDRESS), .MASK(MASK))
-// wb_interconnect_i
-// (
-//     .clk_i(clk_i),
-//     .rstn_i(rstn_i),
-
-//     // interconnect <-> Master
-//     .intercon_if(lsu_wb_if),
-//     // interconnect <-> Slaves
-//     .wb_if(slave_wb_if)
-// );
 
 // dmem
 // assign signals to dmem_wb

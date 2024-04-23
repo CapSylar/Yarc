@@ -248,7 +248,7 @@ assign instr_o = ff_rdata;
 // assign wishbone interface outputs
 assign wb_if.cyc = cyc;
 assign wb_if.stb = stb;
-assign wb_if.addr = fetch_pc_q;
+assign wb_if.addr = fetch_pc_q[31:2];
 assign wb_if.we = '0;
 assign wb_if.sel = 4'hf;
 assign wb_if.wdata = '0;

@@ -97,4 +97,7 @@ ddr3_top #(
         .o_ddr3_debug_read_dqs_n()
     );
 
+assign wb_if.err = '0;
+assign wb_if.rty = '0;
+
 endmodule: yarc_ddr3_top

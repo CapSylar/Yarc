@@ -19,7 +19,7 @@ logic [63:0] mtimecmp_q, mtimecmp_d;
 logic [31:0] rdata_d, rdata_q;
 logic ack_q;
 
-wire [1:0] addr = wb_if.addr[3:2]; // the two LSBs are don't cares, 4-byte granularity
+wire [1:0] addr = wb_if.addr[1:0]; // the two LSBs are don't cares, 4-byte granularity
 
 // combinational reads
 always_comb

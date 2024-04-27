@@ -79,7 +79,7 @@ wishbone_if #(.ADDRESS_WIDTH(32), .DATA_WIDTH(32)) imem_wb_if();
 // Instruction Memory
 sp_mem_wb #(.MEMFILE(IMEMFILE), .SIZE_POT_WORDS(IMEM_SIZE_WORDS_POT), .DATA_WIDTH(DATA_WIDTH)) imem
 (
-    .clk_i(clk),
+    .clk_i(sys_clk),
 
     .cyc_i(imem_wb_if.cyc),
     .stb_i(imem_wb_if.stb),
@@ -101,7 +101,7 @@ wishbone_if #(.ADDRESS_WIDTH(32), .DATA_WIDTH(32)) dmem_wb_if();
 // Data Memory
 sp_mem_wb #(.MEMFILE(DMEMFILE), .SIZE_POT_WORDS(DMEM_SIZE_WORDS_POT), .DATA_WIDTH(DATA_WIDTH)) dmem
 (
-    .clk_i(clk),
+    .clk_i(sys_clk),
 
     .cyc_i(dmem_wb_if.cyc),
     .stb_i(dmem_wb_if.stb),
@@ -130,7 +130,7 @@ wbupsz #(.ADDRESS_WIDTH(32),
          .OPT_LOWPOWER(1'b0))
 wbupsz_i
 (
-    .i_clk(clk),
+    .i_clk(sys_clk),
     .i_reset(~rstn),
 
     // incoming small port
@@ -163,7 +163,7 @@ wbupsz_i
 yarc_ddr3_top #() yarc_ddr3_top_i
 (
     // clock and reset
-    .i_controller_clk(clk),
+    .i_controller_clk(sys_clk),
     .i_ddr3_clk(ddr3_clk), //i_controller_clk has period of CONTROLLER_CLK_PERIOD, i_ddr3_clk has period of DDR3_CLK_PERIOD 
     .i_ref_clk(ref_clk),
     .i_ddr3_clk_90(ddr3_clk_90),

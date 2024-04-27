@@ -42,9 +42,9 @@
 //`define RAM_8Gb
 
 module ddr3_controller #(
-    parameter      CONTROLLER_CLK_PERIOD = 10_000, //ps, clock period of the controller interface
-                   DDR3_CLK_PERIOD = 2_500, //ps, clock period of the DDR3 RAM device (must be 1/4 of the CONTROLLER_CLK_PERIOD) 
-                   ROW_BITS = 14,   //width of DDR3 row address
+                   parameter real CONTROLLER_CLK_PERIOD = 10_000, //ps, clock period of the controller interface
+                   parameter real DDR3_CLK_PERIOD = 2_500, //ps, clock period of the DDR3 RAM device (must be 1/4 of the CONTROLLER_CLK_PERIOD) 
+                   parameter ROW_BITS = 14,   //width of DDR3 row address
                    COL_BITS = 10, //width of DDR3 column address
                    BA_BITS = 3, //width of bank address
                    DQ_BITS = 8,  //device width
@@ -184,19 +184,19 @@ module ddr3_controller #(
     localparam POWER_ON_RESET_HIGH      =     200_000_000; // 200_000_000 ps (200 us) reset must be active at initialization
     localparam INITIAL_CKE_LOW      =       500_000_000; // 500_000_000 ps (500 us) cke must be low before activating
     `ifdef DDR3_1600_11_11_11 //DDR3-1600 (11-11-11) speed bin
-        localparam tRCD     =       13_750; // ps Active to Read/Write command time
-        localparam tRP      =      13_750; // ps Precharge command period
-        localparam tRAS     =      35_000; // ps ACT to PRE command period
+        localparam real tRCD     =       13_750; // ps Active to Read/Write command time
+        localparam real tRP      =      13_750; // ps Precharge command period
+        localparam real tRAS     =      35_000; // ps ACT to PRE command period
     `endif
 
     `ifdef RAM_1Gb
-        localparam tRFC         =           110_000;      // ps Refresh command  to ACT or REF 
+        localparam real tRFC         =           110_000;      // ps Refresh command  to ACT or REF 
     `elsif RAM_2Gb
-        localparam tRFC         =           160_000;      // ps Refresh command  to ACT or REF 
+        localparam real tRFC         =           160_000;      // ps Refresh command  to ACT or REF 
     `elsif RAM_4Gb
-        localparam tRFC         =           300_000;      // ps Refresh command  to ACT or REF 
+        localparam real tRFC         =           300_000;      // ps Refresh command  to ACT or REF 
     `else
-        localparam tRFC             =       350_000;      // ps Refresh command  to ACT or REF 
+        localparam real tRFC             =       350_000;      // ps Refresh command  to ACT or REF 
     `endif
     localparam tREFI = 7_800_000; //ps Average periodic refresh interval
     localparam tXPR = max(5*DDR3_CLK_PERIOD, tRFC+10_000); // ps Exit Reset from CKE HIGH to a valid command

@@ -3,9 +3,9 @@
 //`define DEBUG_DQS
 
 module ddr3_phy #(
-    parameter     CONTROLLER_CLK_PERIOD = 10_000, //ps, clock period of the controller interface
-                  DDR3_CLK_PERIOD = 2_500, //ps, clock period of the DDR3 RAM device (must be 1/4 of the CONTROLLER_CLK_PERIOD) 
-                  ROW_BITS = 14,   //width of row address
+                parameter real CONTROLLER_CLK_PERIOD = 10_000, //ps, clock period of the controller interface
+                parameter real DDR3_CLK_PERIOD = 2_500, //ps, clock period of the DDR3 RAM device (must be 1/4 of the CONTROLLER_CLK_PERIOD) 
+                parameter ROW_BITS = 14,   //width of row address
                   BA_BITS = 3,
                   DQ_BITS = 8,
                   LANES = 8,

@@ -65,6 +65,7 @@ ${PRJ_DIR}/ddr3_mem_controller/ddr3_phy.v
 ${PRJ_DIR}/ddr3_mem_controller/ddr3_top.v
 ${PRJ_DIR}/ddr3_mem_controller/yarc_ddr3_top.sv
 ${PRJ_DIR}/ddr3_mem_controller/sim_files/ddr3_sim_model.sv
+${PRJ_DIR}/ddr3_mem_controller/sim_files/wb_sim_memory.sv
 
 // testbenches
 ${PRJ_DIR}/peripherals/wbuart32/rtl/rxuartlite.v

@@ -349,35 +349,36 @@ add wave -group {MTIMER WB Interface} -color Gold ${PLATFORM}/slave_wb_if[2]/*;
 add wave -group {LED DRIVER WB Interface} -color Gold ${PLATFORM}/slave_wb_if[3]/*;
 add wave -group {WBUART WB Interface} -color Gold ${PLATFORM}/slave_wb_if[4]/*;
 
-add wave -group {DDR3 Controller} -divider {DDR3 Controller}
-add wave -group {DDR3 Controller} ${ddr3_top}/i_controller_clk;
-add wave -group {DDR3 Controller} ${ddr3_top}/i_ddr3_clk;
-add wave -group {DDR3 Controller} ${ddr3_top}/i_ref_clk;
-add wave -group {DDR3 Controller} ${ddr3_top}/i_ddr3_clk_90;
-add wave -group {DDR3 Controller} ${ddr3_top}/i_rst_n;
+# add wave -group {DDR3 Controller} -divider {DDR3 Controller}
+# add wave -group {DDR3 Controller} ${ddr3_top}/i_controller_clk;
+# add wave -group {DDR3 Controller} ${ddr3_top}/i_ddr3_clk;
+# add wave -group {DDR3 Controller} ${ddr3_top}/i_ref_clk;
+# add wave -group {DDR3 Controller} ${ddr3_top}/i_ddr3_clk_90;
+# add wave -group {DDR3 Controller} ${ddr3_top}/i_rst_n;
 add wave -group {DDR3 Controller} ${TOP}/wide_ddr3_wb_if/*;
+add wave -group {Simple WB Memory} ${TOP}/replace_with_wb_model/wb_sim_memory_i/*;
 
-add wave -group {DDR3 External Interface} -divider {DDR3 External Interface}
-add wave -group {DDR3 External Interface} ${ddr3_top}/wb_if/*;
-add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_clk_p;
-add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_clk_n;
-add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_reset_n;
-add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_cke;
-add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_cs_n;
-add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_ras_n;
-add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_cas_n;
-add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_we_n;
-add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_addr;
-add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_ba_addr;
-add wave -group {DDR3 External Interface} ${ddr3_top}/io_ddr3_dq;
-add wave -group {DDR3 External Interface} ${ddr3_top}/io_ddr3_dqs;
-add wave -group {DDR3 External Interface} ${ddr3_top}/io_ddr3_dqs_n;
-add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_dm;
-add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_odt;
+# add wave -group {DDR3 External Interface} -divider {DDR3 External Interface}
+# add wave -group {DDR3 External Interface} ${ddr3_top}/wb_if/*;
+# add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_clk_p;
+# add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_clk_n;
+# add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_reset_n;
+# add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_cke;
+# add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_cs_n;
+# add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_ras_n;
+# add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_cas_n;
+# add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_we_n;
+# add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_addr;
+# add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_ba_addr;
+# add wave -group {DDR3 External Interface} ${ddr3_top}/io_ddr3_dq;
+# add wave -group {DDR3 External Interface} ${ddr3_top}/io_ddr3_dqs;
+# add wave -group {DDR3 External Interface} ${ddr3_top}/io_ddr3_dqs_n;
+# add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_dm;
+# add wave -group {DDR3 External Interface} ${ddr3_top}/o_ddr3_odt;
 
-add wave -group {DDR3 External Interface} ${ddr3_top}/ddr3_top/o_wb_stall;
-add wave -group {DDR3 External Interface} ${ddr3_top}/ddr3_top/o_wb_ack;
-add wave -group {DDR3 External Interface} ${ddr3_top}/ddr3_top/o_wb_data;
+# add wave -group {DDR3 External Interface} ${ddr3_top}/ddr3_top/o_wb_stall;
+# add wave -group {DDR3 External Interface} ${ddr3_top}/ddr3_top/o_wb_ack;
+# add wave -group {DDR3 External Interface} ${ddr3_top}/ddr3_top/o_wb_data;
 
 # ---------------------------------------------------------
 # disable creation of the transcript file

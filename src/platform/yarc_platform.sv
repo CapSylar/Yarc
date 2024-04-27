@@ -208,7 +208,7 @@ wbuart_i
     .i_wb_cyc(slave_wb_if[WBUART_SLAVE_INDEX].cyc),
     .i_wb_stb(slave_wb_if[WBUART_SLAVE_INDEX].stb),
     .i_wb_we(slave_wb_if[WBUART_SLAVE_INDEX].we),
-    .i_wb_addr(slave_wb_if[WBUART_SLAVE_INDEX].addr[3:2]),
+    .i_wb_addr(slave_wb_if[WBUART_SLAVE_INDEX].addr[1:0]),
     .i_wb_data(slave_wb_if[WBUART_SLAVE_INDEX].wdata),
     .i_wb_sel(slave_wb_if[WBUART_SLAVE_INDEX].sel),
     

@@ -68,7 +68,7 @@ typedef struct packed
   bit [23:0] baud_clks; // clocks per baud
 } wbuart_conf_t;
 
-localparam CLK_FREQUENCY = 80 * 1000_000; // 80Mhz
+localparam CLK_FREQUENCY = 83 * 1000_000; // 80Mhz
 localparam UART_BAUD_RATE = 921600; // Baud per second
 localparam [23:0] CLKS_PER_BAUD = CLK_FREQUENCY / UART_BAUD_RATE;
 

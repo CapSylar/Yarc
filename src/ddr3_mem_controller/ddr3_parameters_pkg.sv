@@ -8,8 +8,8 @@ package ddr3_parameters_pkg;
 `define x16
 `include "4096Mb_ddr3_parameters.vh"
 
-localparam real CONTROLLER_CLK_PERIOD = 10_000; //ps, clock period of the controller interface
-localparam real DDR3_CLK_PERIOD = 2_500; //ps, clock period of the DDR3 RAM device (must be 1/4 of the CONTROLLER_CLK_PERIOD) 0
+localparam real CONTROLLER_CLK_PERIOD = 12_000.0; //ps, clock period of the controller interface
+localparam real DDR3_CLK_PERIOD = 3_000.0; //ps, clock period of the DDR3 RAM device (must be 1/4 of the CONTROLLER_CLK_PERIOD) 0
 localparam CONTROLLER_REF_CLK = 5_000; //ps, 200Mhz
 localparam AUX_WIDTH = 4; //width of aux line (must be >= 4) 
 localparam LANES = 2;

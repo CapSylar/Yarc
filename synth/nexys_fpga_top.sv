@@ -17,13 +17,13 @@ import ddr3_parameters_pkg::*;
     input uart_tx_in,
 
     // ddr3 memory lines
-    output ddr3_clk_n_o,
-    output ddr3_clk_p_o,
+    output [0:0] ddr3_clk_n_o,
+    output [0:0] ddr3_clk_p_o,
 
     output [14:0] ddr3_addr_o,
     output [2:0] ddr3_ba_o,
     output ddr3_cas_o,
-    output ddr3_cke_o,
+    output [0:0] ddr3_cke_o,
     output [1:0] ddr3_dm_o,
 
     inout [15:0] ddr3_dq_io,
@@ -165,7 +165,7 @@ yarc_ddr3_top #() yarc_ddr3_top_i
     // clock and reset
     .i_controller_clk(sys_clk),
     .i_ddr3_clk(ddr3_clk), //i_controller_clk has period of CONTROLLER_CLK_PERIOD, i_ddr3_clk has period of DDR3_CLK_PERIOD 
-    .i_ref_clk(ref_clk),
+    .i_ref_clk(ddr3_ref_clk),
     .i_ddr3_clk_90(ddr3_clk_90),
     .i_rst_n(rstn && clk_locked), 
 

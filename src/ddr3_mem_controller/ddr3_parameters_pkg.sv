@@ -20,7 +20,7 @@ localparam OPT_LOWPOWER = 1; //1 = low power, 0 = low logic
 localparam OPT_BUS_ABORT = 1;  //1 = can abort bus, 0 = no abort (i_wb_cyc will be ignored, ideal for an AXI implementation which cannot abort transaction)
 
 localparam MICRON_SIM = 1; //enable faster simulation for micron ddr3 model (shorten POWER_ON_RESET_HIGH and INITIAL_CKE_LOW)
-localparam ODELAY_SUPPORTED = 1; //set to 1 when ODELAYE2 is supported
+localparam ODELAY_SUPPORTED = 0; //set to 1 when ODELAYE2 is supported
 localparam SECOND_WISHBONE = 0; //set to 1 if 2nd wishbone is needed 
 
 localparam NUM_DQ_BITS = 8;

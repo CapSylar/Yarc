@@ -45,124 +45,138 @@ import platform_pkg::*;
 wishbone_if lsu_wb_if();
 
 // Wb interconnect
-wishbone_if slave_wb_if [NUM_SLAVES]();
+wishbone_if slave_wb_if [MAIN_XBAR_NUM_SLAVES]();
 
-localparam NUM_MASTERS = 1;
+// // master interconnect lines
+// logic [MAIN_XBAR_NUM_MASTERS-1:0] mcyc, mstb, mwe;
+// logic [MAIN_XBAR_NUM_MASTERS*MAIN_WB_AW-1:0] maddr;
+// logic [MAIN_XBAR_NUM_MASTERS*MAIN_WB_DW-1:0] mdata_o;
+// logic [MAIN_XBAR_NUM_MASTERS*MAIN_WB_DW/8-1:0] msel;
+// logic [MAIN_XBAR_NUM_MASTERS-1:0] mstall, mack, merr;
+// logic [MAIN_XBAR_NUM_MASTERS*MAIN_WB_DW-1:0] mdata_i;
 
-// master interconnect lines
-logic [NUM_MASTERS-1:0] mcyc, mstb, mwe;
-logic [NUM_MASTERS*WB_AW-1:0] maddr;
-logic [NUM_MASTERS*WB_DW-1:0] mdata_o;
-logic [NUM_MASTERS*WB_DW/8-1:0] msel;
-logic [NUM_MASTERS-1:0] mstall, mack, merr;
-logic [NUM_MASTERS*WB_DW-1:0] mdata_i;
+// // slave interconnect lines
+// logic [MAIN_XBAR_NUM_SLAVES-1:0] scyc, sstb, swe;
+// logic [MAIN_XBAR_NUM_SLAVES*MAIN_WB_AW-1:0] saddr;
+// logic [MAIN_XBAR_NUM_SLAVES*MAIN_WB_DW-1:0] sdata_i;
+// logic [MAIN_XBAR_NUM_SLAVES*MAIN_WB_DW/8-1:0] ssel;
+// logic [MAIN_XBAR_NUM_SLAVES-1:0] sstall, sack, serr;
+// logic [MAIN_XBAR_NUM_SLAVES*MAIN_WB_DW-1:0] sdata_o;
 
-// slave interconnect lines
-logic [NUM_SLAVES-1:0] scyc, sstb, swe;
-logic [NUM_SLAVES*WB_AW-1:0] saddr;
-logic [NUM_SLAVES*WB_DW-1:0] sdata_i;
-logic [NUM_SLAVES*WB_DW/8-1:0] ssel;
-logic [NUM_SLAVES-1:0] sstall, sack, serr;
-logic [NUM_SLAVES*WB_DW-1:0] sdata_o;
+// // Zipcpu wishbone crossbar
+// wbxbar
+// #(  .NM(MAIN_XBAR_NUM_MASTERS),
+//     .NS(MAIN_XBAR_NUM_SLAVES),
+//     .AW(MAIN_WB_AW),
+//     .DW(MAIN_WB_DW),
+//     .SLAVE_ADDR(MAIN_XBAR_BASE_ADDRESSES),
+//     .SLAVE_MASK(MAIN_XBAR_MASKS),
+//     .LGMAXBURST(MAIN_XBAR_LGMAXBURST),
+//     .OPT_TIMEOUT(MAIN_XBAR_OPT_TIMEOUT),
+//     .OPT_DBLBUFFER(MAIN_XBAR_OPT_DBLBUFFER),
+//     .OPT_LOWPOWER(MAIN_XBAR_OPT_LOWPOWER)
+// )
+// wbxbar_peripherals_i
+// (
+//     .i_clk(clk_i),
+//     .i_reset(~rstn_i),
 
-// Zipcpu wishbone crossbar
-wbxbar
-#(.NM(NUM_MASTERS), .NS(NUM_SLAVES), .AW(WB_AW), .DW(WB_DW),
-    .SLAVE_ADDR(START_ADDRESSES), .SLAVE_MASK(MASKS),
-    .LGMAXBURST(6), .OPT_TIMEOUT(0),
-    .OPT_DBLBUFFER(0), .OPT_LOWPOWER(0))
-wbxbar_i
+//     // master bus inputs
+//     .i_mcyc(mcyc),
+//     .i_mstb(mstb),
+//     .i_mwe(mwe),
+//     .i_maddr(maddr),
+//     .i_mdata(mdata_o),
+//     .i_msel(msel),
+
+//     // master return data
+//     .o_mstall(mstall),
+//     .o_mack(mack),
+//     .o_mdata(mdata_i),
+//     .o_merr(merr),
+
+//     .o_scyc(scyc),
+//     .o_sstb(sstb),
+//     .o_swe(swe),
+//     .o_saddr(saddr),
+//     .o_sdata(sdata_i),
+//     .o_ssel(ssel),
+
+//     // slave return data
+//     .i_sstall(sstall),
+//     .i_sack(sack),
+//     .i_sdata(sdata_o),
+//     .i_serr(serr)
+// );
+
+// // connect the master wire side to the systemverilog interfaces
+// assign mcyc = lsu_wb_if.cyc;
+// assign mstb = lsu_wb_if.stb;
+// assign mwe = lsu_wb_if.we;
+// assign maddr = lsu_wb_if.addr;
+// assign mdata_o = lsu_wb_if.wdata;
+// assign msel = lsu_wb_if.sel;
+
+// assign lsu_wb_if.stall = mstall;
+// assign lsu_wb_if.ack = mack;
+// assign lsu_wb_if.rdata = mdata_i;
+// assign lsu_wb_if.err = merr;
+
+// // connect the slave wire side to the systemverilog interfaces
+// genvar i;
+// generate
+//     for (i = 0 ; i < NUM_SLAVES; ++i) begin: connect_slave_wb_ifs
+//         assign slave_wb_if[i].cyc = scyc[i];
+//         assign slave_wb_if[i].stb = sstb[i];
+//         assign slave_wb_if[i].we = swe[i];
+//         assign slave_wb_if[i].addr = saddr[i*MAIN_WB_AW +: MAIN_WB_AW];
+//         assign slave_wb_if[i].wdata = sdata_i[i*MAIN_WB_DW +: MAIN_WB_DW];
+//         assign slave_wb_if[i].sel = ssel[i*MAIN_WB_DW/8 +: MAIN_WB_DW/8];
+
+//         assign sstall[i] = slave_wb_if[i].stall;
+//         assign sack[i] = slave_wb_if[i].ack;
+//         assign sdata_o[i*MAIN_WB_DW +: MAIN_WB_DW] = slave_wb_if[i].rdata;
+//         assign serr[i] = slave_wb_if[i].err;
+//     end
+// endgenerate
+
+main_xbar main_xbar_i
 (
-    .i_clk(clk_i),
-    .i_reset(~rstn_i),
+    .clk_i(clk_i),
+    .rstn_i(rstn_i),
 
-    // master bus inputs
-    .i_mcyc(mcyc),
-    .i_mstb(mstb),
-    .i_mwe(mwe),
-    .i_maddr(maddr),
-    .i_mdata(mdata_o),
-    .i_msel(msel),
-
-    // master return data
-    .o_mstall(mstall),
-    .o_mack(mack),
-    .o_mdata(mdata_i),
-    .o_merr(merr),
-
-    .o_scyc(scyc),
-    .o_sstb(sstb),
-    .o_swe(swe),
-    .o_saddr(saddr),
-    .o_sdata(sdata_i),
-    .o_ssel(ssel),
-
-    // slave return data
-    .i_sstall(sstall),
-    .i_sack(sack),
-    .i_sdata(sdata_o),
-    .i_serr(serr)
+    .master_wb_if(lsu_wb_if),
+    .slave_wb_if(slave_wb_if)
 );
-
-// connect the master wire side to the systemverilog interfaces
-assign mcyc = lsu_wb_if.cyc;
-assign mstb = lsu_wb_if.stb;
-assign mwe = lsu_wb_if.we;
-assign maddr = lsu_wb_if.addr;
-assign mdata_o = lsu_wb_if.wdata;
-assign msel = lsu_wb_if.sel;
-
-assign lsu_wb_if.stall = mstall;
-assign lsu_wb_if.ack = mack;
-assign lsu_wb_if.rdata = mdata_i;
-assign lsu_wb_if.err = merr;
-
-// connect the slave wire side to the systemverilog interfaces
-genvar i;
-generate
-    for (i = 0 ; i < NUM_SLAVES; ++i) begin: connect_slave_wb_ifs
-        assign slave_wb_if[i].cyc = scyc[i];
-        assign slave_wb_if[i].stb = sstb[i];
-        assign slave_wb_if[i].we = swe[i];
-        assign slave_wb_if[i].addr = saddr[i*WB_AW +: WB_AW];
-        assign slave_wb_if[i].wdata = sdata_i[i*WB_DW +: WB_DW];
-        assign slave_wb_if[i].sel = ssel[i*WB_DW/8 +: WB_DW/8];
-
-        assign sstall[i] = slave_wb_if[i].stall;
-        assign sack[i] = slave_wb_if[i].ack;
-        assign sdata_o[i*WB_DW +: WB_DW] = slave_wb_if[i].rdata;
-        assign serr[i] = slave_wb_if[i].err;
-    end
-endgenerate
 
 // dmem
 // assign signals to dmem_wb
-assign dmem_wb_if.cyc = slave_wb_if[DMEM_SLAVE_INDEX].cyc;
-assign dmem_wb_if.stb = slave_wb_if[DMEM_SLAVE_INDEX].stb;
-assign dmem_wb_if.we = slave_wb_if[DMEM_SLAVE_INDEX].we;
-assign dmem_wb_if.addr = slave_wb_if[DMEM_SLAVE_INDEX].addr;
-assign dmem_wb_if.sel = slave_wb_if[DMEM_SLAVE_INDEX].sel;
-assign dmem_wb_if.wdata = slave_wb_if[DMEM_SLAVE_INDEX].wdata;
+assign dmem_wb_if.cyc = slave_wb_if[MAIN_XBAR_DMEM_SLAVE__IDX].cyc;
+assign dmem_wb_if.stb = slave_wb_if[MAIN_XBAR_DMEM_SLAVE__IDX].stb;
+assign dmem_wb_if.we = slave_wb_if[MAIN_XBAR_DMEM_SLAVE__IDX].we;
+assign dmem_wb_if.addr = slave_wb_if[MAIN_XBAR_DMEM_SLAVE__IDX].addr;
+assign dmem_wb_if.sel = slave_wb_if[MAIN_XBAR_DMEM_SLAVE__IDX].sel;
+assign dmem_wb_if.wdata = slave_wb_if[MAIN_XBAR_DMEM_SLAVE__IDX].wdata;
 
-assign slave_wb_if[DMEM_SLAVE_INDEX].rdata = dmem_wb_if.rdata;
-assign slave_wb_if[DMEM_SLAVE_INDEX].rty = dmem_wb_if.rty;
-assign slave_wb_if[DMEM_SLAVE_INDEX].ack = dmem_wb_if.ack;
-assign slave_wb_if[DMEM_SLAVE_INDEX].stall = dmem_wb_if.stall;
-assign slave_wb_if[DMEM_SLAVE_INDEX].err = dmem_wb_if.err;
+assign slave_wb_if[MAIN_XBAR_DMEM_SLAVE__IDX].rdata = dmem_wb_if.rdata;
+assign slave_wb_if[MAIN_XBAR_DMEM_SLAVE__IDX].rty = dmem_wb_if.rty;
+assign slave_wb_if[MAIN_XBAR_DMEM_SLAVE__IDX].ack = dmem_wb_if.ack;
+assign slave_wb_if[MAIN_XBAR_DMEM_SLAVE__IDX].stall = dmem_wb_if.stall;
+assign slave_wb_if[MAIN_XBAR_DMEM_SLAVE__IDX].err = dmem_wb_if.err;
 
 // ddr3 interface signals
-assign ddr3_wb_if.cyc = slave_wb_if[DDR3_SLAVE_INDEX].cyc;
-assign ddr3_wb_if.stb = slave_wb_if[DDR3_SLAVE_INDEX].stb;
-assign ddr3_wb_if.we = slave_wb_if[DDR3_SLAVE_INDEX].we;
-assign ddr3_wb_if.addr = slave_wb_if[DDR3_SLAVE_INDEX].addr;
-assign ddr3_wb_if.sel = slave_wb_if[DDR3_SLAVE_INDEX].sel;
-assign ddr3_wb_if.wdata = slave_wb_if[DDR3_SLAVE_INDEX].wdata;
+// assign ddr3_wb_if.cyc = slave_wb_if[MAIN_XBAR_DDR3_SLAVE_IDX].cyc;
+// assign ddr3_wb_if.stb = slave_wb_if[MAIN_XBAR_DDR3_SLAVE_IDX].stb;
+// assign ddr3_wb_if.we = slave_wb_if[MAIN_XBAR_DDR3_SLAVE_IDX].we;
+// assign ddr3_wb_if.addr = slave_wb_if[MAIN_XBAR_DDR3_SLAVE_IDX].addr;
+// assign ddr3_wb_if.sel = slave_wb_if[MAIN_XBAR_DDR3_SLAVE_IDX].sel;
+// assign ddr3_wb_if.wdata = slave_wb_if[MAIN_XBAR_DDR3_SLAVE_IDX].wdata;
 
-assign slave_wb_if[DDR3_SLAVE_INDEX].rdata = ddr3_wb_if.rdata;
-assign slave_wb_if[DDR3_SLAVE_INDEX].rty = ddr3_wb_if.rty;
-assign slave_wb_if[DDR3_SLAVE_INDEX].ack = ddr3_wb_if.ack;
-assign slave_wb_if[DDR3_SLAVE_INDEX].stall = ddr3_wb_if.stall;
-assign slave_wb_if[DDR3_SLAVE_INDEX].err = ddr3_wb_if.err;
+// assign slave_wb_if[MAIN_XBAR_DDR3_SLAVE_IDX].rdata = ddr3_wb_if.rdata;
+// assign slave_wb_if[MAIN_XBAR_DDR3_SLAVE_IDX].rty = ddr3_wb_if.rty;
+// assign slave_wb_if[MAIN_XBAR_DDR3_SLAVE_IDX].ack = ddr3_wb_if.ack;
+// assign slave_wb_if[MAIN_XBAR_DDR3_SLAVE_IDX].stall = ddr3_wb_if.stall;
+// assign slave_wb_if[MAIN_XBAR_DDR3_SLAVE_IDX].err = ddr3_wb_if.err;
 
 // interrupt lines
 logic irq_timer;
@@ -175,7 +189,7 @@ mtimer mtimer_i
     .clk_i(clk_i),
     .rstn_i(rstn_i),
 
-    .wb_if(slave_wb_if[MTIMER_SLAVE_INDEX]),
+    .wb_if(slave_wb_if[MAIN_XBAR_MTIMER_SLAVE_IDX]),
 
     .timer_int_o(irq_timer)
 );
@@ -186,7 +200,7 @@ led_driver led_driver_i
     .clk_i(clk_i),
     .rstn_i(rstn_i),
 
-    .wb_if(slave_wb_if[LED_DRIVER_SLAVE_INDEX]),
+    .wb_if(slave_wb_if[MAIN_XBAR_LED_DRIVER_SLAVE_IDX]),
     
     .led_status_o(led_status_o)
 );
@@ -205,16 +219,16 @@ wbuart_i
     .i_reset(~rstn_i),
 
     // wishbone connections
-    .i_wb_cyc(slave_wb_if[WBUART_SLAVE_INDEX].cyc),
-    .i_wb_stb(slave_wb_if[WBUART_SLAVE_INDEX].stb),
-    .i_wb_we(slave_wb_if[WBUART_SLAVE_INDEX].we),
-    .i_wb_addr(slave_wb_if[WBUART_SLAVE_INDEX].addr[1:0]),
-    .i_wb_data(slave_wb_if[WBUART_SLAVE_INDEX].wdata),
-    .i_wb_sel(slave_wb_if[WBUART_SLAVE_INDEX].sel),
+    .i_wb_cyc(slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].cyc),
+    .i_wb_stb(slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].stb),
+    .i_wb_we(slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].we),
+    .i_wb_addr(slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].addr[1:0]),
+    .i_wb_data(slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].wdata),
+    .i_wb_sel(slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].sel),
     
-    .o_wb_stall(slave_wb_if[WBUART_SLAVE_INDEX].stall),
-    .o_wb_ack(slave_wb_if[WBUART_SLAVE_INDEX].ack),
-    .o_wb_data(slave_wb_if[WBUART_SLAVE_INDEX].rdata),
+    .o_wb_stall(slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].stall),
+    .o_wb_ack(slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].ack),
+    .o_wb_data(slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].rdata),
 
     // uart connections
     .i_uart_rx(uart_rx_i),
@@ -229,8 +243,8 @@ wbuart_i
     .o_uart_txfifo_int(uart_txfifo_int)
 );
 // zero out the rest of the control lines
-assign slave_wb_if[WBUART_SLAVE_INDEX].err = '0;
-assign slave_wb_if[WBUART_SLAVE_INDEX].rty = '0;
+assign slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].err = '0;
+assign slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].rty = '0;
 
 // NOTE: development on the hdmi core is halted for now
 // hdmi frambuffer + hdmi video driver
@@ -249,6 +263,17 @@ assign slave_wb_if[WBUART_SLAVE_INDEX].rty = '0;
 //     .hdmi_clk_o(hdmi_clk_o),
 //     .hdmi_data_o(hdmi_data_o)
 // );
+
+sec_xbar sec_xbar_i
+(
+    .clk_i(clk_i),
+    .rstn_i(rstn_i),
+
+    .cpu_wb_if(cpu_fb_wb_if),
+    .video_wb_if(video_fb_wb_if),
+
+    .slave_wb_if(ddr3_wb_if)
+);
 
 // Core Top
 core_top core_i

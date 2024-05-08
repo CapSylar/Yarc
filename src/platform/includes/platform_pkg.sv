@@ -4,8 +4,8 @@ localparam BYTE_ADDRESS_WIDTH = 32;
 localparam integer DATA_WIDTH = 32;
 
 localparam integer UNUSED_BITS = $clog2(DATA_WIDTH/8); // unused bits due to bus addressable word size > byte
-localparam integer WB_AW = BYTE_ADDRESS_WIDTH - UNUSED_BITS; // wishbone address width
-localparam integer WB_DW = DATA_WIDTH; // wishbone data width
+localparam integer MAIN_WB_AW = BYTE_ADDRESS_WIDTH - UNUSED_BITS; // wishbone address width
+localparam integer MAIN_WB_DW = DATA_WIDTH; // wishbone data width
 
 // IMEM and DMEM memory parameters
 localparam integer DMEM_SIZE_BYTES_POT = 15; // 32KiB
@@ -15,47 +15,77 @@ localparam DMEM_SIZE_WORDS_POT = DMEM_SIZE_BYTES_POT - UNUSED_BITS;
 localparam IMEM_SIZE_WORDS_POT = IMEM_SIZE_BYTES_POT - UNUSED_BITS;
 
 // The first half of the address space is for memories
-localparam logic [WB_AW-1:0] DMEM_BASE_ADDR =    32'h9000_0000 >> UNUSED_BITS;
-localparam logic [WB_AW-1:0] DMEM_MASK =         32'hF000_0000 >> UNUSED_BITS;
+localparam logic [MAIN_WB_AW-1:0] DMEM_BASE_ADDR =    32'h9000_0000 >> UNUSED_BITS;
+localparam logic [MAIN_WB_AW-1:0] DMEM_MASK =         32'hF000_0000 >> UNUSED_BITS;
 
 // address space for DDR3 RAM (512MiB)
-localparam logic [WB_AW-1:0] DDR3_BASE_ADDR =     32'hC000_0000 >> UNUSED_BITS;
-localparam logic [WB_AW-1:0] DDR3_MASK =          32'hE000_0000 >> UNUSED_BITS;
+localparam logic [MAIN_WB_AW-1:0] DDR3_BASE_ADDR =     32'hC000_0000 >> UNUSED_BITS;
+localparam logic [MAIN_WB_AW-1:0] DDR3_MASK =          32'hE000_0000 >> UNUSED_BITS;
 
 // the second half for peripherals
 // MTIMER
 // 8 bytes for mtimer and 8 bytes for mtimecmp
-localparam logic [WB_AW-1:0] MTIMER_BASE_ADDR =  32'hA000_0000 >> UNUSED_BITS;
-localparam logic [WB_AW-1:0] MTIMER_MASK =       32'hFFFF_FFF0 >> UNUSED_BITS;
+localparam logic [MAIN_WB_AW-1:0] MTIMER_BASE_ADDR =  32'hA000_0000 >> UNUSED_BITS;
+localparam logic [MAIN_WB_AW-1:0] MTIMER_MASK =       32'hFFFF_FFF0 >> UNUSED_BITS;
 
 // LED DRIVER
 // 4 bytes
-localparam logic [WB_AW-1:0] LED_DRIVER_BASE_ADDR =  32'hA000_0010 >> UNUSED_BITS;
-localparam logic [WB_AW-1:0] LED_DRIVER_MASK =       32'hFFFF_FFFC >> UNUSED_BITS;
+localparam logic [MAIN_WB_AW-1:0] LED_DRIVER_BASE_ADDR =  32'hA000_0010 >> UNUSED_BITS;
+localparam logic [MAIN_WB_AW-1:0] LED_DRIVER_MASK =       32'hFFFF_FFFC >> UNUSED_BITS;
 
 // WBUART
 // 4 bytes * 4 = 16 bytes
-localparam logic [WB_AW-1:0] WBUART_BASE_ADDR =      32'hA000_0020 >> UNUSED_BITS;
-localparam logic [WB_AW-1:0] WBUART_MASK =           32'hFFFF_FFF0 >> UNUSED_BITS;
+localparam logic [MAIN_WB_AW-1:0] WBUART_BASE_ADDR =      32'hA000_0020 >> UNUSED_BITS;
+localparam logic [MAIN_WB_AW-1:0] WBUART_MASK =           32'hFFFF_FFF0 >> UNUSED_BITS;
 
 // HDMI CORE
 // 2^20 bytes
-localparam logic [WB_AW-1:0] HDMI_BASE_ADDR =        32'hA010_0000 >> UNUSED_BITS;
-localparam logic [WB_AW-1:0] HDMI_MASK =             32'hFFF0_0000 >> UNUSED_BITS;
+localparam logic [MAIN_WB_AW-1:0] VIDEO_BASE_ADDR =        32'hA010_0000 >> UNUSED_BITS;
+localparam logic [MAIN_WB_AW-1:0] VIDEO_MASK =             32'hFFF0_0000 >> UNUSED_BITS;
 
-localparam NUM_SLAVES = 5;
+// Main Wbxbar (cpu with peripherals)
+localparam MAIN_XBAR_NUM_MASTERS = 1;
+localparam MAIN_XBAR_NUM_SLAVES = 6;
 
-localparam DMEM_SLAVE_INDEX = 0;
-localparam DDR3_SLAVE_INDEX = 1;
-localparam MTIMER_SLAVE_INDEX = 2;
-localparam LED_DRIVER_SLAVE_INDEX = 3;
-localparam WBUART_SLAVE_INDEX = 4;
+// slave indices
+localparam MAIN_XBAR_DMEM_SLAVE__IDX =  0;
+localparam MAIN_XBAR_DDR3_SLAVE_IDX = 1;
+localparam MAIN_XBAR_MTIMER_SLAVE_IDX = 2;
+localparam MAIN_XBAR_LED_DRIVER_SLAVE_IDX = 3;
+localparam MAIN_XBAR_WBUART_SLAVE_IDX = 4;
+localparam MAIN_XBAR_VIDEO_SLAVE_IDX = 5;
 
 // make sure the index of the slaves in the following arrays match the indices above
-localparam bit [WB_AW*NUM_SLAVES-1:0] START_ADDRESSES = 
-    {WBUART_BASE_ADDR, LED_DRIVER_BASE_ADDR, MTIMER_BASE_ADDR, DDR3_BASE_ADDR, DMEM_BASE_ADDR};
-localparam bit [WB_AW*NUM_SLAVES-1:0] MASKS = 
-    {WBUART_MASK, LED_DRIVER_MASK, MTIMER_MASK, DDR3_MASK, DMEM_MASK};
+localparam bit [MAIN_WB_AW*MAIN_XBAR_NUM_SLAVES-1:0] MAIN_XBAR_BASE_ADDRESSES = 
+    {VIDEO_BASE_ADDR, WBUART_BASE_ADDR, LED_DRIVER_BASE_ADDR, MTIMER_BASE_ADDR, DDR3_BASE_ADDR, DMEM_BASE_ADDR};
+localparam bit [MAIN_WB_AW*MAIN_XBAR_NUM_SLAVES-1:0] MAIN_XBAR_MASKS = 
+    {VIDEO_MASK, WBUART_MASK, LED_DRIVER_MASK, MTIMER_MASK, DDR3_MASK, DMEM_MASK};
+
+localparam MAIN_XBAR_LGMAXBURST = 6;
+localparam MAIN_XBAR_OPT_TIMEOUT = 0;
+localparam MAIN_XBAR_OPT_DBLBUFFER = 0;
+localparam MAIN_XBAR_OPT_LOWPOWER = 0;
+
+// secondary wbxbar (cpu-master & video-master with ddr3 as a slave)
+localparam SEC_WB_AW = 32;
+localparam SEC_WB_DW = 128;
+
+localparam SEC_XBAR_NUM_MASTERS = 2;
+localparam SEC_XBAR_NUM_SLAVES = 1;
+
+localparam SEC_XBAR_VIDEO_MASTER_IDX = 0;
+localparam SEC_XBAR_CPU_MASTER_IDX = 1;
+
+localparam SEC_XBAR_DDR3_SLAVE_IDX = 0;
+
+// make sure the index of the slaves in the following arrays match the indices above
+localparam bit [SEC_WB_AW*SEC_XBAR_NUM_SLAVES-1:0] SEC_XBAR_BASE_ADDRESSES = {'0};
+localparam bit [SEC_WB_AW*SEC_XBAR_NUM_SLAVES-1:0] SEC_XBAR_MASKS = {'0};
+
+localparam SEC_XBAR_LGMAXBURST = 6;
+localparam SEC_XBAR_OPT_TIMEOUT = 0;
+localparam SEC_XBAR_OPT_DBLBUFFER = 0;
+localparam SEC_XBAR_OPT_LOWPOWER = 0;
 
 // wbuart32 config register
 typedef struct packed

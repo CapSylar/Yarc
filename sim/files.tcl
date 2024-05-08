@@ -15,6 +15,8 @@ ${PRJ_DIR}/peripherals/wbuart32/rtl/rxuart.v
 ${PRJ_DIR}/peripherals/wbuart32/rtl/txuart.v
 ${PRJ_DIR}/peripherals/wbuart32/rtl/wbuart.v
 
+${PRJ_DIR}/peripherals/hdmi/hdmi_pkg.sv
+${PRJ_DIR}/peripherals/hdmi/hdmi_core_ctrl.sv
 ${PRJ_DIR}/peripherals/hdmi/tmds_encoder.sv
 ${PRJ_DIR}/peripherals/hdmi/serializer.sv
 ${PRJ_DIR}/peripherals/hdmi/hdmi_core.sv
@@ -25,6 +27,7 @@ ${PRJ_DIR}/interfaces/wishbone_if.sv
 // utils
 ${PRJ_DIR}/utils/sync_fifo.sv
 ${PRJ_DIR}/utils/sfifo.v
+${PRJ_DIR}/utils/reg_bw.sv
 
 // fetch modules
 // ${PRJ_DIR}/core/simple_fetch.sv
@@ -52,6 +55,8 @@ ${PRJ_DIR}/bus_components/wbupsz.v
 ${PRJ_DIR}/bus_components/wb_interconnect.sv
 ${PRJ_DIR}/platform/mtimer.sv
 ${PRJ_DIR}/platform/led_driver.sv
+${PRJ_DIR}/platform/main_xbar.sv
+${PRJ_DIR}/platform/sec_xbar.sv
 ${PRJ_DIR}/platform/yarc_platform.sv
 
 // memories

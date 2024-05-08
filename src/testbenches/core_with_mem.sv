@@ -131,42 +131,42 @@ rxuart_printer_i
 wishbone_if #(.ADDRESS_WIDTH(32), .DATA_WIDTH(32)) ddr3_wb_if();
 wishbone_if #(.ADDRESS_WIDTH(32), .DATA_WIDTH(128)) wide_ddr3_wb_if();
 
-wbupsz #(.ADDRESS_WIDTH(32),
-         .WIDE_DW(128),
-         .SMALL_DW(32),
-         .OPT_LITTLE_ENDIAN(1'b1),
-         .OPT_LOWPOWER(1'b0))
-wbupsz_i
-(
-    .i_clk(clk),
-    .i_reset(~rstn),
+// wbupsz #(.ADDRESS_WIDTH(32),
+//          .WIDE_DW(128),
+//          .SMALL_DW(32),
+//          .OPT_LITTLE_ENDIAN(1'b1),
+//          .OPT_LOWPOWER(1'b0))
+// wbupsz_i
+// (
+//     .i_clk(clk),
+//     .i_reset(~rstn),
 
-    // incoming small port
-    .i_scyc(ddr3_wb_if.cyc),
-    .i_sstb(ddr3_wb_if.stb),
-    .i_swe(ddr3_wb_if.we),
-    .i_saddr(ddr3_wb_if.addr),
-    .i_sdata(ddr3_wb_if.wdata),
-    .i_ssel(ddr3_wb_if.sel),
-    .o_sstall(ddr3_wb_if.stall),
-    .o_sack(ddr3_wb_if.ack),
-    .o_sdata(ddr3_wb_if.rdata),
-    .o_serr(ddr3_wb_if.err),
+//     // incoming small port
+//     .i_scyc(ddr3_wb_if.cyc),
+//     .i_sstb(ddr3_wb_if.stb),
+//     .i_swe(ddr3_wb_if.we),
+//     .i_saddr(ddr3_wb_if.addr),
+//     .i_sdata(ddr3_wb_if.wdata),
+//     .i_ssel(ddr3_wb_if.sel),
+//     .o_sstall(ddr3_wb_if.stall),
+//     .o_sack(ddr3_wb_if.ack),
+//     .o_sdata(ddr3_wb_if.rdata),
+//     .o_serr(ddr3_wb_if.err),
 
-    // outgoing larger bus size port
-    .o_wcyc(wide_ddr3_wb_if.cyc),
-    .o_wstb(wide_ddr3_wb_if.stb),
-    .o_wwe(wide_ddr3_wb_if.we),
-    .o_waddr(wide_ddr3_wb_if.addr),
-    .o_wdata(wide_ddr3_wb_if.wdata),
-    .o_wsel(wide_ddr3_wb_if.sel),
-    .i_wstall(wide_ddr3_wb_if.stall),
-    .i_wack(wide_ddr3_wb_if.ack),
-    .i_wdata(wide_ddr3_wb_if.rdata),
-    .i_werr(wide_ddr3_wb_if.err)
-);
+//     // outgoing larger bus size port
+//     .o_wcyc(wide_ddr3_wb_if.cyc),
+//     .o_wstb(wide_ddr3_wb_if.stb),
+//     .o_wwe(wide_ddr3_wb_if.we),
+//     .o_waddr(wide_ddr3_wb_if.addr),
+//     .o_wdata(wide_ddr3_wb_if.wdata),
+//     .o_wsel(wide_ddr3_wb_if.sel),
+//     .i_wstall(wide_ddr3_wb_if.stall),
+//     .i_wack(wide_ddr3_wb_if.ack),
+//     .i_wdata(wide_ddr3_wb_if.rdata),
+//     .i_werr(wide_ddr3_wb_if.err)
+// );
 
-localparam DDR3_TRUE_SIM = 1'b0;
+localparam DDR3_TRUE_SIM = 1'b1;
 generate
     if (DDR3_TRUE_SIM) begin: true_ddr3_model_sim
 

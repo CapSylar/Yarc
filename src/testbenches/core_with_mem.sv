@@ -166,7 +166,7 @@ wishbone_if #(.ADDRESS_WIDTH(32), .DATA_WIDTH(128)) wide_ddr3_wb_if();
 //     .i_werr(wide_ddr3_wb_if.err)
 // );
 
-localparam DDR3_TRUE_SIM = 1'b1;
+localparam DDR3_TRUE_SIM = 1'b0;
 generate
     if (DDR3_TRUE_SIM) begin: true_ddr3_model_sim
 

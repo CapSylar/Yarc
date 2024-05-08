@@ -26,7 +26,7 @@ assign rdata_o = data_q;
 
 generate
     for (genvar i = 0; i < WSEL; ++i) begin
-        assign data_d = (wsel_i[i] & we_i) ? wdata_i[`SELECT_SLICE]: data_q[`SELECT_SLICE];
+        assign data_d[`SELECT_SLICE] = (wsel_i[i] & we_i) ? wdata_i[`SELECT_SLICE]: data_q[`SELECT_SLICE];
     end
 endgenerate
 

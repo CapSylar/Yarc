@@ -19,8 +19,8 @@ localparam logic [MAIN_WB_AW-1:0] DMEM_BASE_ADDR =    32'h9000_0000 >> UNUSED_BI
 localparam logic [MAIN_WB_AW-1:0] DMEM_MASK =         32'hF000_0000 >> UNUSED_BITS;
 
 // address space for DDR3 RAM (512MiB)
-localparam logic [MAIN_WB_AW-1:0] DDR3_BASE_ADDR =     32'hC000_0000 >> UNUSED_BITS;
-localparam logic [MAIN_WB_AW-1:0] DDR3_MASK =          32'hE000_0000 >> UNUSED_BITS;
+localparam logic [MAIN_WB_AW-1:0] FB_BASE_ADDR =     32'hC000_0000 >> UNUSED_BITS;
+localparam logic [MAIN_WB_AW-1:0] FB_MASK =          32'hE000_0000 >> UNUSED_BITS;
 
 // the second half for peripherals
 // MTIMER
@@ -38,10 +38,10 @@ localparam logic [MAIN_WB_AW-1:0] LED_DRIVER_MASK =       32'hFFFF_FFFC >> UNUSE
 localparam logic [MAIN_WB_AW-1:0] WBUART_BASE_ADDR =      32'hA000_0020 >> UNUSED_BITS;
 localparam logic [MAIN_WB_AW-1:0] WBUART_MASK =           32'hFFFF_FFF0 >> UNUSED_BITS;
 
-// HDMI CORE
-// 2^20 bytes
-localparam logic [MAIN_WB_AW-1:0] VIDEO_BASE_ADDR =        32'hA010_0000 >> UNUSED_BITS;
-localparam logic [MAIN_WB_AW-1:0] VIDEO_MASK =             32'hFFF0_0000 >> UNUSED_BITS;
+// VIDEO CORE
+// 4 bytes * 8 = 32 bytes
+localparam logic [MAIN_WB_AW-1:0] VIDEO_BASE_ADDR =        32'hA000_0040 >> UNUSED_BITS;
+localparam logic [MAIN_WB_AW-1:0] VIDEO_MASK =             32'hFFFF_FFE0 >> UNUSED_BITS;
 
 // Main Wbxbar (cpu with peripherals)
 localparam MAIN_XBAR_NUM_MASTERS = 1;
@@ -57,9 +57,9 @@ localparam MAIN_XBAR_VIDEO_SLAVE_IDX = 5;
 
 // make sure the index of the slaves in the following arrays match the indices above
 localparam bit [MAIN_WB_AW*MAIN_XBAR_NUM_SLAVES-1:0] MAIN_XBAR_BASE_ADDRESSES = 
-    {VIDEO_BASE_ADDR, WBUART_BASE_ADDR, LED_DRIVER_BASE_ADDR, MTIMER_BASE_ADDR, DDR3_BASE_ADDR, DMEM_BASE_ADDR};
+    {VIDEO_BASE_ADDR, WBUART_BASE_ADDR, LED_DRIVER_BASE_ADDR, MTIMER_BASE_ADDR, FB_BASE_ADDR, DMEM_BASE_ADDR};
 localparam bit [MAIN_WB_AW*MAIN_XBAR_NUM_SLAVES-1:0] MAIN_XBAR_MASKS = 
-    {VIDEO_MASK, WBUART_MASK, LED_DRIVER_MASK, MTIMER_MASK, DDR3_MASK, DMEM_MASK};
+    {VIDEO_MASK, WBUART_MASK, LED_DRIVER_MASK, MTIMER_MASK, FB_MASK, DMEM_MASK};
 
 localparam MAIN_XBAR_LGMAXBURST = 6;
 localparam MAIN_XBAR_OPT_TIMEOUT = 0;

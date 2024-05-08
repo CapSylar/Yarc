@@ -15,11 +15,11 @@ ${PRJ_DIR}/peripherals/wbuart32/rtl/rxuart.v
 ${PRJ_DIR}/peripherals/wbuart32/rtl/txuart.v
 ${PRJ_DIR}/peripherals/wbuart32/rtl/wbuart.v
 
-${PRJ_DIR}/peripherals/hdmi/hdmi_pkg.sv
-${PRJ_DIR}/peripherals/hdmi/hdmi_core_ctrl.sv
-${PRJ_DIR}/peripherals/hdmi/tmds_encoder.sv
-${PRJ_DIR}/peripherals/hdmi/serializer.sv
-${PRJ_DIR}/peripherals/hdmi/hdmi_core.sv
+${PRJ_DIR}/peripherals/video/video_pkg.sv
+${PRJ_DIR}/peripherals/video/video_core_ctrl.sv
+${PRJ_DIR}/peripherals/video/tmds_encoder.sv
+${PRJ_DIR}/peripherals/video/serializer.sv
+${PRJ_DIR}/peripherals/video/video_core.sv
 
 // interfaces
 ${PRJ_DIR}/interfaces/wishbone_if.sv
@@ -28,6 +28,7 @@ ${PRJ_DIR}/interfaces/wishbone_if.sv
 ${PRJ_DIR}/utils/sync_fifo.sv
 ${PRJ_DIR}/utils/sfifo.v
 ${PRJ_DIR}/utils/reg_bw.sv
+${PRJ_DIR}/utils/afifo.v
 
 // fetch modules
 // ${PRJ_DIR}/core/simple_fetch.sv

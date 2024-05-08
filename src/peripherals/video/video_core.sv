@@ -1,5 +1,5 @@
-module hdmi_core
-import hdmi_pkg::*;
+module video_core
+import video_pkg::*;
 (
 	input clk_i,
     input rstn_i,
@@ -17,18 +17,18 @@ import hdmi_pkg::*;
 );
 
 // module configuration registers
-hdmi_config_t hdmi_config;
-hdmi_addr_t hdmi_addr;
+video_config_t video_config;
+video_addr_t video_addr;
 
-hdmi_core_ctrl hdmi_core_ctrl_i
+video_core_ctrl video_core_ctrl_i
 (
 	.clk_i(clk_i),
 	.rstn_i(rstn_i),
 
 	.config_if(config_if),
 
-	.hdmi_config_o(hdmi_config),
-	.hdmi_addr_o(hdmi_addr)
+	.video_config_o(video_config),
+	.video_addr_o(video_addr)
 );
 
 // testing a simple hdmi(really dvi) driver
@@ -44,51 +44,27 @@ logic draw_area;
 
 logic [7:0] red, green, blue;
 
-localparam int FB_DEPTH = 20;
-localparam int FB_WIDTH = 32;
+// logic [FB_DEPTH-1:0] fb_cpu_addr;
+// logic [FB_DEPTH-1:0] fb_pixel_raddr;
+// logic [FB_WIDTH-1:0] fb_pixel_rdata, fb_pixel_rdata_q, fb_pixel_rdata_q2;
 
-// wishbone logic
-wire is_addressed = wb_if.cyc & wb_if.stb;
-logic ack_q;
+// assign fb_cpu_addr = wb_if.addr[FB_DEPTH-1:0];
 
-always_ff @(posedge clk_i)
-begin
-	if (!rstn_i)
-	begin
-		ack_q <= '0;
-	end
-	else
-	begin
-		ack_q <= is_addressed;
-	end
-end
+// logic fetch_pixel;
 
-assign wb_if.ack = ack_q;
-assign wb_if.rty = '0;
-assign wb_if.stall = '0;
-assign wb_if.err = '0;
+// logic pixel_wait;
 
-logic [FB_DEPTH-1:0] fb_cpu_addr;
-logic [FB_DEPTH-1:0] fb_pixel_raddr;
-logic [FB_WIDTH-1:0] fb_pixel_rdata, fb_pixel_rdata_q, fb_pixel_rdata_q2;
+// always_comb
+// begin
+// 	fetch_pixel = '0;
 
-assign fb_cpu_addr = wb_if.addr[FB_DEPTH-1:0];
-
-logic fetch_pixel;
-
-logic pixel_wait;
-
-always_comb
-begin
-	fetch_pixel = '0;
-
-	if ((y_counter == 'd524 || (y_counter < 'd479)) && // in correct Y
-		(x_counter == 'd799 || (x_counter < 'd638))) // in correct X
-	begin
-		if (!pixel_wait)
-			fetch_pixel = 1'b1;
-	end
-end
+// 	if ((y_counter == 'd524 || (y_counter < 'd479)) && // in correct Y
+// 		(x_counter == 'd799 || (x_counter < 'd638))) // in correct X
+// 	begin
+// 		if (!pixel_wait)
+// 			fetch_pixel = 1'b1;
+// 	end
+// end
 
 // the memory pumps out 32 bit words, we need 24 bits at a time
 // this means we sometimes need data from adjacent memory words
@@ -168,7 +144,7 @@ always_comb begin
 	case (state)
 		IDLE: begin
 			// fetching starts if the module is enabled and the update period is over
-			if (hdmi_config.is_enabled && fetch_start) begin
+			if (video_config.is_enabled && fetch_start) begin
 				next = FETCHING;
 			end
 		end
@@ -226,4 +202,4 @@ assign draw_area = (x_counter < 'd640) & (y_counter < 'd480);
 // 		);
 // 	end
 // endgenerate
-endmodule: hdmi_core
+endmodule: video_core

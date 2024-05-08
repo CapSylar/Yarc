@@ -246,34 +246,39 @@ wbuart_i
 assign slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].err = '0;
 assign slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].rty = '0;
 
-// NOTE: development on the hdmi core is halted for now
-// hdmi frambuffer + hdmi video driver
-// hdmi_core
-// #()
-// hdmi_core_i
-// (
-//     .clk_i(clk_i),
-//     .rstn_i(rstn_i),
+wishbone_if #() video_fb_wb_if();
+wishbone_if #() cpu_fb_wb_if();
+wishbone_if #() sec_xbar_slaves_if[SEC_XBAR_NUM_SLAVES]();
 
-//     .pixel_clk_i(pixel_clk_i),
-//     .pixel_clk_5x_i(pixel_clk_5x_i),
+video_core
+#(
 
-//     .wb_if(slave_wb_if[HDMI_SLAVE_INDEX]),
-
-//     .hdmi_clk_o(hdmi_clk_o),
-//     .hdmi_data_o(hdmi_data_o)
-// );
-
-sec_xbar sec_xbar_i
+)
+video_core_i
 (
     .clk_i(clk_i),
     .rstn_i(rstn_i),
 
-    .cpu_wb_if(cpu_fb_wb_if),
-    .video_wb_if(video_fb_wb_if),
+    .pixel_clk_i(pixel_clk_i),
+    .pixel_clk_5x_i(pixel_clk_5x_i),
 
-    .slave_wb_if(ddr3_wb_if)
+    .config_if(slave_wb_if[MAIN_XBAR_VIDEO_SLAVE_IDX]),
+    .fetch_if(video_fb_wb_if)
+
+    // .hdmi_clk_o(hdmi_clk_o),
+    // .hdmi_data_o(hdmi_data_o)
 );
+
+// sec_xbar sec_xbar_i
+// (
+//     .clk_i(clk_i),
+//     .rstn_i(rstn_i),
+
+//     .cpu_wb_if(cpu_fb_wb_if),
+//     .video_wb_if(video_fb_wb_if),
+
+//     .slave_wb_if(sec_xbar_slaves_if)
+// );
 
 // Core Top
 core_top core_i

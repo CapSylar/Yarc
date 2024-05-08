@@ -98,7 +98,7 @@ assign video_wb_if.err = merr[SEC_XBAR_VIDEO_MASTER_IDX];
 
 // connect the slave wire side to the systemverilog interfaces
 generate
-    for (genvar i = 0 ; i < MAIN_XBAR_NUM_SLAVES; ++i) begin: connect_slave_wb_ifs
+    for (genvar i = 0 ; i < SEC_XBAR_NUM_SLAVES; ++i) begin: connect_slave_wb_ifs
         assign slave_wb_if[i].cyc = scyc[i];
         assign slave_wb_if[i].stb = sstb[i];
         assign slave_wb_if[i].we = swe[i];

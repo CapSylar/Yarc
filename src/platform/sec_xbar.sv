@@ -25,7 +25,7 @@ wbupsz #(.ADDRESS_WIDTH(MAIN_WB_AW_BYTE),
          .OPT_LOWPOWER(1'b0))
 wbupsz_i
 (
-    .i_clk(clk_I),
+    .i_clk(clk_i),
     .i_reset(~rstn_i),
 
     // incoming small port

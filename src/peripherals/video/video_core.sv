@@ -202,4 +202,13 @@ assign draw_area = (x_counter < 'd640) & (y_counter < 'd480);
 // 		);
 // 	end
 // endgenerate
+
+// zero out fetch_if for now
+assign fetch_if.cyc = '0;
+assign fetch_if.stb = '0;
+assign fetch_if.we = '0;
+assign fetch_if.addr = '0;
+assign fetch_if.sel = '0;
+assign fetch_if.wdata = '0;
+
 endmodule: video_core

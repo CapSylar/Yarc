@@ -67,10 +67,10 @@ begin
     $finish;
 end
 
-wishbone_if #(.ADDRESS_WIDTH(32), .DATA_WIDTH(32)) imem_wb_if();
+wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) imem_wb_if();
 
 // Instruction Memory
-sp_mem_wb #(.MEMFILE(IMEMFILE), .SIZE_POT_WORDS(IMEM_SIZE_WORDS_POT), .DATA_WIDTH(DATA_WIDTH)) imem
+sp_mem_wb #(.MEMFILE(IMEMFILE), .SIZE_POT_WORDS(IMEM_SIZE_WORDS_POT), .DATA_WIDTH(MAIN_WB_DW)) imem
 (
     .clk_i(clk),
 
@@ -89,10 +89,10 @@ sp_mem_wb #(.MEMFILE(IMEMFILE), .SIZE_POT_WORDS(IMEM_SIZE_WORDS_POT), .DATA_WIDT
     .err_o(imem_wb_if.err)
 );
 
-wishbone_if #(.ADDRESS_WIDTH(32), .DATA_WIDTH(32)) dmem_wb_if();
+wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) dmem_wb_if();
 
 // Data Memory
-sp_mem_wb #(.MEMFILE(DMEMFILE), .SIZE_POT_WORDS(DMEM_SIZE_WORDS_POT), .DATA_WIDTH(DATA_WIDTH)) dmem
+sp_mem_wb #(.MEMFILE(DMEMFILE), .SIZE_POT_WORDS(DMEM_SIZE_WORDS_POT), .DATA_WIDTH(MAIN_WB_DW)) dmem
 (
     .clk_i(clk),
 
@@ -127,44 +127,7 @@ rxuart_printer_i
     .uart_rx_i(uart_tx)
 );
 
-// wishbone up converter 32-bits <-> 128-bits
-wishbone_if #(.ADDRESS_WIDTH(32), .DATA_WIDTH(32)) ddr3_wb_if();
-wishbone_if #(.ADDRESS_WIDTH(32), .DATA_WIDTH(128)) wide_ddr3_wb_if();
-
-// wbupsz #(.ADDRESS_WIDTH(32),
-//          .WIDE_DW(128),
-//          .SMALL_DW(32),
-//          .OPT_LITTLE_ENDIAN(1'b1),
-//          .OPT_LOWPOWER(1'b0))
-// wbupsz_i
-// (
-//     .i_clk(clk),
-//     .i_reset(~rstn),
-
-//     // incoming small port
-//     .i_scyc(ddr3_wb_if.cyc),
-//     .i_sstb(ddr3_wb_if.stb),
-//     .i_swe(ddr3_wb_if.we),
-//     .i_saddr(ddr3_wb_if.addr),
-//     .i_sdata(ddr3_wb_if.wdata),
-//     .i_ssel(ddr3_wb_if.sel),
-//     .o_sstall(ddr3_wb_if.stall),
-//     .o_sack(ddr3_wb_if.ack),
-//     .o_sdata(ddr3_wb_if.rdata),
-//     .o_serr(ddr3_wb_if.err),
-
-//     // outgoing larger bus size port
-//     .o_wcyc(wide_ddr3_wb_if.cyc),
-//     .o_wstb(wide_ddr3_wb_if.stb),
-//     .o_wwe(wide_ddr3_wb_if.we),
-//     .o_waddr(wide_ddr3_wb_if.addr),
-//     .o_wdata(wide_ddr3_wb_if.wdata),
-//     .o_wsel(wide_ddr3_wb_if.sel),
-//     .i_wstall(wide_ddr3_wb_if.stall),
-//     .i_wack(wide_ddr3_wb_if.ack),
-//     .i_wdata(wide_ddr3_wb_if.rdata),
-//     .i_werr(wide_ddr3_wb_if.err)
-// );
+wishbone_if #(.ADDRESS_WIDTH(SEC_WB_AW), .DATA_WIDTH(SEC_WB_DW)) ddr3_wb_if();
 
 localparam DDR3_TRUE_SIM = 1'b0;
 generate
@@ -198,7 +161,7 @@ generate
             .i_rst_n(rstn && clk_locked), 
 
             // Wishbone inputs
-            .wb_if(wide_ddr3_wb_if),
+            .wb_if(ddr3_wb_if),
 
             // PHY Interface
             .o_ddr3_clk_p(o_ddr3_clk_p),
@@ -242,24 +205,24 @@ generate
         assign odt[1] = 1'b0; 
 
     end else begin: replace_with_wb_model
-        wb_sim_memory #(.DATA_WIDTH(128), .SIZE_POT_WORDS(25))
+        wb_sim_memory #(.DATA_WIDTH(SEC_WB_DW), .SIZE_POT_WORDS(SEC_WB_AW))
         wb_sim_memory_i
         (
             .clk_i(clk),
 
-            .cyc_i(wide_ddr3_wb_if.cyc),
-            .stb_i(wide_ddr3_wb_if.stb),
+            .cyc_i(ddr3_wb_if.cyc),
+            .stb_i(ddr3_wb_if.stb),
 
-            .we_i(wide_ddr3_wb_if.we),
-            .addr_i(wide_ddr3_wb_if.addr[$bits(wb_sim_memory_i.addr_i)-1:0]),
-            .sel_i(wide_ddr3_wb_if.sel),
-            .wdata_i(wide_ddr3_wb_if.wdata),
+            .we_i(ddr3_wb_if.we),
+            .addr_i(ddr3_wb_if.addr[$bits(wb_sim_memory_i.addr_i)-1:0]),
+            .sel_i(ddr3_wb_if.sel),
+            .wdata_i(ddr3_wb_if.wdata),
             
-            .rdata_o(wide_ddr3_wb_if.rdata),
-            .rty_o(wide_ddr3_wb_if.rty),
-            .ack_o(wide_ddr3_wb_if.ack),
-            .stall_o(wide_ddr3_wb_if.stall),
-            .err_o(wide_ddr3_wb_if.err)
+            .rdata_o(ddr3_wb_if.rdata),
+            .rty_o(ddr3_wb_if.rty),
+            .ack_o(ddr3_wb_if.ack),
+            .stall_o(ddr3_wb_if.stall),
+            .err_o(ddr3_wb_if.err)
         );
     end
 endgenerate
@@ -276,7 +239,7 @@ yarc_platform yarc_platform_i
     .instr_fetch_wb_if(imem_wb_if),
 
     // Platform <-> DDR3
-    .ddr3_wb_if(ddr3_wb_if),
+    .fb_wb_if(ddr3_wb_if),
 
     // Platform <-> Peripherals
     .led_status_o(),

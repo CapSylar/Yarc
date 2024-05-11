@@ -13,13 +13,14 @@ import platform_pkg::*;
     wishbone_if.MASTER slave_wb_if [SEC_XBAR_NUM_SLAVES]
 );
 
-wishbone_if #(.ADDRESS_WIDTH(32), .DATA_WIDTH(128)) cpu_wb_wide_if();
+wishbone_if #(.ADDRESS_WIDTH(SEC_WB_AW), .DATA_WIDTH(SEC_WB_DW)) cpu_wb_wide_if();
 
+logic [MAIN_WB_AW_BYTE-$clog2(SEC_WB_DW/8)-SEC_WB_AW-1:0] ignore; // make simulator happy
 // the cpu interface is 32-bit, we need to take it up to 128-bit and only then connect
 // it to the crossbar
-wbupsz #(.ADDRESS_WIDTH(32),
-         .WIDE_DW(128),
-         .SMALL_DW(32),
+wbupsz #(.ADDRESS_WIDTH(MAIN_WB_AW_BYTE),
+         .WIDE_DW(SEC_WB_DW),
+         .SMALL_DW(MAIN_WB_DW),
          .OPT_LITTLE_ENDIAN(1'b1),
          .OPT_LOWPOWER(1'b0))
 wbupsz_i
@@ -43,7 +44,7 @@ wbupsz_i
     .o_wcyc(cpu_wb_wide_if.cyc),
     .o_wstb(cpu_wb_wide_if.stb),
     .o_wwe(cpu_wb_wide_if.we),
-    .o_waddr(cpu_wb_wide_if.addr),
+    .o_waddr({ignore, cpu_wb_wide_if.addr}),
     .o_wdata(cpu_wb_wide_if.wdata),
     .o_wsel(cpu_wb_wide_if.sel),
     .i_wstall(cpu_wb_wide_if.stall),
@@ -71,17 +72,17 @@ logic [SEC_XBAR_NUM_SLAVES*SEC_WB_DW-1:0] sdata_o;
 // shit needs to be done manually unfortunately
 
 // for the cpu widened master interface
-assign mcyc[SEC_XBAR_CPU_MASTER_IDX] = cpu_wb_if.cyc;
-assign mstb[SEC_XBAR_CPU_MASTER_IDX] = cpu_wb_if.stb;
-assign mwe[SEC_XBAR_CPU_MASTER_IDX] = cpu_wb_if.we;
-assign maddr[SEC_XBAR_CPU_MASTER_IDX*SEC_WB_AW +: SEC_WB_AW] = cpu_wb_if.addr;
-assign mdata_o[SEC_XBAR_CPU_MASTER_IDX*SEC_WB_DW +: SEC_WB_DW] = cpu_wb_if.wdata;
-assign msel[SEC_XBAR_CPU_MASTER_IDX*SEC_WB_DW/8 +: SEC_WB_DW/8] = cpu_wb_if.sel;
+assign mcyc[SEC_XBAR_CPU_MASTER_IDX] = cpu_wb_wide_if.cyc;
+assign mstb[SEC_XBAR_CPU_MASTER_IDX] = cpu_wb_wide_if.stb;
+assign mwe[SEC_XBAR_CPU_MASTER_IDX] = cpu_wb_wide_if.we;
+assign maddr[SEC_XBAR_CPU_MASTER_IDX*SEC_WB_AW +: SEC_WB_AW] = cpu_wb_wide_if.addr;
+assign mdata_o[SEC_XBAR_CPU_MASTER_IDX*SEC_WB_DW +: SEC_WB_DW] = cpu_wb_wide_if.wdata;
+assign msel[SEC_XBAR_CPU_MASTER_IDX*SEC_WB_DW/8 +: SEC_WB_DW/8] = cpu_wb_wide_if.sel;
 
-assign cpu_wb_if.stall = mstall[SEC_XBAR_CPU_MASTER_IDX];
-assign cpu_wb_if.ack = mack[SEC_XBAR_CPU_MASTER_IDX];
-assign cpu_wb_if.rdata = mdata_i[SEC_XBAR_CPU_MASTER_IDX*SEC_WB_DW +: SEC_WB_DW];
-assign cpu_wb_if.err = merr[SEC_XBAR_CPU_MASTER_IDX];
+assign cpu_wb_wide_if.stall = mstall[SEC_XBAR_CPU_MASTER_IDX];
+assign cpu_wb_wide_if.ack = mack[SEC_XBAR_CPU_MASTER_IDX];
+assign cpu_wb_wide_if.rdata = mdata_i[SEC_XBAR_CPU_MASTER_IDX*SEC_WB_DW +: SEC_WB_DW];
+assign cpu_wb_wide_if.err = merr[SEC_XBAR_CPU_MASTER_IDX];
 
 // for the video master interface
 assign mcyc[SEC_XBAR_VIDEO_MASTER_IDX] = video_wb_if.cyc;

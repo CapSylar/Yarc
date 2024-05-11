@@ -357,7 +357,7 @@ add wave -group {VIDEO Interface} -color Gold ${PLATFORM}/slave_wb_if[5]/*;
 # add wave -group {DDR3 Controller} ${ddr3_top}/i_ref_clk;
 # add wave -group {DDR3 Controller} ${ddr3_top}/i_ddr3_clk_90;
 # add wave -group {DDR3 Controller} ${ddr3_top}/i_rst_n;
-add wave -group {DDR3 Controller} ${TOP}/wide_ddr3_wb_if/*;
+add wave -group {DDR3 Controller} ${TOP}/ddr3_wb_if/*;
 add wave -group {Simple WB Memory} ${TOP}/replace_with_wb_model/wb_sim_memory_i/*;
 
 # add wave -group {DDR3 External Interface} -divider {DDR3 External Interface}

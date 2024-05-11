@@ -5,7 +5,7 @@ logic cyc;
 logic stb;
 
 logic we;
-logic [ADDRESS_WIDTH-$clog2(DATA_WIDTH/8)-1:0] addr;
+logic [ADDRESS_WIDTH-1:0] addr;
 logic [(DATA_WIDTH/8)-1:0] sel;
 logic [DATA_WIDTH-1:0] wdata;
 

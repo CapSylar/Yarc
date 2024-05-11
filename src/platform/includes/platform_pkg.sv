@@ -1,11 +1,10 @@
 package platform_pkg;
 
-localparam BYTE_ADDRESS_WIDTH = 32;
-localparam integer DATA_WIDTH = 32;
+localparam MAIN_WB_AW_BYTE = 32; // address is byte addressable
 
-localparam integer UNUSED_BITS = $clog2(DATA_WIDTH/8); // unused bits due to bus addressable word size > byte
-localparam integer MAIN_WB_AW = BYTE_ADDRESS_WIDTH - UNUSED_BITS; // wishbone address width
-localparam integer MAIN_WB_DW = DATA_WIDTH; // wishbone data width
+localparam integer MAIN_WB_DW = 32; // wishbone data width
+localparam integer UNUSED_BITS = $clog2(MAIN_WB_DW/8); // unused bits due to bus addressable word size > byte
+localparam integer MAIN_WB_AW = MAIN_WB_AW_BYTE - UNUSED_BITS; // wishbone address width
 
 // IMEM and DMEM memory parameters
 localparam integer DMEM_SIZE_BYTES_POT = 15; // 32KiB
@@ -48,8 +47,8 @@ localparam MAIN_XBAR_NUM_MASTERS = 1;
 localparam MAIN_XBAR_NUM_SLAVES = 6;
 
 // slave indices
-localparam MAIN_XBAR_DMEM_SLAVE__IDX =  0;
-localparam MAIN_XBAR_DDR3_SLAVE_IDX = 1;
+localparam MAIN_XBAR_DMEM_SLAVE_IDX =  0;
+localparam MAIN_XBAR_FB_SLAVE_IDX = 1;
 localparam MAIN_XBAR_MTIMER_SLAVE_IDX = 2;
 localparam MAIN_XBAR_LED_DRIVER_SLAVE_IDX = 3;
 localparam MAIN_XBAR_WBUART_SLAVE_IDX = 4;
@@ -67,8 +66,8 @@ localparam MAIN_XBAR_OPT_DBLBUFFER = 0;
 localparam MAIN_XBAR_OPT_LOWPOWER = 0;
 
 // secondary wbxbar (cpu-master & video-master with ddr3 as a slave)
-localparam SEC_WB_AW = 32;
-localparam SEC_WB_DW = 128;
+localparam SEC_WB_AW = ddr3_parameters_pkg::wb_addr_bits;
+localparam SEC_WB_DW = ddr3_parameters_pkg::wb_data_bits;
 
 localparam SEC_XBAR_NUM_MASTERS = 2;
 localparam SEC_XBAR_NUM_SLAVES = 1;
@@ -76,7 +75,7 @@ localparam SEC_XBAR_NUM_SLAVES = 1;
 localparam SEC_XBAR_VIDEO_MASTER_IDX = 0;
 localparam SEC_XBAR_CPU_MASTER_IDX = 1;
 
-localparam SEC_XBAR_DDR3_SLAVE_IDX = 0;
+localparam SEC_XBAR_FB_SLAVE_IDX = 0;
 
 // make sure the index of the slaves in the following arrays match the indices above
 localparam bit [SEC_WB_AW*SEC_XBAR_NUM_SLAVES-1:0] SEC_XBAR_BASE_ADDRESSES = {'0};

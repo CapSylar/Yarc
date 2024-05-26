@@ -30,7 +30,7 @@ import ddr3_parameters_pkg::*;
     inout [1:0] ddr3_dqs_n_io,
     inout [1:0] ddr3_dqs_p_io,
 
-    output ddr3_odt_o,
+    output [0:0] ddr3_odt_o,
     output ddr3_ras_o,
     output ddr3_reset_o,
     output ddr3_we_o
@@ -59,10 +59,10 @@ clk_wiz_0 clk_wiz_0_i
     .clk_in1(clk),
     .reset(~external_resetn),
     .locked(clk_locked),
-    .clk_out1(sys_clk),
-    .clk_out2(ddr3_clk),
-    .clk_out3(ddr3_clk_90),
-    .clk_out4(ddr3_ref_clk)
+    .sys_clk_o(sys_clk),
+    .ddr3_clk_o(ddr3_clk),
+    .ddr3_ref_clk_o(ddr3_ref_clk),
+    .ddr3_clk_90p_o(ddr3_clk_90)
 );
 
 // create the reset signal from btnc
@@ -74,10 +74,10 @@ begin
 end
 
 // Instruction Memory
-wishbone_if #(.ADDRESS_WIDTH(32), .DATA_WIDTH(32)) imem_wb_if();
+wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) imem_wb_if();
 
 // Instruction Memory
-sp_mem_wb #(.MEMFILE(IMEMFILE), .SIZE_POT_WORDS(IMEM_SIZE_WORDS_POT), .DATA_WIDTH(DATA_WIDTH)) imem
+sp_mem_wb #(.MEMFILE(IMEMFILE), .SIZE_POT_WORDS(IMEM_SIZE_WORDS_POT), .DATA_WIDTH(MAIN_WB_DW)) imem
 (
     .clk_i(sys_clk),
 
@@ -96,10 +96,10 @@ sp_mem_wb #(.MEMFILE(IMEMFILE), .SIZE_POT_WORDS(IMEM_SIZE_WORDS_POT), .DATA_WIDT
     .err_o(imem_wb_if.err)
 );
 
-wishbone_if #(.ADDRESS_WIDTH(32), .DATA_WIDTH(32)) dmem_wb_if();
+wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) dmem_wb_if();
 
 // Data Memory
-sp_mem_wb #(.MEMFILE(DMEMFILE), .SIZE_POT_WORDS(DMEM_SIZE_WORDS_POT), .DATA_WIDTH(DATA_WIDTH)) dmem
+sp_mem_wb #(.MEMFILE(DMEMFILE), .SIZE_POT_WORDS(DMEM_SIZE_WORDS_POT), .DATA_WIDTH(MAIN_WB_DW)) dmem
 (
     .clk_i(sys_clk),
 
@@ -119,44 +119,7 @@ sp_mem_wb #(.MEMFILE(DMEMFILE), .SIZE_POT_WORDS(DMEM_SIZE_WORDS_POT), .DATA_WIDT
 );
 
 // DDR3 memory
-// wishbone up converter 32-bits <-> 128-bits
-wishbone_if #(.ADDRESS_WIDTH(32), .DATA_WIDTH(32)) ddr3_wb_if();
-wishbone_if #(.ADDRESS_WIDTH(32), .DATA_WIDTH(128)) wide_ddr3_wb_if();
-
-wbupsz #(.ADDRESS_WIDTH(32),
-         .WIDE_DW(128),
-         .SMALL_DW(32),
-         .OPT_LITTLE_ENDIAN(1'b1),
-         .OPT_LOWPOWER(1'b0))
-wbupsz_i
-(
-    .i_clk(sys_clk),
-    .i_reset(~rstn),
-
-    // incoming small port
-    .i_scyc(ddr3_wb_if.cyc),
-    .i_sstb(ddr3_wb_if.stb),
-    .i_swe(ddr3_wb_if.we),
-    .i_saddr(ddr3_wb_if.addr),
-    .i_sdata(ddr3_wb_if.wdata),
-    .i_ssel(ddr3_wb_if.sel),
-    .o_sstall(ddr3_wb_if.stall),
-    .o_sack(ddr3_wb_if.ack),
-    .o_sdata(ddr3_wb_if.rdata),
-    .o_serr(ddr3_wb_if.err),
-
-    // outgoing larger bus size port
-    .o_wcyc(wide_ddr3_wb_if.cyc),
-    .o_wstb(wide_ddr3_wb_if.stb),
-    .o_wwe(wide_ddr3_wb_if.we),
-    .o_waddr(wide_ddr3_wb_if.addr),
-    .o_wdata(wide_ddr3_wb_if.wdata),
-    .o_wsel(wide_ddr3_wb_if.sel),
-    .i_wstall(wide_ddr3_wb_if.stall),
-    .i_wack(wide_ddr3_wb_if.ack),
-    .i_wdata(wide_ddr3_wb_if.rdata),
-    .i_werr(wide_ddr3_wb_if.err)
-);
+wishbone_if #(.ADDRESS_WIDTH(SEC_WB_AW), .DATA_WIDTH(SEC_WB_DW)) ddr3_wb_if();
 
 // ddr3 phy interface definitons
 // DDR3 Controller 
@@ -170,7 +133,7 @@ yarc_ddr3_top #() yarc_ddr3_top_i
     .i_rst_n(rstn && clk_locked), 
 
     // Wishbone inputs
-    .wb_if(wide_ddr3_wb_if),
+    .wb_if(ddr3_wb_if),
 
     // PHY Interface
     .o_ddr3_clk_p(ddr3_clk_p_o),
@@ -202,11 +165,11 @@ yarc_platform yarc_platform_i
     // Core <-> IMEM
     .instr_fetch_wb_if(imem_wb_if),
 
+    // Platform <-> DDR3
+    .fb_wb_if(ddr3_wb_if),
+
     // Platform <-> Peripherals
     .led_status_o(led),
-
-    // Platform <-> DDR3
-    .ddr3_wb_if(ddr3_wb_if),
 
     // Platform <-> UART
     .uart_rx_i(uart_tx_in),

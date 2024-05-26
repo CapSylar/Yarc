@@ -232,63 +232,325 @@ set_property -dict { PACKAGE_PIN V18   IOSTANDARD LVCMOS33 } [get_ports { uart_t
 #set_property -dict { PACKAGE_PIN V14   IOSTANDARD LVCMOS25 } [get_ports { vadj_en }]; #IO_L13N_T2_MRCC_13 Sch=vadj_en
 
 ## DDR3
-set_property INTERNAL_VREF 0.750 [get_iobanks 35]; # bank 35 is where all the DDR3 IOs lie, among others
+# set_property INTERNAL_VREF 0.750 [get_iobanks 35]; # bank 35 is where all the DDR3 IOs lie, among others
 
-set_property -dict { PACKAGE_PIN M2 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[0] }]; #IO_L16N_T2_35 Sch=ddr3_addr_o[0]
-set_property -dict { PACKAGE_PIN M5 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[1] }]; #IO_L23N_T3_35 Sch=ddr3_addr_o[1]
-set_property -dict { PACKAGE_PIN M3 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[2] }]; #IO_L16P_T2_35 Sch=ddr3_addr_o[2]
-set_property -dict { PACKAGE_PIN M1 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[3] }]; #IO_L15P_T2_DQS_35 Sch=ddr3_addr_o[3]
-set_property -dict { PACKAGE_PIN L6 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[4] }]; #IO_25_35 Sch=ddr3_addr_o[4]
-set_property -dict { PACKAGE_PIN P1 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[5] }]; #IO_L20N_T3_35 Sch=ddr3_addr_o[5]
-set_property -dict { PACKAGE_PIN N3 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[6] }]; #IO_L19N_T3_VREF_35 Sch=ddr3_addr_o[6]
-set_property -dict { PACKAGE_PIN N2 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[7] }]; #IO_L22N_T3_35 Sch=ddr3_addr_o[7]
-set_property -dict { PACKAGE_PIN M6 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[8] }]; #IO_L23P_T3_35 Sch=ddr3_addr_o[8]
-set_property -dict { PACKAGE_PIN R1 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[9] }]; #IO_L20P_T3_35 Sch=ddr3_addr_o[9]
-set_property -dict { PACKAGE_PIN L5 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[10] }]; #IO_L18P_T2_35 Sch=ddr3_addr_o[10]
-set_property -dict { PACKAGE_PIN N5 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[11] }]; #IO_L24N_T3_35 Sch=ddr3_addr_o[11]
-set_property -dict { PACKAGE_PIN N4 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[12] }]; #IO_L19P_T3_35 Sch=ddr3_addr_o[12]
-set_property -dict { PACKAGE_PIN P2 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[13] }]; #IO_L22P_T3_35 Sch=ddr3_addr_o[13]
-set_property -dict { PACKAGE_PIN P6 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[14] }]; #IO_L24P_T3_35 Sch=ddr3_addr_o[14]
+# set_property -dict { PACKAGE_PIN M2 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[0] }]; #IO_L16N_T2_35 Sch=ddr3_addr_o[0]
+# set_property -dict { PACKAGE_PIN M5 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[1] }]; #IO_L23N_T3_35 Sch=ddr3_addr_o[1]
+# set_property -dict { PACKAGE_PIN M3 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[2] }]; #IO_L16P_T2_35 Sch=ddr3_addr_o[2]
+# set_property -dict { PACKAGE_PIN M1 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[3] }]; #IO_L15P_T2_DQS_35 Sch=ddr3_addr_o[3]
+# set_property -dict { PACKAGE_PIN L6 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[4] }]; #IO_25_35 Sch=ddr3_addr_o[4]
+# set_property -dict { PACKAGE_PIN P1 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[5] }]; #IO_L20N_T3_35 Sch=ddr3_addr_o[5]
+# set_property -dict { PACKAGE_PIN N3 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[6] }]; #IO_L19N_T3_VREF_35 Sch=ddr3_addr_o[6]
+# set_property -dict { PACKAGE_PIN N2 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[7] }]; #IO_L22N_T3_35 Sch=ddr3_addr_o[7]
+# set_property -dict { PACKAGE_PIN M6 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[8] }]; #IO_L23P_T3_35 Sch=ddr3_addr_o[8]
+# set_property -dict { PACKAGE_PIN R1 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[9] }]; #IO_L20P_T3_35 Sch=ddr3_addr_o[9]
+# set_property -dict { PACKAGE_PIN L5 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[10] }]; #IO_L18P_T2_35 Sch=ddr3_addr_o[10]
+# set_property -dict { PACKAGE_PIN N5 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[11] }]; #IO_L24N_T3_35 Sch=ddr3_addr_o[11]
+# set_property -dict { PACKAGE_PIN N4 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[12] }]; #IO_L19P_T3_35 Sch=ddr3_addr_o[12]
+# set_property -dict { PACKAGE_PIN P2 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[13] }]; #IO_L22P_T3_35 Sch=ddr3_addr_o[13]
+# set_property -dict { PACKAGE_PIN P6 IOSTANDARD SSTL15 } [get_ports { ddr3_addr_o[14] }]; #IO_L24P_T3_35 Sch=ddr3_addr_o[14]
 
-set_property -dict { PACKAGE_PIN L3 IOSTANDARD SSTL15 } [get_ports { ddr3_ba_o[0] }]; #IO_L14P_T2_SRCC_35 Sch=ddr3_ba_o[0]
-set_property -dict { PACKAGE_PIN K6 IOSTANDARD SSTL15 } [get_ports { ddr3_ba_o[1] }]; #IO_L17P_T2_35 Sch=ddr3_ba_o[1]
-set_property -dict { PACKAGE_PIN L4 IOSTANDARD SSTL15 } [get_ports { ddr3_ba_o[2] }]; #IO_L18N_T2_35 Sch=ddr3_ba_o[2]
+# set_property -dict { PACKAGE_PIN L3 IOSTANDARD SSTL15 } [get_ports { ddr3_ba_o[0] }]; #IO_L14P_T2_SRCC_35 Sch=ddr3_ba_o[0]
+# set_property -dict { PACKAGE_PIN K6 IOSTANDARD SSTL15 } [get_ports { ddr3_ba_o[1] }]; #IO_L17P_T2_35 Sch=ddr3_ba_o[1]
+# set_property -dict { PACKAGE_PIN L4 IOSTANDARD SSTL15 } [get_ports { ddr3_ba_o[2] }]; #IO_L18N_T2_35 Sch=ddr3_ba_o[2]
 
-set_property -dict { PACKAGE_PIN K3 IOSTANDARD SSTL15 } [get_ports { ddr3_cas_o }]; #IO_L14N_T2_SRCC_35 Sch=ddr3_cas_o
-set_property -dict { PACKAGE_PIN J6 IOSTANDARD SSTL15 } [get_ports { ddr3_cke_o[0] }]; #IO_L17N_T2_35 Sch=ddr3_cke_o[0]
+# set_property -dict { PACKAGE_PIN K3 IOSTANDARD SSTL15 } [get_ports { ddr3_cas_o }]; #IO_L14N_T2_SRCC_35 Sch=ddr3_cas_o
+# set_property -dict { PACKAGE_PIN J6 IOSTANDARD SSTL15 } [get_ports { ddr3_cke_o[0] }]; #IO_L17N_T2_35 Sch=ddr3_cke_o[0]
 
-set_property -dict { PACKAGE_PIN P4 IOSTANDARD DIFF_SSTL15 } [get_ports { ddr3_clk_n_o[0] }]; #IO_L21N_T3_DQS_35 Sch=ddr3_clk_n_o[0]
-set_property -dict { PACKAGE_PIN P5 IOSTANDARD DIFF_SSTL15 } [get_ports { ddr3_clk_p_o[0] }]; #IO_L21P_T3_DQS_35 Sch=ddr3_clk_p_o[0]
+# set_property -dict { PACKAGE_PIN P4 IOSTANDARD DIFF_SSTL15 } [get_ports { ddr3_clk_n_o[0] }]; #IO_L21N_T3_DQS_35 Sch=ddr3_clk_n_o[0]
+# set_property -dict { PACKAGE_PIN P5 IOSTANDARD DIFF_SSTL15 } [get_ports { ddr3_clk_p_o[0] }]; #IO_L21P_T3_DQS_35 Sch=ddr3_clk_p_o[0]
 
-set_property -dict { PACKAGE_PIN G3 IOSTANDARD SSTL15 } [get_ports { ddr3_dm_o[0] }]; #IO_L11N_T1_SRCC_35 Sch=ddr3_dm_o[0]
-set_property -dict { PACKAGE_PIN F1 IOSTANDARD SSTL15 } [get_ports { ddr3_dm_o[1] }]; #IO_L5N_T0_AD13N_35 Sch=ddr3_dm_o[1]
+# set_property -dict { PACKAGE_PIN G3 IOSTANDARD SSTL15 } [get_ports { ddr3_dm_o[0] }]; #IO_L11N_T1_SRCC_35 Sch=ddr3_dm_o[0]
+# set_property -dict { PACKAGE_PIN F1 IOSTANDARD SSTL15 } [get_ports { ddr3_dm_o[1] }]; #IO_L5N_T0_AD13N_35 Sch=ddr3_dm_o[1]
 
-set_property -dict { PACKAGE_PIN G2 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[0] }]; #IO_L8N_T1_AD14N_35 Sch=ddr3_dq_io[0]
-set_property -dict { PACKAGE_PIN H4 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[1] }]; #IO_L12P_T1_MRCC_35 Sch=ddr3_dq_io[1]
-set_property -dict { PACKAGE_PIN H5 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[2] }]; #IO_L10N_T1_AD15N_35 Sch=ddr3_dq_io[2]
-set_property -dict { PACKAGE_PIN J1 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[3] }]; #IO_L7N_T1_AD6N_35 Sch=ddr3_dq_io[3]
-set_property -dict { PACKAGE_PIN K1 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[4] }]; #IO_L7P_T1_AD6P_35 Sch=ddr3_dq_io[4]
-set_property -dict { PACKAGE_PIN H3 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[5] }]; #IO_L11P_T1_SRCC_35 Sch=ddr3_dq_io[5]
-set_property -dict { PACKAGE_PIN H2 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[6] }]; #IO_L8P_T1_AD14P_35 Sch=ddr3_dq_io[6]
-set_property -dict { PACKAGE_PIN J5 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[7] }]; #IO_L10P_T1_AD15P_35 Sch=ddr3_dq_io[7]
-set_property -dict { PACKAGE_PIN E3 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[8] }]; #IO_L6N_T0_VREF_35 Sch=ddr3_dq_io[8]
-set_property -dict { PACKAGE_PIN B2 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[9] }]; #IO_L2N_T0_AD12N_35 Sch=ddr3_dq_io[9]
-set_property -dict { PACKAGE_PIN F3 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[10] }]; #IO_L6P_T0_35 Sch=ddr3_dq_io[10]
-set_property -dict { PACKAGE_PIN D2 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[11] }]; #IO_L4N_T0_35 Sch=ddr3_dq_io[11]
-set_property -dict { PACKAGE_PIN C2 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[12] }]; #IO_L2P_T0_AD12P_35 Sch=ddr3_dq_io[12]
-set_property -dict { PACKAGE_PIN A1 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[13] }]; #IO_L1N_T0_AD4N_35 Sch=ddr3_dq_io[13]
-set_property -dict { PACKAGE_PIN E2 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[14] }]; #IO_L4P_T0_35 Sch=ddr3_dq_io[14]
-set_property -dict { PACKAGE_PIN B1 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[15] }]; #IO_L1P_T0_AD4P_35 Sch=ddr3_dq_io[15]
+# set_property -dict { PACKAGE_PIN G2 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[0] }]; #IO_L8N_T1_AD14N_35 Sch=ddr3_dq_io[0]
+# set_property -dict { PACKAGE_PIN H4 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[1] }]; #IO_L12P_T1_MRCC_35 Sch=ddr3_dq_io[1]
+# set_property -dict { PACKAGE_PIN H5 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[2] }]; #IO_L10N_T1_AD15N_35 Sch=ddr3_dq_io[2]
+# set_property -dict { PACKAGE_PIN J1 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[3] }]; #IO_L7N_T1_AD6N_35 Sch=ddr3_dq_io[3]
+# set_property -dict { PACKAGE_PIN K1 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[4] }]; #IO_L7P_T1_AD6P_35 Sch=ddr3_dq_io[4]
+# set_property -dict { PACKAGE_PIN H3 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[5] }]; #IO_L11P_T1_SRCC_35 Sch=ddr3_dq_io[5]
+# set_property -dict { PACKAGE_PIN H2 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[6] }]; #IO_L8P_T1_AD14P_35 Sch=ddr3_dq_io[6]
+# set_property -dict { PACKAGE_PIN J5 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[7] }]; #IO_L10P_T1_AD15P_35 Sch=ddr3_dq_io[7]
+# set_property -dict { PACKAGE_PIN E3 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[8] }]; #IO_L6N_T0_VREF_35 Sch=ddr3_dq_io[8]
+# set_property -dict { PACKAGE_PIN B2 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[9] }]; #IO_L2N_T0_AD12N_35 Sch=ddr3_dq_io[9]
+# set_property -dict { PACKAGE_PIN F3 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[10] }]; #IO_L6P_T0_35 Sch=ddr3_dq_io[10]
+# set_property -dict { PACKAGE_PIN D2 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[11] }]; #IO_L4N_T0_35 Sch=ddr3_dq_io[11]
+# set_property -dict { PACKAGE_PIN C2 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[12] }]; #IO_L2P_T0_AD12P_35 Sch=ddr3_dq_io[12]
+# set_property -dict { PACKAGE_PIN A1 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[13] }]; #IO_L1N_T0_AD4N_35 Sch=ddr3_dq_io[13]
+# set_property -dict { PACKAGE_PIN E2 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[14] }]; #IO_L4P_T0_35 Sch=ddr3_dq_io[14]
+# set_property -dict { PACKAGE_PIN B1 IOSTANDARD SSTL15 } [get_ports { ddr3_dq_io[15] }]; #IO_L1P_T0_AD4P_35 Sch=ddr3_dq_io[15]
 
-set_property -dict { PACKAGE_PIN J2 IOSTANDARD DIFF_SSTL15 } [get_ports { ddr3_dqs_n_io[0] }]; #IO_L9N_T1_DQS_AD7N_35 Sch=ddr3_dqs_n_io[0]
-set_property -dict { PACKAGE_PIN K2 IOSTANDARD DIFF_SSTL15 } [get_ports { ddr3_dqs_p_io[0] }]; #IO_L9P_T1_DQS_AD7P_35 Sch=ddr3_dqs_p_io[0]
-set_property -dict { PACKAGE_PIN D1 IOSTANDARD DIFF_SSTL15 } [get_ports { ddr3_dqs_n_io[1] }]; #IO_L3N_T0_DQS_AD5N_35 Sch=ddr3_dqs_n_io[1]
-set_property -dict { PACKAGE_PIN E1 IOSTANDARD DIFF_SSTL15 } [get_ports { ddr3_dqs_p_io[1] }]; #IO_L3P_T0_DQS_AD5P_35 Sch=ddr3_dqs_p_io[1]
+# set_property -dict { PACKAGE_PIN J2 IOSTANDARD DIFF_SSTL15 } [get_ports { ddr3_dqs_n_io[0] }]; #IO_L9N_T1_DQS_AD7N_35 Sch=ddr3_dqs_n_io[0]
+# set_property -dict { PACKAGE_PIN K2 IOSTANDARD DIFF_SSTL15 } [get_ports { ddr3_dqs_p_io[0] }]; #IO_L9P_T1_DQS_AD7P_35 Sch=ddr3_dqs_p_io[0]
+# set_property -dict { PACKAGE_PIN D1 IOSTANDARD DIFF_SSTL15 } [get_ports { ddr3_dqs_n_io[1] }]; #IO_L3N_T0_DQS_AD5N_35 Sch=ddr3_dqs_n_io[1]
+# set_property -dict { PACKAGE_PIN E1 IOSTANDARD DIFF_SSTL15 } [get_ports { ddr3_dqs_p_io[1] }]; #IO_L3P_T0_DQS_AD5P_35 Sch=ddr3_dqs_p_io[1]
 
-set_property -dict { PACKAGE_PIN K4 IOSTANDARD SSTL15 } [get_ports { ddr3_odt_o }]; #IO_L13P_T2_MRCC_35 Sch=ddr3_odt_o
-set_property -dict { PACKAGE_PIN J4 IOSTANDARD SSTL15} [get_ports { ddr3_ras_o }]; #IO_L13N_T2_MRCC_35 Sch=ddr3_ras_o
-set_property -dict { PACKAGE_PIN G1 IOSTANDARD LVCMOS15 } [get_ports { ddr3_reset_o }]; #IO_L5P_T0_AD13P_35 Sch=ddr3_reset_o
-set_property -dict { PACKAGE_PIN L1 IOSTANDARD SSTL15 } [get_ports { ddr3_we_o }]; #IO_L15N_T2_DQS_35 Sch=ddr3_we_O
+# set_property -dict { PACKAGE_PIN K4 IOSTANDARD SSTL15 } [get_ports { ddr3_odt_o }]; #IO_L13P_T2_MRCC_35 Sch=ddr3_odt_o
+# set_property -dict { PACKAGE_PIN J4 IOSTANDARD SSTL15} [get_ports { ddr3_ras_o }]; #IO_L13N_T2_MRCC_35 Sch=ddr3_ras_o
+# set_property -dict { PACKAGE_PIN G1 IOSTANDARD LVCMOS15 } [get_ports { ddr3_reset_o }]; #IO_L5P_T0_AD13P_35 Sch=ddr3_reset_o
+# set_property -dict { PACKAGE_PIN L1 IOSTANDARD SSTL15 } [get_ports { ddr3_we_o }]; #IO_L15N_T2_DQS_35 Sch=ddr3_we_O
+
+# PadFunction: IO_L8N_T1_AD14N_35 
+set_property SLEW FAST [get_ports {ddr3_dq_io[0]}]
+set_property IN_TERM UNTUNED_SPLIT_50 [get_ports {ddr3_dq_io[0]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_dq_io[0]}]
+set_property PACKAGE_PIN G2 [get_ports {ddr3_dq_io[0]}]
+
+# PadFunction: IO_L12P_T1_MRCC_35 
+set_property SLEW FAST [get_ports {ddr3_dq_io[1]}]
+set_property IN_TERM UNTUNED_SPLIT_50 [get_ports {ddr3_dq_io[1]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_dq_io[1]}]
+set_property PACKAGE_PIN H4 [get_ports {ddr3_dq_io[1]}]
+
+# PadFunction: IO_L10N_T1_AD15N_35 
+set_property SLEW FAST [get_ports {ddr3_dq_io[2]}]
+set_property IN_TERM UNTUNED_SPLIT_50 [get_ports {ddr3_dq_io[2]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_dq_io[2]}]
+set_property PACKAGE_PIN H5 [get_ports {ddr3_dq_io[2]}]
+
+# PadFunction: IO_L7N_T1_AD6N_35 
+set_property SLEW FAST [get_ports {ddr3_dq_io[3]}]
+set_property IN_TERM UNTUNED_SPLIT_50 [get_ports {ddr3_dq_io[3]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_dq_io[3]}]
+set_property PACKAGE_PIN J1 [get_ports {ddr3_dq_io[3]}]
+
+# PadFunction: IO_L7P_T1_AD6P_35 
+set_property SLEW FAST [get_ports {ddr3_dq_io[4]}]
+set_property IN_TERM UNTUNED_SPLIT_50 [get_ports {ddr3_dq_io[4]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_dq_io[4]}]
+set_property PACKAGE_PIN K1 [get_ports {ddr3_dq_io[4]}]
+
+# PadFunction: IO_L11P_T1_SRCC_35 
+set_property SLEW FAST [get_ports {ddr3_dq_io[5]}]
+set_property IN_TERM UNTUNED_SPLIT_50 [get_ports {ddr3_dq_io[5]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_dq_io[5]}]
+set_property PACKAGE_PIN H3 [get_ports {ddr3_dq_io[5]}]
+
+# PadFunction: IO_L8P_T1_AD14P_35 
+set_property SLEW FAST [get_ports {ddr3_dq_io[6]}]
+set_property IN_TERM UNTUNED_SPLIT_50 [get_ports {ddr3_dq_io[6]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_dq_io[6]}]
+set_property PACKAGE_PIN H2 [get_ports {ddr3_dq_io[6]}]
+
+# PadFunction: IO_L10P_T1_AD15P_35 
+set_property SLEW FAST [get_ports {ddr3_dq_io[7]}]
+set_property IN_TERM UNTUNED_SPLIT_50 [get_ports {ddr3_dq_io[7]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_dq_io[7]}]
+set_property PACKAGE_PIN J5 [get_ports {ddr3_dq_io[7]}]
+
+# PadFunction: IO_L6N_T0_VREF_35 
+set_property SLEW FAST [get_ports {ddr3_dq_io[8]}]
+set_property IN_TERM UNTUNED_SPLIT_50 [get_ports {ddr3_dq_io[8]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_dq_io[8]}]
+set_property PACKAGE_PIN E3 [get_ports {ddr3_dq_io[8]}]
+
+# PadFunction: IO_L2N_T0_AD12N_35 
+set_property SLEW FAST [get_ports {ddr3_dq_io[9]}]
+set_property IN_TERM UNTUNED_SPLIT_50 [get_ports {ddr3_dq_io[9]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_dq_io[9]}]
+set_property PACKAGE_PIN B2 [get_ports {ddr3_dq_io[9]}]
+
+# PadFunction: IO_L6P_T0_35 
+set_property SLEW FAST [get_ports {ddr3_dq_io[10]}]
+set_property IN_TERM UNTUNED_SPLIT_50 [get_ports {ddr3_dq_io[10]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_dq_io[10]}]
+set_property PACKAGE_PIN F3 [get_ports {ddr3_dq_io[10]}]
+
+# PadFunction: IO_L4N_T0_35 
+set_property SLEW FAST [get_ports {ddr3_dq_io[11]}]
+set_property IN_TERM UNTUNED_SPLIT_50 [get_ports {ddr3_dq_io[11]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_dq_io[11]}]
+set_property PACKAGE_PIN D2 [get_ports {ddr3_dq_io[11]}]
+
+# PadFunction: IO_L2P_T0_AD12P_35 
+set_property SLEW FAST [get_ports {ddr3_dq_io[12]}]
+set_property IN_TERM UNTUNED_SPLIT_50 [get_ports {ddr3_dq_io[12]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_dq_io[12]}]
+set_property PACKAGE_PIN C2 [get_ports {ddr3_dq_io[12]}]
+
+# PadFunction: IO_L1N_T0_AD4N_35 
+set_property SLEW FAST [get_ports {ddr3_dq_io[13]}]
+set_property IN_TERM UNTUNED_SPLIT_50 [get_ports {ddr3_dq_io[13]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_dq_io[13]}]
+set_property PACKAGE_PIN A1 [get_ports {ddr3_dq_io[13]}]
+
+# PadFunction: IO_L4P_T0_35 
+set_property SLEW FAST [get_ports {ddr3_dq_io[14]}]
+set_property IN_TERM UNTUNED_SPLIT_50 [get_ports {ddr3_dq_io[14]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_dq_io[14]}]
+set_property PACKAGE_PIN E2 [get_ports {ddr3_dq_io[14]}]
+
+# PadFunction: IO_L1P_T0_AD4P_35 
+set_property SLEW FAST [get_ports {ddr3_dq_io[15]}]
+set_property IN_TERM UNTUNED_SPLIT_50 [get_ports {ddr3_dq_io[15]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_dq_io[15]}]
+set_property PACKAGE_PIN B1 [get_ports {ddr3_dq_io[15]}]
+
+# PadFunction: IO_L24P_T3_35 
+set_property SLEW FAST [get_ports {ddr3_addr_o[14]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_addr_o[14]}]
+set_property PACKAGE_PIN P6 [get_ports {ddr3_addr_o[14]}]
+
+# PadFunction: IO_L22P_T3_35 
+set_property SLEW FAST [get_ports {ddr3_addr_o[13]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_addr_o[13]}]
+set_property PACKAGE_PIN P2 [get_ports {ddr3_addr_o[13]}]
+
+# PadFunction: IO_L19P_T3_35 
+set_property SLEW FAST [get_ports {ddr3_addr_o[12]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_addr_o[12]}]
+set_property PACKAGE_PIN N4 [get_ports {ddr3_addr_o[12]}]
+
+# PadFunction: IO_L24N_T3_35 
+set_property SLEW FAST [get_ports {ddr3_addr_o[11]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_addr_o[11]}]
+set_property PACKAGE_PIN N5 [get_ports {ddr3_addr_o[11]}]
+
+# PadFunction: IO_L18P_T2_35 
+set_property SLEW FAST [get_ports {ddr3_addr_o[10]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_addr_o[10]}]
+set_property PACKAGE_PIN L5 [get_ports {ddr3_addr_o[10]}]
+
+# PadFunction: IO_L20P_T3_35 
+set_property SLEW FAST [get_ports {ddr3_addr_o[9]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_addr_o[9]}]
+set_property PACKAGE_PIN R1 [get_ports {ddr3_addr_o[9]}]
+
+# PadFunction: IO_L23P_T3_35 
+set_property SLEW FAST [get_ports {ddr3_addr_o[8]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_addr_o[8]}]
+set_property PACKAGE_PIN M6 [get_ports {ddr3_addr_o[8]}]
+
+# PadFunction: IO_L22N_T3_35 
+set_property SLEW FAST [get_ports {ddr3_addr_o[7]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_addr_o[7]}]
+set_property PACKAGE_PIN N2 [get_ports {ddr3_addr_o[7]}]
+
+# PadFunction: IO_L19N_T3_VREF_35 
+set_property SLEW FAST [get_ports {ddr3_addr_o[6]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_addr_o[6]}]
+set_property PACKAGE_PIN N3 [get_ports {ddr3_addr_o[6]}]
+
+# PadFunction: IO_L20N_T3_35 
+set_property SLEW FAST [get_ports {ddr3_addr_o[5]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_addr_o[5]}]
+set_property PACKAGE_PIN P1 [get_ports {ddr3_addr_o[5]}]
+
+# PadFunction: IO_25_35 
+set_property SLEW FAST [get_ports {ddr3_addr_o[4]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_addr_o[4]}]
+set_property PACKAGE_PIN L6 [get_ports {ddr3_addr_o[4]}]
+
+# PadFunction: IO_L15P_T2_DQS_35 
+set_property SLEW FAST [get_ports {ddr3_addr_o[3]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_addr_o[3]}]
+set_property PACKAGE_PIN M1 [get_ports {ddr3_addr_o[3]}]
+
+# PadFunction: IO_L16P_T2_35 
+set_property SLEW FAST [get_ports {ddr3_addr_o[2]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_addr_o[2]}]
+set_property PACKAGE_PIN M3 [get_ports {ddr3_addr_o[2]}]
+
+# PadFunction: IO_L23N_T3_35 
+set_property SLEW FAST [get_ports {ddr3_addr_o[1]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_addr_o[1]}]
+set_property PACKAGE_PIN M5 [get_ports {ddr3_addr_o[1]}]
+
+# PadFunction: IO_L16N_T2_35 
+set_property SLEW FAST [get_ports {ddr3_addr_o[0]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_addr_o[0]}]
+set_property PACKAGE_PIN M2 [get_ports {ddr3_addr_o[0]}]
+
+# PadFunction: IO_L18N_T2_35 
+set_property SLEW FAST [get_ports {ddr3_ba_o[2]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_ba_o[2]}]
+set_property PACKAGE_PIN L4 [get_ports {ddr3_ba_o[2]}]
+
+# PadFunction: IO_L17P_T2_35 
+set_property SLEW FAST [get_ports {ddr3_ba_o[1]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_ba_o[1]}]
+set_property PACKAGE_PIN K6 [get_ports {ddr3_ba_o[1]}]
+
+# PadFunction: IO_L14P_T2_SRCC_35 
+set_property SLEW FAST [get_ports {ddr3_ba_o[0]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_ba_o[0]}]
+set_property PACKAGE_PIN L3 [get_ports {ddr3_ba_o[0]}]
+
+# PadFunction: IO_L13N_T2_MRCC_35 
+set_property SLEW FAST [get_ports {ddr3_ras_o}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_ras_o}]
+set_property PACKAGE_PIN J4 [get_ports {ddr3_ras_o}]
+
+# PadFunction: IO_L14N_T2_SRCC_35 
+set_property SLEW FAST [get_ports {ddr3_cas_o}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_cas_o}]
+set_property PACKAGE_PIN K3 [get_ports {ddr3_cas_o}]
+
+# PadFunction: IO_L15N_T2_DQS_35 
+set_property SLEW FAST [get_ports {ddr3_we_o}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_we_o}]
+set_property PACKAGE_PIN L1 [get_ports {ddr3_we_o}]
+
+# PadFunction: IO_L5P_T0_AD13P_35 
+set_property SLEW FAST [get_ports {ddr3_reset_o}]
+set_property IOSTANDARD LVCMOS15 [get_ports {ddr3_reset_o}]
+set_property PACKAGE_PIN G1 [get_ports {ddr3_reset_o}]
+
+# PadFunction: IO_L17N_T2_35 
+set_property SLEW FAST [get_ports {ddr3_cke_o[0]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_cke_o[0]}]
+set_property PACKAGE_PIN J6 [get_ports {ddr3_cke_o[0]}]
+
+# PadFunction: IO_L13P_T2_MRCC_35 
+set_property SLEW FAST [get_ports {ddr3_odt_o[0]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_odt_o[0]}]
+set_property PACKAGE_PIN K4 [get_ports {ddr3_odt_o[0]}]
+
+# PadFunction: IO_L11N_T1_SRCC_35 
+set_property SLEW FAST [get_ports {ddr3_dm_o[0]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_dm_o[0]}]
+set_property PACKAGE_PIN G3 [get_ports {ddr3_dm_o[0]}]
+
+# PadFunction: IO_L5N_T0_AD13N_35 
+set_property SLEW FAST [get_ports {ddr3_dm_o[1]}]
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_dm_o[1]}]
+set_property PACKAGE_PIN F1 [get_ports {ddr3_dm_o[1]}]
+
+# PadFunction: IO_L9P_T1_DQS_AD7P_35 
+set_property SLEW FAST [get_ports {ddr3_dqs_p_io[0]}]
+set_property IN_TERM UNTUNED_SPLIT_50 [get_ports {ddr3_dqs_p_io[0]}]
+set_property IOSTANDARD DIFF_SSTL15 [get_ports {ddr3_dqs_p_io[0]}]
+set_property PACKAGE_PIN K2 [get_ports {ddr3_dqs_p_io[0]}]
+
+# PadFunction: IO_L9N_T1_DQS_AD7N_35 
+set_property SLEW FAST [get_ports {ddr3_dqs_n_io[0]}]
+set_property IN_TERM UNTUNED_SPLIT_50 [get_ports {ddr3_dqs_n_io[0]}]
+set_property IOSTANDARD DIFF_SSTL15 [get_ports {ddr3_dqs_n_io[0]}]
+set_property PACKAGE_PIN J2 [get_ports {ddr3_dqs_n_io[0]}]
+
+# PadFunction: IO_L3P_T0_DQS_AD5P_35 
+set_property SLEW FAST [get_ports {ddr3_dqs_p_io[1]}]
+set_property IN_TERM UNTUNED_SPLIT_50 [get_ports {ddr3_dqs_p_io[1]}]
+set_property IOSTANDARD DIFF_SSTL15 [get_ports {ddr3_dqs_p_io[1]}]
+set_property PACKAGE_PIN E1 [get_ports {ddr3_dqs_p_io[1]}]
+
+# PadFunction: IO_L3N_T0_DQS_AD5N_35 
+set_property SLEW FAST [get_ports {ddr3_dqs_n_io[1]}]
+set_property IN_TERM UNTUNED_SPLIT_50 [get_ports {ddr3_dqs_n_io[1]}]
+set_property IOSTANDARD DIFF_SSTL15 [get_ports {ddr3_dqs_n_io[1]}]
+set_property PACKAGE_PIN D1 [get_ports {ddr3_dqs_n_io[1]}]
+
+# PadFunction: IO_L21P_T3_DQS_35 
+set_property SLEW FAST [get_ports {ddr3_clk_p_o[0]}]
+set_property IOSTANDARD DIFF_SSTL15 [get_ports {ddr3_clk_p_o[0]}]
+set_property PACKAGE_PIN P5 [get_ports {ddr3_clk_p_o[0]}]
+
+# PadFunction: IO_L21N_T3_DQS_35 
+set_property SLEW FAST [get_ports {ddr3_clk_n_o[0]}]
+set_property IOSTANDARD DIFF_SSTL15 [get_ports {ddr3_clk_n_o[0]}]
+set_property PACKAGE_PIN P4 [get_ports {ddr3_clk_n_o[0]}]
+
+set_property INTERNAL_VREF  0.750 [get_iobanks 35]
 
 ## FMC
 #set_property -dict { PACKAGE_PIN H19   IOSTANDARD LVCMOS12 } [get_ports { fmc_clk0_m2c_n }]; #IO_L12N_T1_MRCC_15 Sch=fmc_clk0_m2c_n

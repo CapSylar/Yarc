@@ -183,7 +183,7 @@ generate
 
         // DDR3 simulation model
         ddr3_sim_model ddr3_sim_model_i(
-            .rst_n(rstn),
+            .rst_n(reset_n),
             .ck(o_ddr3_clk_p),
             .ck_n(o_ddr3_clk_n),
             .cke(ck_en[0]),

@@ -46,17 +46,19 @@ end
 int initial_stall = INITIAL_STALL;
 
 always @(posedge clk_i) begin: stall_control
-    stall_o = 1'b1;
-    
     if (initial_stall > 0) begin
         --initial_stall; // decrement counter
-    end else begin: normal_operation
-        stall_o = 1'b0;
-
-        if (queue.size() == MAX_INFLIGHT_RQS) begin
-            stall_o = 1'b1;
-        end
     end
+end
+
+always @(*) begin: drive_wb_stall
+    stall_o = '0;
+
+    if (initial_stall)
+        stall_o = 1'b1;
+
+    if (queue.size() >= MAX_INFLIGHT_RQS-1)
+        stall_o = 1'b1;
 end
 
 typedef struct

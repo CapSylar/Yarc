@@ -29,6 +29,7 @@ ${PRJ_DIR}/utils/sync_fifo.sv
 ${PRJ_DIR}/utils/sfifo.v
 ${PRJ_DIR}/utils/reg_bw.sv
 ${PRJ_DIR}/utils/afifo.v
+${PRJ_DIR}/utils/async_fifo.sv
 
 // fetch modules
 // ${PRJ_DIR}/core/simple_fetch.sv

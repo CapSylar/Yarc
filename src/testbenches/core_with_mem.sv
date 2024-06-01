@@ -129,7 +129,7 @@ rxuart_printer_i
 
 wishbone_if #(.ADDRESS_WIDTH(SEC_WB_AW), .DATA_WIDTH(SEC_WB_DW)) ddr3_wb_if();
 
-localparam DDR3_TRUE_SIM = 1'b0;
+localparam DDR3_TRUE_SIM = 1'b1;
 generate
     if (DDR3_TRUE_SIM) begin: true_ddr3_model_sim
 
@@ -146,9 +146,9 @@ generate
         logic reset_n;
         logic [ROW_BITS-1:0] addr;
         logic [BA_BITS-1:0] ba_addr;
-        logic [LANES-1:0] ddr3_dm;
-        wire [(NUM_DQ_BITS*LANES)-1:0] dq;
-        wire [(NUM_DQ_BITS*LANES)/8-1:0] dqs, dqs_n;
+        logic [BYTE_LANES-1:0] ddr3_dm;
+        wire [(NUM_DQ_BITS*BYTE_LANES)-1:0] dq;
+        wire [(NUM_DQ_BITS*BYTE_LANES)/8-1:0] dqs, dqs_n;
 
         // DDR3 Controller 
         yarc_ddr3_top #() yarc_ddr3_top_i

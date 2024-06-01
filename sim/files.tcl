@@ -6,8 +6,8 @@
 // packages
 ${PRJ_DIR}/core/includes/riscv_pkg.sv
 ${PRJ_DIR}/core/includes/csr_pkg.sv
-${PRJ_DIR}/platform/includes/platform_pkg.sv
 ${PRJ_DIR}/ddr3_mem_controller/ddr3_parameters_pkg.sv
+${PRJ_DIR}/platform/includes/platform_pkg.sv
 
 // peripherals
 ${PRJ_DIR}/peripherals/wbuart32/rtl/ufifo.v
@@ -66,9 +66,9 @@ ${PRJ_DIR}/memories/sp_mem_wb.sv
 ${PRJ_DIR}/memories/tdp_mem.sv
 
 // ddr3 controller files
-${PRJ_DIR}/ddr3_mem_controller/ddr3_controller.sv
-${PRJ_DIR}/ddr3_mem_controller/ddr3_phy.sv
-${PRJ_DIR}/ddr3_mem_controller/ddr3_top.sv
+${PRJ_DIR}/ddr3_mem_controller/ddr3_controller.v
+${PRJ_DIR}/ddr3_mem_controller/ddr3_phy.v
+${PRJ_DIR}/ddr3_mem_controller/ddr3_top.v
 ${PRJ_DIR}/ddr3_mem_controller/yarc_ddr3_top.sv
 ${PRJ_DIR}/ddr3_mem_controller/sim_files/ddr3_sim_model.sv
 ${PRJ_DIR}/ddr3_mem_controller/sim_files/wb_sim_memory.sv

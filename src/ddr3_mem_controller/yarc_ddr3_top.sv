@@ -20,9 +20,9 @@ import ddr3_parameters_pkg::*;
     output wire o_ddr3_we_n, // WE#
     output wire[ROW_BITS-1:0] o_ddr3_addr,
     output wire[BA_BITS-1:0] o_ddr3_ba_addr,
-    inout wire[(NUM_DQ_BITS*LANES)-1:0] io_ddr3_dq,
-    inout wire[(NUM_DQ_BITS*LANES)/8-1:0] io_ddr3_dqs, io_ddr3_dqs_n,
-    output wire[LANES-1:0] o_ddr3_dm,
+    inout wire[(NUM_DQ_BITS*BYTE_LANES)-1:0] io_ddr3_dq,
+    inout wire[(NUM_DQ_BITS*BYTE_LANES)/8-1:0] io_ddr3_dqs, io_ddr3_dqs_n,
+    output wire[BYTE_LANES-1:0] o_ddr3_dm,
     output wire o_ddr3_odt // on-die termination
 );
 
@@ -35,10 +35,8 @@ ddr3_top #(
     .CONTROLLER_CLK_PERIOD(CONTROLLER_CLK_PERIOD), //ns, period of clock input to this DDR3 controller module
     .DDR3_CLK_PERIOD(DDR3_CLK_PERIOD), //ns, period of clock input to DDR3 RAM device 
     .ODELAY_SUPPORTED(ODELAY_SUPPORTED), //set to 1 when ODELAYE2 is supported
-    .LANES(LANES), //8 lanes of DQ
+    .BYTE_LANES(BYTE_LANES), //8 lanes of DQ
     .AUX_WIDTH(AUX_WIDTH),
-    .OPT_LOWPOWER(OPT_LOWPOWER), //1 = low power, 0 = low logic
-    .OPT_BUS_ABORT(OPT_BUS_ABORT),  //1 = can abort bus, 0 = no absort (i_wb_cyc will be ignored, ideal for an AXI implementation which cannot abort transaction)
     .MICRON_SIM(MICRON_SIM),
     .SECOND_WISHBONE(SECOND_WISHBONE)
     ) ddr3_top

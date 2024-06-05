@@ -17,7 +17,7 @@ module async_fifo
     input we_i,
     input [DW-1:0] wdata_i,
     output logic full_o,
-    output logic [AW-1:0] wfill_count_o,
+    output logic [AW:0] wfill_count_o,
 
     // read side
     input rclk_i,
@@ -35,7 +35,7 @@ logic [AW:0] wgrey_d, wgrey_q;
 logic full_d, full_q;
 logic [AW:0] rgrey_wq1, rgrey_wq2, rgrey_wq2_bin;
 logic [AW-1:0] waddr;
-logic [AW-1:0] wfill_count_d, wfill_count_q;
+logic [AW:0] wfill_count_d, wfill_count_q;
 
 logic [DW-1:0] rdata_d, rdata_q;
 logic [AW:0] rbin_d, rbin_q; // binary pointer that points to the fifo address that will be read next
@@ -53,12 +53,11 @@ for (genvar i = 0; i <= AW; ++i) begin: grey_to_binary
     assign rgrey_wq2_bin[i] = ^rgrey_wq2[AW:i];
 end
 
-assign rgrey_wq2_bin = grey_to_binary(rgrey_wq2);
 assign wfill_count_d = 
     (rgrey_wq2_bin[AW] == wbin_d[AW]) ? ({1'b0,wbin_d[AW-1:0]} - {1'b0,rgrey_wq2_bin[AW-1:0]})
                                       : ({1'b1,wbin_d[AW-1:0]} - {1'b0,rgrey_wq2_bin[AW-1:0]});
 
-always_ff @(posedge wclk_i) begin
+always_ff @(posedge wclk_i or negedge wrstn_i) begin
     if (!wrstn_i) begin
         wbin_q <= '0;
         wgrey_q <= '0;
@@ -72,7 +71,7 @@ always_ff @(posedge wclk_i) begin
     end
 end
 
-always_ff @(posedge wclk_i) begin: rd_to_wr_cdc
+always_ff @(posedge wclk_i or negedge wrstn_i) begin: rd_to_wr_cdc
     if (!wrstn_i) begin
         {rgrey_wq2, rgrey_wq1} <= '0;
     end else begin
@@ -93,7 +92,7 @@ assign rbin_d = rbin_q + (re_i & ~empty_q);
 assign rgrey_d = (rbin_d >> 1) ^ rbin_d;
 assign empty_d = (rgrey_d == wgrey_rq2);
 
-always_ff @(posedge rclk_i) begin
+always_ff @(posedge rclk_i or negedge rrstn_i) begin
     if (!rrstn_i) begin
         rbin_q <= '0;
         rgrey_q <= '0;
@@ -105,11 +104,11 @@ always_ff @(posedge rclk_i) begin
     end
 end
 
-always_ff @(posedge rclk_i) begin: wr_to_rd_cdc
+always_ff @(posedge rclk_i or negedge rrstn_i) begin: wr_to_rd_cdc
     if (!rrstn_i) begin
         {wgrey_rq2, wgrey_rq1} <= '0;
     end else begin
-        {wgrey_rq2, wgrey_rq1} <= {wgrey_rq1, rgrey_q};
+        {wgrey_rq2, wgrey_rq1} <= {wgrey_rq1, wgrey_q};
     end
 end
 

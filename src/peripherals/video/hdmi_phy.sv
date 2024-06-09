@@ -20,7 +20,7 @@ tmds_encoder tms_encoder_0 (.clk(pixel_clk_i), .rstn_i(rstn_i), .vd_i(blue),    
 tmds_encoder tms_encoder_1 (.clk(pixel_clk_i), .rstn_i(rstn_i), .vd_i(green),   .cd_i('0), .vde_i(draw_area), .tmds_o(tmds_green));
 tmds_encoder tms_encoder_2 (.clk(pixel_clk_i), .rstn_i(rstn_i), .vd_i(red),     .cd_i('0), .vde_i(draw_area), .tmds_o(tmds_red));
 
-logic tmds_plus_clock_serial [3:0]; // outputs of serdes written here
+logic [3:0] tmds_plus_clock_serial; // outputs of serdes written here
 assign hdmi_channel_o = tmds_plus_clock_serial;
 
 // prepare data for input into the serde primitives

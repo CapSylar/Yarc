@@ -9,11 +9,10 @@ import video_pkg::*;
 
 	wishbone_if.SLAVE config_if,
 
-    wishbone_if.MASTER fetch_if
+    wishbone_if.MASTER fetch_if,
     
     // hdmi signal outputs
-	// output logic hdmi_clk_o,
-	// output logic [2:0] hdmi_data_o
+	output logic [3:0] hdmi_channel_o
 );
 
 // module configuration registers
@@ -31,6 +30,182 @@ video_core_ctrl video_core_ctrl_i
 	.video_addr_o(video_addr)
 );
 
+logic wb_cyc, wb_stb, wb_ack, wb_stall;
+logic [31:0] wb_addr_d, wb_addr_q;
+
+assign wb_ack = fetch_if.ack;
+assign wb_stall = fetch_if.stall;
+
+localparam ASIZE = 9;
+localparam DSIZE = 128;
+
+logic ff_we;
+logic [DSIZE-1:0] ff_wdata;
+logic ff_full;
+logic [ASIZE:0] ff_fill_count;
+
+logic async_ff_re;
+logic [DSIZE-1:0] async_ff_rdata;
+logic async_ff_empty;
+
+async_fifo #(.DATA_WIDTH(DSIZE), .ADDR_WIDTH(ASIZE)) afifo_i
+(
+	// write side
+	.wclk_i(clk_i),
+	.wrstn_i(rstn_i),
+	.we_i(ff_we),
+	.wdata_i(ff_wdata),
+	.full_o(ff_full),
+	.wfill_count_o(ff_fill_count),
+
+	// read side
+	.rclk_i(pixel_clk_i),
+	.rrstn_i(rstn_i),
+	.re_i(async_ff_re),
+	.rdata_o(async_ff_rdata),
+	.empty_o(async_ff_empty)
+);
+
+// fifo frontend adapter placed at the read side of the fifo above
+// allows use to read in 16 or 32-bit chunks without specializing the fifo
+fifo_adapter fifo_adapter_i
+(
+	.clk_i(pixel_clk_i),
+	.rstn_i(rstn_i),
+
+	// connection to fifo
+	.empty_i(async_ff_empty),
+	.re_o(async_ff_re),
+	.rdata_i(async_ff_rdata),
+
+	// adapter read interface
+	.re_i(ff_re),
+	.rsize_i(ff_rsize),
+	.rdata_o(ff_rdata),
+	.empty_o(ff_empty)
+);
+
+assign ff_we = wb_ack;
+assign ff_wdata = fetch_if.wdata;
+
+logic [ASIZE:0] req_pending_d, req_pending_q;
+wire [ASIZE:0] max_ff_count = {1'b1, {(ASIZE){1'b0}}};
+wire ff_one_till_full = (req_pending_q + ff_fill_count == (max_ff_count-1'b1));
+
+// ==================================== fetching part ====================================
+// read data from the framebuffer into the line fifos
+
+// *fetch_start* pulses when the fetching logic should start fetching data from the framebuffer
+// and store it in the fifo
+logic fetch_start;
+
+assign wb_req_ok = wb_cyc & wb_stb & ~wb_stall;
+
+enum {IDLE, FETCHING, FIFO_FULL} state, next;
+always_ff @(posedge clk_i)
+	if (!rstn_i) state <= IDLE;
+	else	     state <= next;
+
+always_comb begin
+	next = state;
+
+	wb_cyc = '0;
+	wb_stb = '0;
+
+	wb_addr_d = wb_addr_q;
+
+	case (state)
+		IDLE: begin
+			// fetching starts if the module is enabled and the update period is over
+			if (video_config.is_enabled && fetch_start) begin
+
+				wb_addr_d = video_addr.fb_address;
+				next = FETCHING;
+			end
+		end
+
+		FETCHING: begin
+
+			wb_cyc = 1'b1;
+			wb_stb = 1'b1;
+
+			if (wb_req_ok) begin
+				wb_addr_d = wb_addr_d + 1;
+			end
+
+			// we can't issue more requests currently since there is no way to store them
+			// back off and wait for some fifo space to become available
+			if (wb_req_ok && ff_one_till_full) begin
+				next = FIFO_FULL;
+			end
+		end
+
+		FIFO_FULL: begin
+			if (!ff_full)
+				next = FETCHING;
+		end
+	endcase
+end
+
+// bookkeeping logic
+always_comb begin: count_pending_reqs
+
+	req_pending_d = req_pending_q;
+
+	if (fetch_if.ack) begin
+		req_pending_d = req_pending_d - 1;
+	end
+
+	if (wb_req_ok) begin
+		req_pending_d = req_pending_d + 1;
+	end
+end
+
+always_ff @(posedge clk_i) begin
+	if (!rstn_i) begin
+		req_pending_q <= '0;
+		wb_addr_q <= '0;
+	end else begin
+		req_pending_q <= req_pending_d;
+		wb_addr_q <= wb_addr_d;
+	end
+end
+
+/*
+	In the normal frambuffer mode, each fetched 4-byte word corresponds to a screen pixel. The pixel
+	is popped from the fifo and not needed again for this frame.
+	The matter at hand is different in the case of vga text mode, where a fetched glyph dictates the colors
+	of several pixels, crossing several lines. In this case, we can't simply pop from the fifo since the data
+	will be needed again.
+
+	We devised a small 256 byte line buffer used for storing vga text mode characters after popping them from the fifo.
+*/
+
+logic read_char, flush_line_buffer;
+logic [7:0] char_idx;
+logic [15:0] text_mode_data;
+
+text_mode_line_buffer text_mode_line_buffer_i
+(
+	.clk_i(pixel_clk_i),
+	.rstn_i(rstn_i),
+
+	// fifo interface port
+	.empty_i(ff_empty),
+	.re_o(ff_re),
+	.rdata_i(ff_rdata),
+
+	// read port
+	.re_i(read_char),
+	.pop_line_i(flush_line_buffer),
+	.empty_o(),
+	.char_idx_i(char_idx),
+	.data_o(text_mode_data)
+);
+
+// ===================================== drawing part ==============================================
+// fetched data from the line fifos and display the pixels
+
 // testing a simple hdmi(really dvi) driver
 // create a 640x480 image
 
@@ -39,57 +214,42 @@ video_core_ctrl video_core_ctrl_i
 logic [9:0] x_counter;
 logic [9:0] y_counter;
 
+// another set of counters that are 2 "pixels" ahead of the other ones
+// since we will pipeline the access to the fifo and its computation
+// we will use these counters to make things easier
+logic [9:0] ahead_x_counter;
+logic [9:0] ahead_y_counter;
+logic ahead_draw_area;
+
 logic hsync, vsync;
 logic draw_area;
 
 logic [7:0] red, green, blue;
 
-// logic [FB_DEPTH-1:0] fb_cpu_addr;
-// logic [FB_DEPTH-1:0] fb_pixel_raddr;
-// logic [FB_WIDTH-1:0] fb_pixel_rdata, fb_pixel_rdata_q, fb_pixel_rdata_q2;
+assign fetch_start = (x_counter == '0 && y_counter == 'd500); // TODO: check for a potential CDC problem here
 
-// assign fb_cpu_addr = wb_if.addr[FB_DEPTH-1:0];
+// read 2 cycles before we actually need something
+assign read_char = ahead_draw_area; // read from line buffer only in draw area
+assign char_idx = ahead_x_counter[9:3]; // every 8 pixels, change character
 
-// logic fetch_pixel;
+logic [2:0] char_pixel_x_d, char_pixel_x_q; // x pixel offset inside glyph
+logic [3:0] char_pixel_y_d, char_pixel_y_q; // y pixel offset inside glyph
 
-// logic pixel_wait;
+assign char_pixel_x_d = ahead_x_counter[2:0];
+assign char_pixel_y_d = ahead_y_counter[3:0];
 
-// always_comb
-// begin
-// 	fetch_pixel = '0;
+// outputs the final rgb data for text mode
+vga_text_decoder vga_text_decoder_i
+(
+	.clk_i(pixel_clk_i),
+	.rstn_i(rstn_i),
 
-// 	if ((y_counter == 'd524 || (y_counter < 'd479)) && // in correct Y
-// 		(x_counter == 'd799 || (x_counter < 'd638))) // in correct X
-// 	begin
-// 		if (!pixel_wait)
-// 			fetch_pixel = 1'b1;
-// 	end
-// end
+	.vga_data_i(text_mode_data),
+	.char_pixel_x_i(char_pixel_x_q),
+	.char_pixel_y_i(char_pixel_y_q),
 
-// the memory pumps out 32 bit words, we need 24 bits at a time
-// this means we sometimes need data from adjacent memory words
-
-// logic [23:0] formatted_pixel_data;
-
-// always_comb
-// begin
-// 	formatted_pixel_data = '0;
-// 	pixel_wait = '0;
-
-// 	case (fb_pixel_rdata[1:0])
-// 		2'd0: formatted_pixel_data = {fb_pixel_rdata_q[23:0]};
-// 		2'd1: formatted_pixel_data = {fb_pixel_rdata_q[15:0],fb_pixel_rdata_q2[31-:8]};
-// 		2'd2: begin
-// 			formatted_pixel_data = {fb_pixel_rdata_q[7:0],fb_pixel_rdata_q2[31-:16]};
-// 			pixel_wait = 1'b1;
-// 		end
-// 		2'd3: formatted_pixel_data = {fb_pixel_rdata_q2[31-:24]};
-// 	endcase
-// end
-
-// assign red = formatted_pixel_data[7:0];
-// assign green = formatted_pixel_data[15-:8];
-// assign blue = formatted_pixel_data[23-:8];
+	.rgb_o(rgb)
+);
 
 always_ff @(posedge pixel_clk_i or negedge rstn_i)
 begin
@@ -107,108 +267,62 @@ begin
 	end
 end
 
-localparam ASIZE = 11;
-localparam DSIZE = 24;
+always_ff @(posedge pixel_clk_i or negedge rstn_i)
+begin
+	if (!rstn_i)
+	begin
+		ahead_x_counter <= 'd2; // 2 pixel ahead
+		ahead_y_counter <= '0;
+	end
+	else
+	begin
+		ahead_x_counter <= (ahead_x_counter == 'd799) ? '0 : ahead_x_counter + 1'b1;
 
-afifo #(.DSIZE(DSIZE), .ASIZE(ASIZE)) afifo_i
-(
-	// write side
-	.i_wclk(clk_i),
-	.i_wrst_n(rstn_i),
-	.i_wr(),
-	.i_wdata(),
-	.o_wfull(),
-
-	// read side
-	.i_rclk(),
-	.i_rrst_n(),
-	.i_rd(),
-	.o_rdata(),
-	.o_rempty()
-);
-
-// fetching part
-// read data from the frambuffer into the line fifos
-
-logic enabled = 1'b1;
-logic fetch_start = 1'b1;
-
-enum {IDLE, FETCHING} state, next;
-always_ff @(posedge clk_i)
-	if (!rstn_i) state <= IDLE;
-	else	     state <= next;
-
-always_comb begin
-	next = state;
-
-	case (state)
-		IDLE: begin
-			// fetching starts if the module is enabled and the update period is over
-			if (video_config.is_enabled && fetch_start) begin
-				next = FETCHING;
-			end
-		end
-
-		FETCHING: begin
-			// if (fetching_done) begin
-
-			// end
-			next = IDLE;
-		end
-
-	endcase
+		if (ahead_x_counter == 'd799)
+			ahead_y_counter <= (ahead_y_counter == 'd524) ? '0 : ahead_y_counter + 1'b1;
+	end
 end
 
-// drawing part
-// fetched data from the line fifos and display the pixels
-
-
-
-
+assign ahead_draw_area = (ahead_x_counter < 'd640) & (ahead_y_counter < 'd480);
 
 // create the hsync and vsync signals
-
 assign hsync = (x_counter >= 'd656) & (x_counter < 'd757);
 assign vsync = (y_counter >= 'd490) & (y_counter < 'd492);
 assign draw_area = (x_counter < 'd640) & (y_counter < 'd480);
 
-// logic [9:0] tmds_red, tmds_green, tmds_blue;
+// hdmi phy
+hdmi_phy hdmi_phy_i
+(
+	.pixel_clk_i(pixel_clk_i),
+	.rstn_i(rstn_i),
 
-// tmds_encoder tms_encoder_0 (.clk(pixel_clk_i), .rstn_i(rstn_i), .vd_i(blue), .cd_i({vsync, hsync}), .vde_i(draw_area), .tmds_o(tmds_blue));
-// tmds_encoder tms_encoder_1 (.clk(pixel_clk_i), .rstn_i(rstn_i), .vd_i(green), .cd_i('0), .vde_i(draw_area), .tmds_o(tmds_green));
-// tmds_encoder tms_encoder_2 (.clk(pixel_clk_i), .rstn_i(rstn_i), .vd_i(red), .cd_i('0), .vde_i(draw_area), .tmds_o(tmds_red));
+	.rgb_i(rgb),
 
-// // TODO: refactor these assignments
-// logic tmds_plus_clock_serial [3:0]; // outputs of serdes written here
-// assign hdmi_clk_o = tmds_plus_clock_serial[3];
-// assign hdmi_data_o[2] = tmds_plus_clock_serial[2];
-// assign hdmi_data_o[1] = tmds_plus_clock_serial[1];
-// assign hdmi_data_o[0] = tmds_plus_clock_serial[0];
+	.hsync(hsync),
+	.vsync(vsync),
 
-// prepare data for input into the serde primitives
-// logic [9:0] tmds_serde_inputs [3:0];
-// assign tmds_serde_inputs = '{10'b00000_11111, tmds_red, tmds_green, tmds_blue};
+	.draw_area_i(draw_area),
 
-// generate
-// 	for (genvar i = 0; i < 4; ++i)
-// 	begin: gen_serializers
-// 		serializer serializer_i
-// 		(
-// 			.clk_i(pixel_clk_i),
-// 		 	.rstn_i(rstn_i),
-// 			.serial_clk_i(pixel_clk_5x_i),
-// 			.data_i(tmds_serde_inputs[i]),
-// 			.serial_data_o(tmds_plus_clock_serial[i])
-// 		);
-// 	end
-// endgenerate
+	// output hdmi channels
+	.hdmi_channel_o(hdmi_channel_o)
+);
 
-// zero out fetch_if for now
-assign fetch_if.cyc = '0;
-assign fetch_if.stb = '0;
+always_ff @(posedge pixel_clk_i, negedge rstn_i) begin
+	if (!rstn_i) begin
+		char_pixel_x_q <= '0;
+		char_pixel_y_q <= '0;
+	end else begin
+		char_pixel_x_q <= char_pixel_x_d;
+		char_pixel_y_q <= char_pixel_y_d;
+	end
+end
+
+// assign wishbone signals
+assign fetch_if.cyc = wb_cyc;
+assign fetch_if.stb = wb_stb;
 assign fetch_if.we = '0;
-assign fetch_if.addr = '0;
-assign fetch_if.sel = '0;
+assign fetch_if.addr = wb_addr_q;
+assign fetch_if.sel = '1;
 assign fetch_if.wdata = '0;
 
 endmodule: video_core

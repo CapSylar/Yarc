@@ -112,8 +112,12 @@ always @(posedge clk_i) begin: handling_requests
                 end
                 ack_o = 1'b1;
             end else begin // handle read req
-                // rdata_o = mem[fetched_req.addr];
-                rdata_o = {$random, $random, $random, $random};
+                // check for the existance of this value
+                if (mem.exists(fetched_req.addr)) begin
+                    rdata_o = mem[fetched_req.addr];
+                end else begin
+                    rdata_o = '0;
+                end
                 ack_o = 1'b1;
             end
 

@@ -9,12 +9,12 @@ import ddr3_parameters_pkg::*;
 
 // create clocks
 localparam MAIN_CLK_PERIOD = 12.0ns;
-// localparam PIXEL_CLK_HALF_PERIOD = 39.6825ns / 2;
-// localparam PIXEL_CLK_5X_HALF_PERIOD = PIXEL_CLK_HALF_PERIOD / 5;
+localparam PIXEL_CLK_HALF_PERIOD = 39.6825ns / 2;
+localparam PIXEL_CLK_5X_HALF_PERIOD = PIXEL_CLK_HALF_PERIOD / 5;
 
 // clk generation
 logic clk;
-// logic pixel_clk, pixel_clk_5x;
+logic pixel_clk, pixel_clk_5x;
 logic ddr3_clk, ref_clk, ddr3_clk_90;
 
 // drive clock
@@ -38,17 +38,17 @@ initial begin
         #(DDR3_CLK_PERIOD/2) ddr3_clk_90 = ~ddr3_clk_90;
 end
 
-// initial
-// begin
-//     pixel_clk = 0;
-//     forever pixel_clk = #PIXEL_CLK_HALF_PERIOD ~pixel_clk;
-// end
+initial
+begin
+    pixel_clk = 0;
+    forever pixel_clk = #PIXEL_CLK_HALF_PERIOD ~pixel_clk;
+end
 
-// initial
-// begin
-//     pixel_clk_5x = 0;
-//     forever pixel_clk_5x = #PIXEL_CLK_5X_HALF_PERIOD ~pixel_clk_5x;
-// end
+initial
+begin
+    pixel_clk_5x = 0;
+    forever pixel_clk_5x = #PIXEL_CLK_5X_HALF_PERIOD ~pixel_clk_5x;
+end
 
 logic rstn = '0;
 logic rstn_t = '0;
@@ -246,13 +246,12 @@ yarc_platform yarc_platform_i
 
     // Platform <-> UART
     .uart_rx_i(1'b1),
-    .uart_tx_o(uart_tx)
+    .uart_tx_o(uart_tx),
 
     // Platform <-> HDMI
-    // .pixel_clk_i(pixel_clk),
-    // .pixel_clk_5x_i(pixel_clk_5x),
-    // .hdmi_clk_o(hdmi_clk),
-    // .hdmi_data_o(hdmi_data)
+    .pixel_clk_i(pixel_clk),
+    .pixel_clk_5x_i(pixel_clk_5x),
+    .hdmi_channel_o()
 );
 
 endmodule: core_with_mem

@@ -1,3 +1,4 @@
+// contains the settings registers for the video core
 
 module video_core_ctrl
 import video_pkg::*;

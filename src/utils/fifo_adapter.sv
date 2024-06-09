@@ -23,8 +23,12 @@ logic [127:0] lines_q [1:0];
 logic [127:0] lines_d [1:0];
 
 logic [1:0] active_index_q, active_index_d; 
-logic [1:0] fill_index_q, fill_index_d;
+logic [1:0] fill_index_q, fill_index_d; 
+logic fill_index, active_index; // actual indices to use
 logic fill_line;
+
+assign fill_index = fill_index_q[0];
+assign active_index = active_index_q[0];
 
 logic empty, full;
 assign empty = (active_index_q == fill_index_q);
@@ -64,7 +68,7 @@ logic [2:0] shift_amount;
 assign shift_amount = rsize_i ? 'd4 : 'd2; // in bytes
 
 // reading side
-assign rdata_o = lines_q[active_index_q];
+assign rdata_o = lines_q[active_index];
 
 logic [4:0] bytes_left_d, bytes_left_q;
 
@@ -74,15 +78,17 @@ always_comb begin: read_size
     active_index_d = active_index_q;
 
     if (fill_line) begin
-        lines_d[fill_index_q] = rdata_i;
+        lines_d[fill_index] = rdata_i;
     end
 
     if (re_i & ~empty) begin
-        lines_d[active_index_q] >>= (shift_amount * 8);
+        lines_d[active_index] >>= (shift_amount * 8);
 
         if (bytes_left_q == shift_amount) begin // this line is now empty
             active_index_d += 'd1;
             bytes_left_d = 'd16;
+        end else begin
+            bytes_left_d -= shift_amount;
         end
     end
 end

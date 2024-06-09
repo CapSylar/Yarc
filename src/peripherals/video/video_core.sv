@@ -15,6 +15,10 @@ import video_pkg::*;
 	output logic [3:0] hdmi_channel_o
 );
 
+// the frame starts in the blanking area after reset
+localparam [9:0] X_COUNTER_INITIAL_VALUE = '0;
+localparam [9:0] Y_COUNTER_INITIAL_VALUE = 'd481;
+
 // module configuration registers
 video_config_t video_config;
 video_addr_t video_addr;
@@ -66,6 +70,13 @@ async_fifo #(.DATA_WIDTH(DSIZE), .ADDR_WIDTH(ASIZE)) afifo_i
 	.empty_o(async_ff_empty)
 );
 
+logic ff_re;
+logic ff_rsize;
+logic [31:0] ff_rdata;
+logic ff_empty;
+
+assign ff_rsize = '0; // fixed to 16-bit reads for now
+
 // fifo frontend adapter placed at the read side of the fifo above
 // allows use to read in 16 or 32-bit chunks without specializing the fifo
 fifo_adapter fifo_adapter_i
@@ -86,7 +97,7 @@ fifo_adapter fifo_adapter_i
 );
 
 assign ff_we = wb_ack;
-assign ff_wdata = fetch_if.wdata;
+assign ff_wdata = fetch_if.rdata;
 
 logic [ASIZE:0] req_pending_d, req_pending_q;
 wire [ASIZE:0] max_ff_count = {1'b1, {(ASIZE){1'b0}}};
@@ -98,6 +109,7 @@ wire ff_one_till_full = (req_pending_q + ff_fill_count == (max_ff_count-1'b1));
 // *fetch_start* pulses when the fetching logic should start fetching data from the framebuffer
 // and store it in the fifo
 logic fetch_start;
+logic [10:0] reqs_left_d, reqs_left_q; // contains the number left for this frame
 
 assign wb_req_ok = wb_cyc & wb_stb & ~wb_stall;
 
@@ -113,6 +125,7 @@ always_comb begin
 	wb_stb = '0;
 
 	wb_addr_d = wb_addr_q;
+	reqs_left_d = reqs_left_q;
 
 	case (state)
 		IDLE: begin
@@ -120,22 +133,25 @@ always_comb begin
 			if (video_config.is_enabled && fetch_start) begin
 
 				wb_addr_d = video_addr.fb_address;
+				reqs_left_d = 'd300; // TODO: only for text mode, change
 				next = FETCHING;
 			end
 		end
 
 		FETCHING: begin
-
 			wb_cyc = 1'b1;
 			wb_stb = 1'b1;
 
 			if (wb_req_ok) begin
-				wb_addr_d = wb_addr_d + 1;
+				wb_addr_d += 'd1;
+				reqs_left_d -= 1'd1;
 			end
 
-			// we can't issue more requests currently since there is no way to store them
-			// back off and wait for some fifo space to become available
-			if (wb_req_ok && ff_one_till_full) begin
+			if (reqs_left_d == '0) begin
+				next = IDLE;
+			end else if (wb_req_ok && ff_one_till_full) begin
+				// we can't issue more requests currently since there is no way to store them
+				// back off and wait for some fifo space to become available
 				next = FIFO_FULL;
 			end
 		end
@@ -165,9 +181,11 @@ always_ff @(posedge clk_i) begin
 	if (!rstn_i) begin
 		req_pending_q <= '0;
 		wb_addr_q <= '0;
+		reqs_left_q <= '0;
 	end else begin
 		req_pending_q <= req_pending_d;
 		wb_addr_q <= wb_addr_d;
+		reqs_left_q <= reqs_left_d;
 	end
 end
 
@@ -193,7 +211,7 @@ text_mode_line_buffer text_mode_line_buffer_i
 	// fifo interface port
 	.empty_i(ff_empty),
 	.re_o(ff_re),
-	.rdata_i(ff_rdata),
+	.rdata_i(ff_rdata[15:0]),
 
 	// read port
 	.re_i(read_char),
@@ -209,6 +227,7 @@ text_mode_line_buffer text_mode_line_buffer_i
 // testing a simple hdmi(really dvi) driver
 // create a 640x480 image
 
+logic [23:0] rgb; // red, green and blue
 // we really have a 800 x 525 pixel area
 
 logic [9:0] x_counter;
@@ -219,14 +238,20 @@ logic [9:0] y_counter;
 // we will use these counters to make things easier
 logic [9:0] ahead_x_counter;
 logic [9:0] ahead_y_counter;
-logic ahead_draw_area;
+logic ahead_draw_area_x; // within bounds w.r.t x
+logic ahead_draw_area_y; // within bounds w.r.t y
+logic ahead_draw_area; // x & y duhh
 
 logic hsync, vsync;
 logic draw_area;
 
-logic [7:0] red, green, blue;
-
 assign fetch_start = (x_counter == '0 && y_counter == 'd500); // TODO: check for a potential CDC problem here
+
+// text mode line buffer only needs to be cleared every 7th line in the draw area only
+// since we don't to clear the line buffer in the vsync area
+assign flush_line_buffer = ahead_draw_area_y & 
+	(ahead_x_counter == 'd640) &
+	(ahead_y_counter[2:0] == 3'b111);
 
 // read 2 cycles before we actually need something
 assign read_char = ahead_draw_area; // read from line buffer only in draw area
@@ -255,8 +280,8 @@ always_ff @(posedge pixel_clk_i or negedge rstn_i)
 begin
 	if (!rstn_i)
 	begin
-		x_counter <= '0;
-		y_counter <= '0;
+		x_counter <= X_COUNTER_INITIAL_VALUE;
+		y_counter <= Y_COUNTER_INITIAL_VALUE;
 	end
 	else
 	begin
@@ -271,8 +296,8 @@ always_ff @(posedge pixel_clk_i or negedge rstn_i)
 begin
 	if (!rstn_i)
 	begin
-		ahead_x_counter <= 'd2; // 2 pixel ahead
-		ahead_y_counter <= '0;
+		ahead_x_counter <= X_COUNTER_INITIAL_VALUE + 'd2; // 2 pixel ahead
+		ahead_y_counter <= Y_COUNTER_INITIAL_VALUE;
 	end
 	else
 	begin
@@ -283,7 +308,9 @@ begin
 	end
 end
 
-assign ahead_draw_area = (ahead_x_counter < 'd640) & (ahead_y_counter < 'd480);
+assign ahead_draw_area_x = (ahead_x_counter < 'd640);
+assign ahead_draw_area_y = (ahead_y_counter < 'd480);
+assign ahead_draw_area = ahead_draw_area_x & ahead_draw_area_y;
 
 // create the hsync and vsync signals
 assign hsync = (x_counter >= 'd656) & (x_counter < 'd757);

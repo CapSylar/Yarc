@@ -32,14 +32,13 @@ import platform_pkg::*;
 
     // uart lines
     input logic uart_rx_i,
-    output logic uart_tx_o
+    output logic uart_tx_o,
 
-    // input pixel_clk_i,
-    // input pixel_clk_5x_i
+    input pixel_clk_i,
+    input pixel_clk_5x_i,
 
     // hdmi lines
-	// output logic hdmi_clk_o,
-	// output logic [2:0] hdmi_data_o
+	output logic [3:0] hdmi_channel_o
 );
 
 wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) lsu_wb_if();
@@ -144,7 +143,6 @@ wishbone_if #(.ADDRESS_WIDTH(SEC_WB_AW), .DATA_WIDTH(SEC_WB_DW)) sec_xbar_slaves
 
 video_core
 #(
-
 )
 video_core_i
 (
@@ -155,10 +153,9 @@ video_core_i
     .pixel_clk_5x_i(pixel_clk_5x_i),
 
     .config_if(slave_wb_if[MAIN_XBAR_VIDEO_SLAVE_IDX]),
-    .fetch_if(video_fb_wb_if)
+    .fetch_if(video_fb_wb_if),
 
-    // .hdmi_clk_o(hdmi_clk_o),
-    // .hdmi_data_o(hdmi_data_o)
+    .hdmi_channel_o(hdmi_channel_o)
 );
 
 sec_xbar sec_xbar_i

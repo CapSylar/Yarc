@@ -96,7 +96,7 @@ always_ff @(posedge rclk_i or negedge rrstn_i) begin
     if (!rrstn_i) begin
         rbin_q <= '0;
         rgrey_q <= '0;
-        empty_q <= '0;
+        empty_q <= 1'b1;
     end else begin
         rbin_q <= rbin_d;
         rgrey_q <= rgrey_d;

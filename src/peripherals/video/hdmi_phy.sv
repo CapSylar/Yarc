@@ -14,7 +14,10 @@ module hdmi_phy
     output logic [3:0] hdmi_channel_o
 );
 
+logic [7:0] red, green, blue;
 logic [9:0] tmds_red, tmds_green, tmds_blue;
+
+assign {red, green, blue} = rgb_i;
 
 tmds_encoder tms_encoder_0 (.clk(pixel_clk_i), .rstn_i(rstn_i), .vd_i(blue),    .cd_i({vsync, hsync}), .vde_i(draw_area), .tmds_o(tmds_blue));
 tmds_encoder tms_encoder_1 (.clk(pixel_clk_i), .rstn_i(rstn_i), .vd_i(green),   .cd_i('0), .vde_i(draw_area), .tmds_o(tmds_green));

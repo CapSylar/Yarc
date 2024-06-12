@@ -113,7 +113,7 @@ logic [10:0] reqs_left_d, reqs_left_q; // contains the number left for this fram
 
 assign wb_req_ok = wb_cyc & wb_stb & ~wb_stall;
 
-enum {IDLE, FETCHING, FIFO_FULL} state, next;
+enum {IDLE, FETCHING, FIFO_FULL, WAIT_OUTSTANDING} state, next;
 always_ff @(posedge clk_i)
 	if (!rstn_i) state <= IDLE;
 	else	     state <= next;
@@ -148,7 +148,7 @@ always_comb begin
 			end
 
 			if (reqs_left_d == '0) begin
-				next = IDLE;
+				next = WAIT_OUTSTANDING; // if no requests are left to send
 			end else if (wb_req_ok && ff_one_till_full) begin
 				// we can't issue more requests currently since there is no way to store them
 				// back off and wait for some fifo space to become available
@@ -159,6 +159,13 @@ always_comb begin
 		FIFO_FULL: begin
 			if (!ff_full)
 				next = FETCHING;
+		end
+
+		WAIT_OUTSTANDING: begin // stay here till all acks have been received
+			wb_cyc = 1'b1;
+
+			if (req_pending_q == '0)
+				next = IDLE;
 		end
 	endcase
 end
@@ -249,9 +256,9 @@ assign fetch_start = (x_counter == '0 && y_counter == 'd500); // TODO: check for
 
 // text mode line buffer only needs to be cleared every 7th line in the draw area only
 // since we don't to clear the line buffer in the vsync area
-assign flush_line_buffer = ahead_draw_area_y & 
+assign flush_line_buffer = (ahead_y_counter < 'd479) & // 479 and not 480 because we don't want to flush on the last line of the frame
 	(ahead_x_counter == 'd640) &
-	(ahead_y_counter[2:0] == 3'b111);
+	(ahead_y_counter[3:0] == 4'hf); // flush every 16th line since characters span 16 lines
 
 // read 2 cycles before we actually need something
 assign read_char = ahead_draw_area; // read from line buffer only in draw area

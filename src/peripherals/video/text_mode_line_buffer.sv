@@ -46,6 +46,7 @@ always_comb begin: sm
         end
 
         IDLE: begin
+            fill_idx_d = '0; // reset counter
             if (pop_line_i) begin
                 next = FILLING_LINE;
             end

@@ -33,13 +33,13 @@ import ddr3_parameters_pkg::*;
     output [0:0] ddr3_odt_o,
     output ddr3_ras_o,
     output ddr3_reset_o,
-    output ddr3_we_o
+    output ddr3_we_o,
 
     // hdmi lvds signal outputs
-	// output hdmi_clk_n_o,
-	// output hdmi_clk_p_o,
-	// output [2:0] hdmi_data_n_o,
-	// output [2:0] hdmi_data_p_o
+	output hdmi_clk_n_o,
+	output hdmi_clk_p_o,
+	output [2:0] hdmi_data_n_o,
+	output [2:0] hdmi_data_p_o
 );
 
 logic sys_clk;
@@ -47,9 +47,8 @@ logic ddr3_clk;
 logic ddr3_clk_90;
 logic ddr3_ref_clk;
 // hdmi lines
-// logic pixel_clk, pixel_clk_5x;
-// logic hdmi_clk;
-// logic [2:0] hdmi_data;
+logic pixel_clk, pixel_clk_5x;
+logic [3:0] hdmi_channel;
 
 wire external_resetn = cpu_resetn;
 
@@ -60,9 +59,15 @@ clk_wiz_0 clk_wiz_0_i
     .reset(~external_resetn),
     .locked(clk_locked),
     .sys_clk_o(sys_clk),
+
+    // ddr3 memory and subsystem clocks
     .ddr3_clk_o(ddr3_clk),
     .ddr3_ref_clk_o(ddr3_ref_clk),
-    .ddr3_clk_90p_o(ddr3_clk_90)
+    .ddr3_clk_90p_o(ddr3_clk_90),
+
+    // hdmi clocks
+    .pixel_clk_o(pixel_clk),
+    .pixel_clk_5x_o(pixel_clk_5x)
 );
 
 // create the reset signal from btnc
@@ -173,19 +178,18 @@ yarc_platform yarc_platform_i
 
     // Platform <-> UART
     .uart_rx_i(uart_tx_in),
-    .uart_tx_o(uart_rx_out)
+    .uart_tx_o(uart_rx_out),
 
     // Platform <-> HDMI
-    // .pixel_clk_i(pixel_clk),
-    // .pixel_clk_5x_i(pixel_clk_5x),
-    // .hdmi_clk_o(hdmi_clk),
-    // .hdmi_data_o(hdmi_data)
+    .pixel_clk_i(pixel_clk),
+    .pixel_clk_5x_i(pixel_clk_5x),
+    .hdmi_channel_o(hdmi_channel)
 );
 
 // create differential outputs for hdmi
-// OBUFDS obufds_clk (.I(hdmi_clk),        .O(hdmi_clk_p_o),       .OB(hdmi_clk_n_o));
-// OBUFDS obufds_c0  (.I(hdmi_data[0]),    .O(hdmi_data_p_o[0]),   .OB(hdmi_data_n_o[0]));
-// OBUFDS obufds_c1  (.I(hdmi_data[1]),    .O(hdmi_data_p_o[1]),   .OB(hdmi_data_n_o[1]));
-// OBUFDS obufds_c2  (.I(hdmi_data[2]),    .O(hdmi_data_p_o[2]),   .OB(hdmi_data_n_o[2]));
+OBUFDS obufds_clk (.I(hdmi_channel[3]),    .O(hdmi_clk_p_o),       .OB(hdmi_clk_n_o));
+OBUFDS obufds_c0  (.I(hdmi_channel[0]),    .O(hdmi_data_p_o[0]),   .OB(hdmi_data_n_o[0]));
+OBUFDS obufds_c1  (.I(hdmi_channel[1]),    .O(hdmi_data_p_o[1]),   .OB(hdmi_data_n_o[1]));
+OBUFDS obufds_c2  (.I(hdmi_channel[2]),    .O(hdmi_data_p_o[2]),   .OB(hdmi_data_n_o[2]));
 
 endmodule: nexys_fpga_top

@@ -340,6 +340,12 @@ add wave ${PLATFORM}/mtimer_i/mtimecmp_q;
 add wave -divider {VIDEO core}
 add wave ${PLATFORM}/video_core_i/*;
 add wave ${PLATFORM}/video_core_i/video_core_ctrl_i/*;
+add wave ${PLATFORM}/video_core_i/afifo_i/*;
+add wave ${PLATFORM}/video_core_i/fifo_adapter_i/*;
+add wave ${PLATFORM}/video_core_i/text_mode_line_buffer_i/*;
+add wave ${PLATFORM}/video_core_i/vga_text_decoder_i/*;
+add wave ${PLATFORM}/video_core_i/hdmi_phy_i/*;
+add wave ${PLATFORM}/video_core_i/hdmi_phy_i/*;
 
 add wave -divider {Secondary Xbar}
 add wave ${PLATFORM}/sec_xbar_i/*;

@@ -328,6 +328,7 @@ assign draw_area = (x_counter < 'd640) & (y_counter < 'd480);
 hdmi_phy hdmi_phy_i
 (
 	.pixel_clk_i(pixel_clk_i),
+	.pixel_clk_5x_i(pixel_clk_5x_i),
 	.rstn_i(rstn_i),
 
 	.rgb_i(rgb),

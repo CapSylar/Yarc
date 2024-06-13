@@ -25,6 +25,7 @@ video_addr_t video_addr_q;
 logic video_config_we, video_addr_we;
 
 always_comb begin :wb_read
+    wb_data_d = '0;
 
     case (addr)
         VIDEO_CONFIG: wb_data_d = 32'(video_config_q);

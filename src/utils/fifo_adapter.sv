@@ -97,6 +97,7 @@ always_ff @(posedge clk_i, negedge rstn_i) begin
     if (!rstn_i) begin
         active_index_q <= '0;
         fill_index_q <= '0;
+        lines_q <= '{default: '0};
         bytes_left_q <= 'd16; // 16 bytes left
     end else begin
         active_index_q <= active_index_d;

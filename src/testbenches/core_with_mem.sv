@@ -113,9 +113,6 @@ sp_mem_wb #(.MEMFILE(DMEMFILE), .SIZE_POT_WORDS(DMEM_SIZE_WORDS_POT), .DATA_WIDT
 
 logic uart_tx;
 
-// logic hdmi_clk;
-// logic [2:0] hdmi_data;
-
 // simulation Uart Rx
 rxuart_printer
 #(.CLKS_PER_BAUD(CLKS_PER_BAUD))

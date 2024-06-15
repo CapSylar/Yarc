@@ -233,7 +233,7 @@ yarc_platform yarc_platform_i
     .dmem_wb_if(dmem_wb_if),
 
     // Platform <-> IMEM
-    .instr_fetch_wb_if(imem_wb_if),
+    .imem_wb_if(imem_wb_if),
 
     // Platform <-> DDR3
     .fb_wb_if(ddr3_wb_if),

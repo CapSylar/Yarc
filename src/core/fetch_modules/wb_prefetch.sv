@@ -36,7 +36,7 @@ import csr_pkg::*;
     input var mtvec_t mtvec_i
 );
 
-logic stb, cyc;
+logic stb;
 logic [31:0] new_pc;
 logic [31:0] exc_target_addr;
 logic [31:0] arch_pc_q, arch_pc_d;
@@ -57,7 +57,7 @@ logic [INSTR_BUFFER_SIZE_POT:0] acks_to_ignore_q, acks_to_ignore_d;
 
 wire [INSTR_BUFFER_SIZE_POT:0] max_ff_count = {1'b1, {(INSTR_BUFFER_SIZE_POT){1'b0}}};
 
-wire wb_req_ok = stb && cyc && !wb_if.stall; // wishbone request accepted by the slave
+wire wb_req_ok = stb && wb_if.cyc && !wb_if.stall; // wishbone request accepted by the slave
 
 // instruction buffer fifo
 sync_fifo
@@ -119,7 +119,6 @@ begin: wb_sm
     
     fetch_pc_d = fetch_pc_q;
 
-    cyc = '0;
     stb = '0;
 
     unique case (state)
@@ -130,7 +129,6 @@ begin: wb_sm
         end
         REQUESTING:
         begin
-            cyc = 1'b1;
             stb = 1'b1;
 
             if (new_pc_en_i)
@@ -246,7 +244,7 @@ assign pc_o = arch_pc_q;
 assign instr_o = ff_rdata;
 
 // assign wishbone interface outputs
-assign wb_if.cyc = cyc;
+assign wb_if.cyc = (state == REQUESTING) | (acks_to_ignore_q != '0) | (req_pending_q != 0);
 assign wb_if.stb = stb;
 assign wb_if.addr = fetch_pc_q[31:2];
 assign wb_if.we = '0;

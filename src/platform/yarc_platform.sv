@@ -22,7 +22,7 @@ import platform_pkg::*;
     wishbone_if.MASTER dmem_wb_if,
 
     // Platform <-> IMEM
-    wishbone_if.MASTER instr_fetch_wb_if,
+    wishbone_if.MASTER imem_wb_if,
 
     // Platform <-> Framebuffer memory
     wishbone_if.MASTER fb_wb_if,
@@ -42,33 +42,65 @@ import platform_pkg::*;
 );
 
 wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) lsu_wb_if();
+wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) instr_fetch_wb_if();
 
-// Wb interconnect
-wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) slave_wb_if [MAIN_XBAR_NUM_SLAVES]();
+// Main wbxbar slaves
+wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) main_slave_wb_if [MAIN_XBAR_NUM_SLAVES]();
 
 main_xbar main_xbar_i
 (
     .clk_i(clk_i),
     .rstn_i(rstn_i),
 
-    .master_wb_if(lsu_wb_if),
-    .slave_wb_if(slave_wb_if)
+    // masters
+    .lsu_wb_if(lsu_wb_if),
+    .instr_fetch_wb_if(instr_fetch_wb_if),
+
+    // slaves
+    .slave_wb_if(main_slave_wb_if)
 );
 
 // dmem
 // assign signals to dmem_wb
-assign dmem_wb_if.cyc = slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].cyc;
-assign dmem_wb_if.stb = slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].stb;
-assign dmem_wb_if.we = slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].we;
-assign dmem_wb_if.addr = slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].addr;
-assign dmem_wb_if.sel = slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].sel;
-assign dmem_wb_if.wdata = slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].wdata;
+assign dmem_wb_if.cyc = main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].cyc;
+assign dmem_wb_if.stb = main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].stb;
+assign dmem_wb_if.we = main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].we;
+assign dmem_wb_if.addr = main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].addr;
+assign dmem_wb_if.sel = main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].sel;
+assign dmem_wb_if.wdata = main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].wdata;
 
-assign slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].rdata = dmem_wb_if.rdata;
-assign slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].rty = dmem_wb_if.rty;
-assign slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].ack = dmem_wb_if.ack;
-assign slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].stall = dmem_wb_if.stall;
-assign slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].err = dmem_wb_if.err;
+assign main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].rdata = dmem_wb_if.rdata;
+assign main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].rty = dmem_wb_if.rty;
+assign main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].ack = dmem_wb_if.ack;
+assign main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].stall = dmem_wb_if.stall;
+assign main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].err = dmem_wb_if.err;
+
+// imem
+// assign signals to imem_wb
+assign imem_wb_if.cyc = main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX].cyc;
+assign imem_wb_if.stb = main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX].stb;
+assign imem_wb_if.we = main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX].we;
+assign imem_wb_if.addr = main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX].addr;
+assign imem_wb_if.sel = main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX].sel;
+assign imem_wb_if.wdata = main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX].wdata;
+
+assign main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX].rdata = imem_wb_if.rdata;
+assign main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX].rty = imem_wb_if.rty;
+assign main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX].ack = imem_wb_if.ack;
+assign main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX].stall = imem_wb_if.stall;
+assign main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX].err = imem_wb_if.err;
+
+// Peripheral wxbar
+wishbone_if #(.ADDRESS_WIDTH(PERIPH_WB_AW), .DATA_WIDTH(PERIPH_WB_DW)) periph_slave_wb_if [PERIPH_XBAR_NUM_SLAVES]();
+
+periph_xbar periph_xbar_i
+(
+    .clk_i(clk_i),
+    .rstn_i(rstn_i),
+
+    .master_wb_if(main_slave_wb_if[MAIN_XBAR_PERIPHERAL_SLAVE_IDX]),
+    .slave_wb_if(periph_slave_wb_if)
+);
 
 // interrupt lines
 logic irq_timer;
@@ -80,7 +112,7 @@ mtimer mtimer_i
     .clk_i(clk_i),
     .rstn_i(rstn_i),
 
-    .wb_if(slave_wb_if[MAIN_XBAR_MTIMER_SLAVE_IDX]),
+    .wb_if(periph_slave_wb_if[PERIPH_XBAR_MTIMER_SLAVE_IDX]),
 
     .timer_int_o(irq_timer)
 );
@@ -91,7 +123,7 @@ led_driver led_driver_i
     .clk_i(clk_i),
     .rstn_i(rstn_i),
 
-    .wb_if(slave_wb_if[MAIN_XBAR_LED_DRIVER_SLAVE_IDX]),
+    .wb_if(periph_slave_wb_if[PERIPH_XBAR_LED_DRIVER_SLAVE_IDX]),
     
     .led_status_o(led_status_o)
 );
@@ -110,16 +142,16 @@ wbuart_i
     .i_reset(~rstn_i),
 
     // wishbone connections
-    .i_wb_cyc(slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].cyc),
-    .i_wb_stb(slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].stb),
-    .i_wb_we(slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].we),
-    .i_wb_addr(slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].addr[1:0]),
-    .i_wb_data(slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].wdata),
-    .i_wb_sel(slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].sel),
+    .i_wb_cyc(periph_slave_wb_if[PERIPH_XBAR_WBUART_SLAVE_IDX].cyc),
+    .i_wb_stb(periph_slave_wb_if[PERIPH_XBAR_WBUART_SLAVE_IDX].stb),
+    .i_wb_we(periph_slave_wb_if[PERIPH_XBAR_WBUART_SLAVE_IDX].we),
+    .i_wb_addr(periph_slave_wb_if[PERIPH_XBAR_WBUART_SLAVE_IDX].addr[1:0]),
+    .i_wb_data(periph_slave_wb_if[PERIPH_XBAR_WBUART_SLAVE_IDX].wdata),
+    .i_wb_sel(periph_slave_wb_if[PERIPH_XBAR_WBUART_SLAVE_IDX].sel),
     
-    .o_wb_stall(slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].stall),
-    .o_wb_ack(slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].ack),
-    .o_wb_data(slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].rdata),
+    .o_wb_stall(periph_slave_wb_if[PERIPH_XBAR_WBUART_SLAVE_IDX].stall),
+    .o_wb_ack(periph_slave_wb_if[PERIPH_XBAR_WBUART_SLAVE_IDX].ack),
+    .o_wb_data(periph_slave_wb_if[PERIPH_XBAR_WBUART_SLAVE_IDX].rdata),
 
     // uart connections
     .i_uart_rx(uart_rx_i),
@@ -134,8 +166,8 @@ wbuart_i
     .o_uart_txfifo_int(uart_txfifo_int)
 );
 // zero out the rest of the control lines
-assign slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].err = '0;
-assign slave_wb_if[MAIN_XBAR_WBUART_SLAVE_IDX].rty = '0;
+assign periph_slave_wb_if[PERIPH_XBAR_WBUART_SLAVE_IDX].err = '0;
+assign periph_slave_wb_if[PERIPH_XBAR_WBUART_SLAVE_IDX].rty = '0;
 
 wishbone_if #(.ADDRESS_WIDTH(SEC_WB_AW), .DATA_WIDTH(SEC_WB_DW)) video_fb_wb_if();
 wishbone_if #(.ADDRESS_WIDTH(SEC_WB_AW), .DATA_WIDTH(SEC_WB_DW)) cpu_fb_wb_if();
@@ -152,7 +184,7 @@ video_core_i
     .pixel_clk_i(pixel_clk_i),
     .pixel_clk_5x_i(pixel_clk_5x_i),
 
-    .config_if(slave_wb_if[MAIN_XBAR_VIDEO_SLAVE_IDX]),
+    .config_if(periph_slave_wb_if[PERIPH_XBAR_VIDEO_SLAVE_IDX]),
     .fetch_if(video_fb_wb_if),
 
     .hdmi_channel_o(hdmi_channel_o)
@@ -163,7 +195,7 @@ sec_xbar sec_xbar_i
     .clk_i(clk_i),
     .rstn_i(rstn_i),
 
-    .cpu_wb_if(slave_wb_if[MAIN_XBAR_FB_SLAVE_IDX]),
+    .cpu_wb_if(main_slave_wb_if[MAIN_XBAR_FB_SLAVE_IDX]),
     .video_wb_if(video_fb_wb_if),
 
     .slave_wb_if(sec_xbar_slaves_if)

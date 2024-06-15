@@ -347,24 +347,31 @@ add wave ${PLATFORM}/video_core_i/vga_text_decoder_i/*;
 add wave ${PLATFORM}/video_core_i/hdmi_phy_i/*;
 add wave ${PLATFORM}/video_core_i/hdmi_phy_i/*;
 
-add wave -divider {Secondary Xbar}
-add wave ${PLATFORM}/sec_xbar_i/*;
-add wave ${PLATFORM}/sec_xbar_i/wbupsz_i/*;
-add wave -group {Sec Xbar cpu input} ${PLATFORM}/sec_xbar_i/cpu_wb_if/*;
-add wave -group {Sec Xbar input 0 video} ${PLATFORM}/sec_xbar_i/video_wb_if/*;
-add wave -group {Sec Xbar input 1 cpu wide} ${PLATFORM}/sec_xbar_i/cpu_wb_wide_if/*;
-add wave -group {Sec Xbar Output} ${PLATFORM}/sec_xbar_i/slave_wb_if[0]/*;
-
 set ddr3_top ${TOP}/true_ddr3_model_sim/yarc_ddr3_top_i
+set main_xbar ${PLATFORM}/main_xbar_i;
+set periph_xbar ${PLATFORM}/periph_xbar_i;
+set sec_xbar ${PLATFORM}/sec_xbar_i;
 
-add wave -group {IMEM interface} -color Gold ${PLATFORM}/instr_fetch_wb_if/*;
-add wave -group {DMEM WB Interface} -color Gold ${PLATFORM}/slave_wb_if[0]/*;
-add wave -group {Framebuffer WB Interface} -color Gold ${PLATFORM}/slave_wb_if[1]/*;
-add wave -group {MTIMER WB Interface} -color Gold ${PLATFORM}/slave_wb_if[2]/*;
-add wave -group {LED DRIVER WB Interface} -color Gold ${PLATFORM}/slave_wb_if[3]/*;
-add wave -group {WBUART WB Interface} -color Gold ${PLATFORM}/slave_wb_if[4]/*;
-add wave -group {VIDEO Interface} -color Gold ${PLATFORM}/slave_wb_if[5]/*;
+add wave -divider {Main Xbar}
+add wave -group {LSU IN} -color Gold ${main_xbar}/lsu_wb_if/*;
+add wave -group {FETCH IN} -color Gold ${main_xbar}/instr_fetch_wb_if/*;
+add wave -group {IMEM interface} -color Gold ${main_xbar}/slave_wb_if[0]/*;
+add wave -group {DMEM WB Interface} -color Gold ${main_xbar}/slave_wb_if[1]/*;
+add wave -group {FB WB Interface} -color Gold ${main_xbar}/slave_wb_if[2]/*;
+add wave -group {Peripherals WB Interface} -color Gold ${main_xbar}/slave_wb_if[3]/*;
 
+add wave -divider {Peripheral Xbar}
+add wave -group {MTIMER WB Interface} -color Gold ${periph_xbar}/slave_wb_if[0]/*;
+add wave -group {LED DRIVER WB Interface} -color Gold ${periph_xbar}/slave_wb_if[1]/*;
+add wave -group {WBUART WB Interface} -color Gold ${periph_xbar}/slave_wb_if[2]/*;
+add wave -group {VIDEO Interface} -color Gold ${periph_xbar}/slave_wb_if[3]/*;
+
+add wave -divider {Secondary Xbar}
+add wave -group {Sec Xbar cpu input} ${sec_xbar}/cpu_wb_if/*;
+add wave -group {Sec Xbar input 0 video} ${sec_xbar}/video_wb_if/*;
+add wave -group {Sec Xbar Output} ${sec_xbar}/slave_wb_if[0]/*;
+
+# add wave -group {Framebuffer WB Interface} -color Gold ${PLATFORM}/slave_wb_if[2]/*;
 # add wave -group {DDR3 Controller} -divider {DDR3 Controller}
 # add wave -group {DDR3 Controller} ${ddr3_top}/i_controller_clk;
 # add wave -group {DDR3 Controller} ${ddr3_top}/i_ddr3_clk;

@@ -50,21 +50,37 @@ logic ddr3_ref_clk;
 logic pixel_clk, pixel_clk_5x;
 logic [3:0] hdmi_channel;
 
-wire external_resetn = cpu_resetn;
+logic clk_locked;
+logic clk_wiz0_locked;
+logic clk_wiz1_locked;
 
-// generate a 50Mhz clock
+assign clk_locked = clk_wiz0_locked & clk_wiz1_locked;
+
+wire external_resetn = cpu_resetn;
+logic clk_buf;
+
+IBUF IBUF_i (.O(clk_buf), .I(clk));
+
 clk_wiz_0 clk_wiz_0_i
 (
-    .clk_in1(clk),
+    .clk_in1(clk_buf),
     .reset(~external_resetn),
-    .locked(clk_locked),
+    .locked(clk_wiz0_locked),
     .sys_clk_o(sys_clk),
 
     // ddr3 memory and subsystem clocks
     .ddr3_clk_o(ddr3_clk),
-    .ddr3_ref_clk_o(ddr3_ref_clk),
-    .ddr3_clk_90p_o(ddr3_clk_90),
+    // .ddr3_ref_clk_o(ddr3_ref_clk),
+    .ddr3_clk_90p_o(ddr3_clk_90)
+);
 
+clk_wiz_1 clk_wiz_1_i
+(
+    .clk_in1(clk_buf),
+    .reset(~external_resetn),
+    .locked(clk_wiz1_locked),
+
+    .ddr3_ref_clk_o(ddr3_ref_clk),
     // hdmi clocks
     .pixel_clk_o(pixel_clk),
     .pixel_clk_5x_o(pixel_clk_5x)
@@ -72,11 +88,31 @@ clk_wiz_0 clk_wiz_0_i
 
 // create the reset signal from btnc
 logic rstn;
-logic [2:0] ff_sync;
-always_ff@(posedge sys_clk)
+logic [2:0] ff_sync_clk;
+// async assert, synchronous deassert
+always_ff@(posedge sys_clk or negedge external_resetn)
 begin
-    {rstn, ff_sync} <= {ff_sync, external_resetn};
+    if (!external_resetn) begin
+        ff_sync_clk <= '0;
+    end else begin
+        ff_sync_clk <= {ff_sync_clk[1:0], clk_locked};
+    end
 end
+
+// reset from button or when clk is not locked
+assign rstn = ff_sync_clk[2];
+
+logic [2:0] ff_sync_pixel_clk;
+always_ff@(posedge pixel_clk or negedge external_resetn)
+begin
+    if (!external_resetn) begin
+        ff_sync_pixel_clk <= '0;
+    end else begin
+        ff_sync_pixel_clk <= {ff_sync_pixel_clk[1:0], clk_locked};
+    end
+end
+
+assign pixel_rstn = ff_sync_pixel_clk[2];
 
 // Instruction Memory
 wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) imem_wb_if();
@@ -182,6 +218,7 @@ yarc_platform yarc_platform_i
 
     // Platform <-> HDMI
     .pixel_clk_i(pixel_clk),
+    .pixel_rstn_i(pixel_rstn),
     .pixel_clk_5x_i(pixel_clk_5x),
     .hdmi_channel_o(hdmi_channel)
 );

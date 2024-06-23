@@ -5,6 +5,7 @@ import video_pkg::*;
     input rstn_i,
 
     input pixel_clk_i,
+	input pixel_rstn_i,
     input pixel_clk_5x_i,
 
 	wishbone_if.SLAVE config_if,
@@ -64,7 +65,7 @@ async_fifo #(.DATA_WIDTH(DSIZE), .ADDR_WIDTH(ASIZE)) afifo_i
 
 	// read side
 	.rclk_i(pixel_clk_i),
-	.rrstn_i(rstn_i),
+	.rrstn_i(pixel_rstn_i),
 	.re_i(async_ff_re),
 	.rdata_o(async_ff_rdata),
 	.empty_o(async_ff_empty)
@@ -82,7 +83,7 @@ assign ff_rsize = '0; // fixed to 16-bit reads for now
 fifo_adapter fifo_adapter_i
 (
 	.clk_i(pixel_clk_i),
-	.rstn_i(rstn_i),
+	.rstn_i(pixel_rstn_i),
 
 	// connection to fifo
 	.empty_i(async_ff_empty),
@@ -99,7 +100,7 @@ fifo_adapter fifo_adapter_i
 assign ff_we = wb_ack;
 assign ff_wdata = fetch_if.rdata;
 
-logic [ASIZE:0] req_pending_d, req_pending_q;
+(* mark_debug = "true" *) logic [ASIZE:0] req_pending_d, req_pending_q;
 wire [ASIZE:0] max_ff_count = {1'b1, {(ASIZE){1'b0}}};
 wire ff_one_till_full = (req_pending_q + ff_fill_count == (max_ff_count-1'b1));
 
@@ -109,11 +110,11 @@ wire ff_one_till_full = (req_pending_q + ff_fill_count == (max_ff_count-1'b1));
 // *fetch_start* pulses when the fetching logic should start fetching data from the framebuffer
 // and store it in the fifo
 logic fetch_start;
-logic [10:0] reqs_left_d, reqs_left_q; // contains the number left for this frame
+(* mark_debug = "true" *) logic [10:0] reqs_left_d, reqs_left_q; // contains the number left for this frame
 
 assign wb_req_ok = wb_cyc & wb_stb & ~wb_stall;
 
-enum {IDLE, FETCHING, FIFO_FULL, WAIT_OUTSTANDING} state, next;
+(* mark_debug = "true" *) enum {IDLE, FETCHING, FIFO_FULL, WAIT_OUTSTANDING} state, next;
 always_ff @(posedge clk_i)
 	if (!rstn_i) state <= IDLE;
 	else	     state <= next;
@@ -157,6 +158,8 @@ always_comb begin
 		end
 
 		FIFO_FULL: begin
+			wb_cyc = 1'b1;
+
 			if (!ff_full)
 				next = FETCHING;
 		end
@@ -213,7 +216,7 @@ logic [15:0] text_mode_data;
 text_mode_line_buffer text_mode_line_buffer_i
 (
 	.clk_i(pixel_clk_i),
-	.rstn_i(rstn_i),
+	.rstn_i(pixel_rstn_i),
 
 	// fifo interface port
 	.empty_i(ff_empty),
@@ -274,7 +277,7 @@ assign char_pixel_y_d = ahead_y_counter[3:0];
 vga_text_decoder vga_text_decoder_i
 (
 	.clk_i(pixel_clk_i),
-	.rstn_i(rstn_i),
+	.rstn_i(pixel_rstn_i),
 
 	.vga_data_i(text_mode_data),
 	.char_pixel_x_i(char_pixel_x_q),
@@ -283,9 +286,9 @@ vga_text_decoder vga_text_decoder_i
 	.rgb_o(rgb)
 );
 
-always_ff @(posedge pixel_clk_i or negedge rstn_i)
+always_ff @(posedge pixel_clk_i or negedge pixel_rstn_i)
 begin
-	if (!rstn_i)
+	if (!pixel_rstn_i)
 	begin
 		x_counter <= X_COUNTER_INITIAL_VALUE;
 		y_counter <= Y_COUNTER_INITIAL_VALUE;
@@ -299,9 +302,9 @@ begin
 	end
 end
 
-always_ff @(posedge pixel_clk_i or negedge rstn_i)
+always_ff @(posedge pixel_clk_i or negedge pixel_rstn_i)
 begin
-	if (!rstn_i)
+	if (!pixel_rstn_i)
 	begin
 		ahead_x_counter <= X_COUNTER_INITIAL_VALUE + 'd2; // 2 pixel ahead
 		ahead_y_counter <= Y_COUNTER_INITIAL_VALUE;
@@ -329,7 +332,7 @@ hdmi_phy hdmi_phy_i
 (
 	.pixel_clk_i(pixel_clk_i),
 	.pixel_clk_5x_i(pixel_clk_5x_i),
-	.rstn_i(rstn_i),
+	.rstn_i(pixel_rstn_i),
 
 	.rgb_i(rgb),
 
@@ -342,8 +345,8 @@ hdmi_phy hdmi_phy_i
 	.hdmi_channel_o(hdmi_channel_o)
 );
 
-always_ff @(posedge pixel_clk_i, negedge rstn_i) begin
-	if (!rstn_i) begin
+always_ff @(posedge pixel_clk_i, negedge pixel_rstn_i) begin
+	if (!pixel_rstn_i) begin
 		char_pixel_x_q <= '0;
 		char_pixel_y_q <= '0;
 	end else begin

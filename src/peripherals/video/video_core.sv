@@ -100,7 +100,7 @@ fifo_adapter fifo_adapter_i
 assign ff_we = wb_ack;
 assign ff_wdata = fetch_if.rdata;
 
-(* mark_debug = "true" *) logic [ASIZE:0] req_pending_d, req_pending_q;
+logic [ASIZE:0] req_pending_d, req_pending_q;
 wire [ASIZE:0] max_ff_count = {1'b1, {(ASIZE){1'b0}}};
 wire ff_one_till_full = (req_pending_q + ff_fill_count == (max_ff_count-1'b1));
 
@@ -110,11 +110,11 @@ wire ff_one_till_full = (req_pending_q + ff_fill_count == (max_ff_count-1'b1));
 // *fetch_start* pulses when the fetching logic should start fetching data from the framebuffer
 // and store it in the fifo
 logic fetch_start;
-(* mark_debug = "true" *) logic [10:0] reqs_left_d, reqs_left_q; // contains the number left for this frame
+logic [10:0] reqs_left_d, reqs_left_q; // contains the number left for this frame
 
 assign wb_req_ok = wb_cyc & wb_stb & ~wb_stall;
 
-(* mark_debug = "true" *) enum {IDLE, FETCHING, FIFO_FULL, WAIT_OUTSTANDING} state, next;
+enum {IDLE, FETCHING, FIFO_FULL, WAIT_OUTSTANDING} state, next;
 always_ff @(posedge clk_i)
 	if (!rstn_i) state <= IDLE;
 	else	     state <= next;

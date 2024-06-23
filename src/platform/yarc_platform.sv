@@ -35,6 +35,7 @@ import platform_pkg::*;
     output logic uart_tx_o,
 
     input pixel_clk_i,
+    input pixel_rstn_i,
     input pixel_clk_5x_i,
 
     // hdmi lines
@@ -61,34 +62,10 @@ main_xbar main_xbar_i
 );
 
 // dmem
-// assign signals to dmem_wb
-assign dmem_wb_if.cyc = main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].cyc;
-assign dmem_wb_if.stb = main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].stb;
-assign dmem_wb_if.we = main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].we;
-assign dmem_wb_if.addr = main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].addr;
-assign dmem_wb_if.sel = main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].sel;
-assign dmem_wb_if.wdata = main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].wdata;
-
-assign main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].rdata = dmem_wb_if.rdata;
-assign main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].rty = dmem_wb_if.rty;
-assign main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].ack = dmem_wb_if.ack;
-assign main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].stall = dmem_wb_if.stall;
-assign main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX].err = dmem_wb_if.err;
+wb_connect dmem_connect (.wb_if_i(main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX]), .wb_if_o(dmem_wb_if));
 
 // imem
-// assign signals to imem_wb
-assign imem_wb_if.cyc = main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX].cyc;
-assign imem_wb_if.stb = main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX].stb;
-assign imem_wb_if.we = main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX].we;
-assign imem_wb_if.addr = main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX].addr;
-assign imem_wb_if.sel = main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX].sel;
-assign imem_wb_if.wdata = main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX].wdata;
-
-assign main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX].rdata = imem_wb_if.rdata;
-assign main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX].rty = imem_wb_if.rty;
-assign main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX].ack = imem_wb_if.ack;
-assign main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX].stall = imem_wb_if.stall;
-assign main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX].err = imem_wb_if.err;
+wb_connect imem_connect (.wb_if_i(main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX]), .wb_if_o(imem_wb_if));
 
 // Peripheral wxbar
 wishbone_if #(.ADDRESS_WIDTH(PERIPH_WB_AW), .DATA_WIDTH(PERIPH_WB_DW)) periph_slave_wb_if [PERIPH_XBAR_NUM_SLAVES]();
@@ -156,7 +133,7 @@ wbuart_i
     // uart connections
     .i_uart_rx(uart_rx_i),
     .o_uart_tx(uart_tx_o),
-    .i_cts_n(),
+    .i_cts_n('0),
     .o_rts_n(),
 
     // uart interrupts
@@ -182,6 +159,7 @@ video_core_i
     .rstn_i(rstn_i),
 
     .pixel_clk_i(pixel_clk_i),
+    .pixel_rstn_i(pixel_rstn_i),
     .pixel_clk_5x_i(pixel_clk_5x_i),
 
     .config_if(periph_slave_wb_if[PERIPH_XBAR_VIDEO_SLAVE_IDX]),
@@ -201,18 +179,7 @@ sec_xbar sec_xbar_i
     .slave_wb_if(sec_xbar_slaves_if)
 );
 
-// fb interface signals (can't assign interfaces in sv yet :( )
-assign fb_wb_if.cyc = sec_xbar_slaves_if[SEC_XBAR_FB_SLAVE_IDX].cyc;
-assign fb_wb_if.stb = sec_xbar_slaves_if[SEC_XBAR_FB_SLAVE_IDX].stb;
-assign fb_wb_if.we = sec_xbar_slaves_if[SEC_XBAR_FB_SLAVE_IDX].we;
-assign fb_wb_if.addr = sec_xbar_slaves_if[SEC_XBAR_FB_SLAVE_IDX].addr;
-assign fb_wb_if.sel = sec_xbar_slaves_if[SEC_XBAR_FB_SLAVE_IDX].sel;
-assign fb_wb_if.wdata = sec_xbar_slaves_if[SEC_XBAR_FB_SLAVE_IDX].wdata;
-assign sec_xbar_slaves_if[SEC_XBAR_FB_SLAVE_IDX].rdata = fb_wb_if.rdata;
-assign sec_xbar_slaves_if[SEC_XBAR_FB_SLAVE_IDX].rty = fb_wb_if.rty;
-assign sec_xbar_slaves_if[SEC_XBAR_FB_SLAVE_IDX].ack = fb_wb_if.ack;
-assign sec_xbar_slaves_if[SEC_XBAR_FB_SLAVE_IDX].stall = fb_wb_if.stall;
-assign sec_xbar_slaves_if[SEC_XBAR_FB_SLAVE_IDX].err = fb_wb_if.err;
+wb_connect fb_connect (.wb_if_i(sec_xbar_slaves_if[SEC_XBAR_FB_SLAVE_IDX]), .wb_if_o(fb_wb_if));
 
 // Core Top
 core_top core_i

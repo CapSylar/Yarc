@@ -83,6 +83,7 @@ assign cpu_wb_wide_if.stall = mstall[SEC_XBAR_CPU_MASTER_IDX];
 assign cpu_wb_wide_if.ack = mack[SEC_XBAR_CPU_MASTER_IDX];
 assign cpu_wb_wide_if.rdata = mdata_i[SEC_XBAR_CPU_MASTER_IDX*SEC_WB_DW +: SEC_WB_DW];
 assign cpu_wb_wide_if.err = merr[SEC_XBAR_CPU_MASTER_IDX];
+assign cpu_wb_wide_if.rty = '0;
 
 // for the video master interface
 assign mcyc[SEC_XBAR_VIDEO_MASTER_IDX] = video_wb_if.cyc;
@@ -96,6 +97,7 @@ assign video_wb_if.stall = mstall[SEC_XBAR_VIDEO_MASTER_IDX];
 assign video_wb_if.ack = mack[SEC_XBAR_VIDEO_MASTER_IDX];
 assign video_wb_if.rdata = mdata_i[SEC_XBAR_VIDEO_MASTER_IDX*SEC_WB_DW +: SEC_WB_DW];
 assign video_wb_if.err = merr[SEC_XBAR_VIDEO_MASTER_IDX];
+assign video_wb_if.rty = '0;
 
 // connect the slave wire side to the systemverilog interfaces
 generate

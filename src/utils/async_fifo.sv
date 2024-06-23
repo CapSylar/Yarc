@@ -57,7 +57,7 @@ assign wfill_count_d =
     (rgrey_wq2_bin[AW] == wbin_d[AW]) ? ({1'b0,wbin_d[AW-1:0]} - {1'b0,rgrey_wq2_bin[AW-1:0]})
                                       : ({1'b1,wbin_d[AW-1:0]} - {1'b0,rgrey_wq2_bin[AW-1:0]});
 
-always_ff @(posedge wclk_i or negedge wrstn_i) begin
+always_ff @(posedge wclk_i) begin
     if (!wrstn_i) begin
         wbin_q <= '0;
         wgrey_q <= '0;
@@ -71,7 +71,7 @@ always_ff @(posedge wclk_i or negedge wrstn_i) begin
     end
 end
 
-always_ff @(posedge wclk_i or negedge wrstn_i) begin: rd_to_wr_cdc
+always_ff @(posedge wclk_i) begin: rd_to_wr_cdc
     if (!wrstn_i) begin
         {rgrey_wq2, rgrey_wq1} <= '0;
     end else begin
@@ -92,7 +92,7 @@ assign rbin_d = rbin_q + (re_i & ~empty_q);
 assign rgrey_d = (rbin_d >> 1) ^ rbin_d;
 assign empty_d = (rgrey_d == wgrey_rq2);
 
-always_ff @(posedge rclk_i or negedge rrstn_i) begin
+always_ff @(posedge rclk_i) begin
     if (!rrstn_i) begin
         rbin_q <= '0;
         rgrey_q <= '0;
@@ -104,7 +104,7 @@ always_ff @(posedge rclk_i or negedge rrstn_i) begin
     end
 end
 
-always_ff @(posedge rclk_i or negedge rrstn_i) begin: wr_to_rd_cdc
+always_ff @(posedge rclk_i) begin: wr_to_rd_cdc
     if (!rrstn_i) begin
         {wgrey_rq2, wgrey_rq1} <= '0;
     end else begin

@@ -1,5 +1,7 @@
 
 module nexys_fpga_top_tb();
+import platform_pkg::*;
+import ddr3_parameters_pkg::*;
 
 localparam CLK_HALF_PERIOD = 5ns;
 
@@ -21,8 +23,6 @@ logic rstn;
 logic [7:0] led;
 logic uart_rx_out;
 logic uart_tx_in;
-
-assign uart_tx_in = 1'b1;
 
 logic ddr3_clk_n;
 logic ddr3_clk_p;
@@ -86,6 +86,28 @@ ddr3_sim_model ddr3_sim_model_i(
     .dqs_n(ddr3_dqs_n),
     .tdqs_n(),
     .odt(ddr3_odt)
+);
+
+// simulation Uart Rx
+rxuart_printer
+#(.CLKS_PER_BAUD(CLKS_PER_BAUD))
+rxuart_printer_i
+(
+    .clk_i(clk),
+    .reset_i(~rstn),
+
+    .uart_rx_i(uart_rx_out)
+);
+
+// simulation uart tx
+txuart_sender
+#(.CLKS_PER_BAUD(CLKS_PER_BAUD))
+txuart_sender_i
+(
+    .clk_i(clk),
+    .reset_i(~rstn),
+
+    .tx_uart_o(uart_tx_in)
 );
 
 initial

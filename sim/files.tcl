@@ -30,6 +30,7 @@ ${PRJ_DIR}/peripherals/video/video_core.sv
 ${PRJ_DIR}/interfaces/wishbone_if.sv
 
 // utils
+${PRJ_DIR}/utils/wb_connect.sv
 ${PRJ_DIR}/utils/sync_fifo.sv
 ${PRJ_DIR}/utils/fifo_adapter.sv
 ${PRJ_DIR}/utils/sfifo.v
@@ -83,6 +84,8 @@ ${PRJ_DIR}/ddr3_mem_controller/sim_files/wb_sim_memory.sv
 
 // testbenches
 ${PRJ_DIR}/peripherals/wbuart32/rtl/rxuartlite.v
+${PRJ_DIR}/peripherals/wbuart32/rtl/txuartlite.v
 ${PRJ_DIR}/testbenches/rxuart_printer.sv
+${PRJ_DIR}/testbenches/txuart_sender.sv
 ${PRJ_DIR}/testbenches/core_with_mem.sv
 ${PRJ_DIR}/testbenches/verilator_top.sv

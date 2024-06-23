@@ -43,6 +43,7 @@ assign instr_fetch_wb_if.stall = mstall[MAIN_XBAR_FETCH_MASTER_IDX];
 assign instr_fetch_wb_if.ack = mack[MAIN_XBAR_FETCH_MASTER_IDX];
 assign instr_fetch_wb_if.rdata = mdata_i[MAIN_XBAR_FETCH_MASTER_IDX*MAIN_WB_DW +: MAIN_WB_DW];
 assign instr_fetch_wb_if.err = merr[MAIN_XBAR_FETCH_MASTER_IDX];
+assign instr_fetch_wb_if.rty = '0;
 
 // for the cpu's lsu interface
 assign mcyc[MAIN_XBAR_LSU_MASTER_IDX] = lsu_wb_if.cyc;
@@ -56,6 +57,7 @@ assign lsu_wb_if.stall = mstall[MAIN_XBAR_LSU_MASTER_IDX];
 assign lsu_wb_if.ack = mack[MAIN_XBAR_LSU_MASTER_IDX];
 assign lsu_wb_if.rdata = mdata_i[MAIN_XBAR_LSU_MASTER_IDX*MAIN_WB_DW +: MAIN_WB_DW];
 assign lsu_wb_if.err = merr[MAIN_XBAR_LSU_MASTER_IDX];
+assign lsu_wb_if.rty = '0;
 
 // connect the slave side to the systemverilog interfaces
 generate

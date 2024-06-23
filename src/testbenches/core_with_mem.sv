@@ -111,7 +111,7 @@ sp_mem_wb #(.MEMFILE(DMEMFILE), .SIZE_POT_WORDS(DMEM_SIZE_WORDS_POT), .DATA_WIDT
     .err_o(dmem_wb_if.err)
 );
 
-logic uart_tx;
+logic uart_tx, uart_rx;
 
 // simulation Uart Rx
 rxuart_printer
@@ -124,9 +124,20 @@ rxuart_printer_i
     .uart_rx_i(uart_tx)
 );
 
+// simulation uart tx
+txuart_sender
+#(.CLKS_PER_BAUD(CLKS_PER_BAUD))
+txuart_sender_i
+(
+    .clk_i(clk),
+    .reset_i(~rstn),
+
+    .tx_uart_o(uart_rx)
+);
+
 wishbone_if #(.ADDRESS_WIDTH(SEC_WB_AW), .DATA_WIDTH(SEC_WB_DW)) ddr3_wb_if();
 
-localparam DDR3_TRUE_SIM = 1'b1;
+localparam DDR3_TRUE_SIM = 1'b0;
 generate
     if (DDR3_TRUE_SIM) begin: true_ddr3_model_sim
 
@@ -242,7 +253,7 @@ yarc_platform yarc_platform_i
     .led_status_o(),
 
     // Platform <-> UART
-    .uart_rx_i(1'b1),
+    .uart_rx_i(uart_rx),
     .uart_tx_o(uart_tx),
 
     // Platform <-> HDMI

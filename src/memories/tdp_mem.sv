@@ -1,7 +1,7 @@
 // True dual port memory with byte-wide write enable
 
 module tdp_mem
-#(parameter int WIDTH, parameter int DEPTH)
+#(parameter int WIDTH = 0, parameter int DEPTH = 0)
 (
     // port 1 A R/W
     input clk_a_i,

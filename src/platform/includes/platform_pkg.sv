@@ -129,8 +129,8 @@ typedef struct packed
   bit [23:0] baud_clks; // clocks per baud
 } wbuart_conf_t;
 
-localparam CLK_FREQUENCY = 83 * 1000_000; // 80Mhz
-localparam UART_BAUD_RATE = 921600; // Baud per second
+localparam CLK_FREQUENCY = 80 * 1000_000; // 80Mhz
+localparam UART_BAUD_RATE = 500000; // Baud per second
 localparam [23:0] CLKS_PER_BAUD = CLK_FREQUENCY / UART_BAUD_RATE;
 
 localparam wbuart_conf_t WBUART_INITIAL_SETUP = '{
@@ -141,7 +141,7 @@ localparam wbuart_conf_t WBUART_INITIAL_SETUP = '{
     parity_settings: 2'b0,
     baud_clks: CLKS_PER_BAUD
 };
-localparam [3:0] WB_UART_LGFLEN = 4;
+localparam [3:0] WB_UART_LGFLEN = 5;
 localparam WB_UART_HW_FLOW_CTR_PR = '0;
 
 endpackage: platform_pkg

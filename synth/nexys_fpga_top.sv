@@ -53,8 +53,9 @@ logic [3:0] hdmi_channel;
 logic clk_locked;
 logic clk_wiz0_locked;
 logic clk_wiz1_locked;
+logic clk_wiz2_locked;
 
-assign clk_locked = clk_wiz0_locked & clk_wiz1_locked;
+assign clk_locked = clk_wiz0_locked & clk_wiz1_locked & clk_wiz2_locked;
 
 wire external_resetn = cpu_resetn;
 logic clk_buf;
@@ -80,7 +81,15 @@ clk_wiz_1 clk_wiz_1_i
     .reset(~external_resetn),
     .locked(clk_wiz1_locked),
 
-    .ddr3_ref_clk_o(ddr3_ref_clk),
+    .ddr3_ref_clk_o(ddr3_ref_clk)
+);
+
+clk_wiz_2 clk_wiz_2_i
+(
+    .clk_in1(clk_buf),
+    .reset(~external_resetn),
+    .locked(clk_wiz2_locked),
+
     // hdmi clocks
     .pixel_clk_o(pixel_clk),
     .pixel_clk_5x_o(pixel_clk_5x)

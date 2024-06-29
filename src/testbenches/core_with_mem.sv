@@ -258,6 +258,7 @@ yarc_platform yarc_platform_i
 
     // Platform <-> HDMI
     .pixel_clk_i(pixel_clk),
+    .pixel_rstn_i(rstn),
     .pixel_clk_5x_i(pixel_clk_5x),
     .hdmi_channel_o()
 );

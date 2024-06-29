@@ -33,6 +33,14 @@ logic [23:0] fg_rgb, bg_rgb; // foreground and background
 logic bit_one;
 assign bit_one = glyph[{~char_pixel_y_i, ~char_pixel_x_i}];
 
-assign rgb_o = bit_one ? 24'hff_ff_ff : '0;
+logic [23:0] rgb_d, rgb_q;
+
+assign rgb_d = bit_one ? 24'hff_ff_ff : '0;
+
+always_ff @(posedge clk_i) begin
+    rgb_q <= rgb_d;
+end
+
+assign rgb_o = rgb_q;
 
 endmodule: vga_text_decoder

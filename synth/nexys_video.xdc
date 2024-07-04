@@ -630,3 +630,10 @@ set_property INTERNAL_VREF 0.75 [get_iobanks 35]
 ## Configuration options, can be used for all designs
 set_property CONFIG_VOLTAGE 3.3 [current_design]
 set_property CFGBVS VCCO [current_design]
+
+# clock groups
+set_clock_groups -asynchronous \
+    -group {pixel_clk_o_clk_wiz_2} \
+    -group {sys_clk_o_clk_wiz_0}
+
+

@@ -71,12 +71,14 @@ async_fifo #(.DATA_WIDTH(DSIZE), .ADDR_WIDTH(ASIZE)) afifo_i
 	.empty_o(async_ff_empty)
 );
 
-logic ff_re;
-logic ff_rsize;
-logic [31:0] ff_rdata;
-logic ff_empty;
+logic adapter_re;
+logic adapter_rsize;
+logic [31:0] adapter_rdata;
+logic adapter_empty;
 
-assign ff_rsize = '0; // fixed to 16-bit reads for now
+// 16-bit reads for text-mode
+// 32-bit reads for raw framebuffer mode
+assign adapter_rsize = video_config.is_text_mode ? 1'b0 : 1'b1;
 
 // fifo frontend adapter placed at the read side of the fifo above
 // allows use to read in 16 or 32-bit chunks without specializing the fifo
@@ -91,10 +93,10 @@ fifo_adapter fifo_adapter_i
 	.rdata_i(async_ff_rdata),
 
 	// adapter read interface
-	.re_i(ff_re),
-	.rsize_i(ff_rsize),
-	.rdata_o(ff_rdata),
-	.empty_o(ff_empty)
+	.re_i(adapter_re),
+	.rsize_i(adapter_rsize),
+	.rdata_o(adapter_rdata),
+	.empty_o(adapter_empty)
 );
 
 assign ff_we = wb_ack;
@@ -102,15 +104,19 @@ assign ff_wdata = fetch_if.rdata;
 
 logic [ASIZE:0] req_pending_d, req_pending_q;
 wire [ASIZE:0] max_ff_count = {1'b1, {(ASIZE){1'b0}}};
-wire ff_one_till_full = (req_pending_q + ff_fill_count == (max_ff_count-1'b1));
+wire ff_one_till_full = (req_pending_q + ff_fill_count) >= (max_ff_count-1'b1);
 
 // ==================================== fetching part ====================================
 // read data from the framebuffer into the line fifos
 
 // *fetch_start* pulses when the fetching logic should start fetching data from the framebuffer
 // and store it in the fifo
-logic fetch_start;
-logic [10:0] reqs_left_d, reqs_left_q; // contains the number left for this frame
+logic fetch_start_synced;
+logic [16:0] reqs_left_d, reqs_left_q; // contains the number left for this frame
+
+// for text mode: 80 * 30 * 2 bytes for an entire frame, we fetch 16b bytes per req thus = 300
+// for raw mode : 640 * 480 * 4 bytes for an entire frame, thus = 76800 fetches
+wire [16:0] initial_reqs_left = video_config.is_text_mode ? 'd300 : 'd76800;
 
 assign wb_req_ok = wb_cyc & wb_stb & ~wb_stall;
 
@@ -131,10 +137,10 @@ always_comb begin
 	case (state)
 		IDLE: begin
 			// fetching starts if the module is enabled and the update period is over
-			if (video_config.is_enabled && fetch_start) begin
+			if (video_config.is_enabled && fetch_start_synced) begin
 
 				wb_addr_d = video_addr.fb_address;
-				reqs_left_d = 'd300; // TODO: only for text mode, change
+				reqs_left_d = initial_reqs_left;
 				next = FETCHING;
 			end
 		end
@@ -160,7 +166,7 @@ always_comb begin
 		FIFO_FULL: begin
 			wb_cyc = 1'b1;
 
-			if (!ff_full)
+			if (!ff_one_till_full)
 				next = FETCHING;
 		end
 
@@ -209,6 +215,7 @@ end
 	We devised a small 256 byte line buffer used for storing vga text mode characters after popping them from the fifo.
 */
 
+logic line_buffer_re;
 logic read_char, flush_line_buffer;
 logic [7:0] char_idx;
 logic [15:0] text_mode_data;
@@ -219,9 +226,9 @@ text_mode_line_buffer text_mode_line_buffer_i
 	.rstn_i(pixel_rstn_i),
 
 	// fifo interface port
-	.empty_i(ff_empty),
-	.re_o(ff_re),
-	.rdata_i(ff_rdata[15:0]),
+	.empty_i(adapter_empty),
+	.re_o(line_buffer_re),
+	.rdata_i(adapter_rdata[15:0]),
 
 	// read port
 	.re_i(read_char),
@@ -231,13 +238,16 @@ text_mode_line_buffer text_mode_line_buffer_i
 	.data_o(text_mode_data)
 );
 
+logic raw_mode_re;
+assign adapter_re = video_config.is_text_mode ? line_buffer_re : raw_mode_re;
+
 // ===================================== drawing part ==============================================
 // fetched data from the line fifos and display the pixels
 
 // testing a simple hdmi(really dvi) driver
 // create a 640x480 image
 
-logic [23:0] rgb; // red, green and blue
+logic [23:0] rgb; // final red, green and blue send to video
 // we really have a 800 x 525 pixel area
 
 logic [9:0] x_counter;
@@ -254,6 +264,45 @@ logic ahead_draw_area; // x & y duhh
 
 logic hsync, vsync;
 logic draw_area;
+
+// cross fetch start to the other domain
+logic [1:0] sys_clk_sync;
+logic [1:0] pixel_clk_sync;
+
+logic fetch_start;
+logic fetch_start_ack;
+logic fetch_start_d, fetch_start_q;
+
+always_ff @(posedge clk_i) begin
+	{sys_clk_sync} <= {sys_clk_sync[0], fetch_start_q};
+end
+
+always_ff @(posedge pixel_clk_i) begin
+	{pixel_clk_sync} <= {pixel_clk_sync[0], fetch_start_synced};
+end
+
+assign fetch_start_synced = sys_clk_sync[1];
+assign fetch_start_ack = pixel_clk_sync[1];
+
+always_comb begin
+	fetch_start_d = fetch_start_q;
+
+	if (fetch_start) begin
+		fetch_start_d = 1'b1;
+	end
+
+	if (fetch_start_ack) begin
+		fetch_start_d = '0;
+	end
+end
+
+always_ff @(posedge clk_i) begin
+	if (!pixel_rstn_i) begin
+		fetch_start_q <= '0;
+	end else begin
+		fetch_start_q <= fetch_start_d;
+	end
+end
 
 assign fetch_start = (x_counter == '0 && y_counter == 'd500); // TODO: check for a potential CDC problem here
 
@@ -273,6 +322,7 @@ logic [3:0] char_pixel_y_d, char_pixel_y_q; // y pixel offset inside glyph
 assign char_pixel_x_d = ahead_x_counter[2:0];
 assign char_pixel_y_d = ahead_y_counter[3:0];
 
+logic [23:0] text_mode_rgb;
 // outputs the final rgb data for text mode
 vga_text_decoder vga_text_decoder_i
 (
@@ -283,8 +333,16 @@ vga_text_decoder vga_text_decoder_i
 	.char_pixel_x_i(char_pixel_x_q),
 	.char_pixel_y_i(char_pixel_y_q),
 
-	.rgb_o(rgb)
+	.rgb_o(text_mode_rgb)
 );
+
+logic [23:0] raw_mode_rgb;
+
+// in raw framebuffer mode, we can read just in time
+assign raw_mode_re = draw_area;
+assign raw_mode_rgb = adapter_rdata[23:0];
+
+assign rgb = video_config.is_text_mode ? text_mode_rgb : raw_mode_rgb;
 
 always_ff @(posedge pixel_clk_i or negedge pixel_rstn_i)
 begin

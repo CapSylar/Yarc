@@ -9,6 +9,8 @@ module video_text_mode
 
     input pixel_clk_i,
     input pixel_rstn_i,
+	
+	input enable_i,
 
     // interface with fifo adapter
     input adapter_empty_i,
@@ -36,6 +38,8 @@ text_mode_line_buffer text_mode_line_buffer_i
 (
 	.clk_i(pixel_clk_i),
 	.rstn_i(pixel_rstn_i),
+
+	.enable_i(enable_i),
 
 	// fifo interface port
 	.empty_i(adapter_empty_i),
@@ -83,9 +87,9 @@ assign ahead_draw_area = ahead_draw_area_x & ahead_draw_area_y;
 
 // text mode line buffer only needs to be cleared every 7th line in the draw area only
 // since we don't to clear the line buffer in the vsync area
-assign flush_line_buffer = (ahead_y_counter < 'd479) & // 479 and not 480 because we don't want to flush on the last line of the frame
-	(ahead_x_counter == 'd640) &
-	(ahead_y_counter[3:0] == 4'hf); // flush every 16th line since characters span 16 lines
+assign flush_line_buffer = 	(ahead_x_counter == 'd640) & ((ahead_y_counter == 'd524) | // flush line should happen on the last line in vsync
+	(ahead_y_counter[3:0] == 4'hf) // flush every 16th line since characters span 16 lines
+	& (ahead_y_counter < 'd479)); // 479 and not 480 because we don't want to flush on the last line of the frame
 
 // read 2 cycles before we actually need something
 assign read_char = ahead_draw_area; // read from line buffer only in draw area

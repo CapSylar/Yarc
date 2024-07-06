@@ -4,6 +4,8 @@ module text_mode_line_buffer
     input clk_i,
     input rstn_i,
 
+    input enable_i,
+
     // fifo interface port
     input empty_i,
     output logic re_o, // CAUTION: assumes no delay read
@@ -24,7 +26,7 @@ logic write_buffer;
 
 enum {FILLING_LINE, IDLE} state, next;
 always_ff @(posedge clk_i)
-    if (!rstn_i) state <= FILLING_LINE;
+    if (!rstn_i) state <= IDLE;
     else         state <= next;
 
 always_comb begin: sm
@@ -47,7 +49,7 @@ always_comb begin: sm
 
         IDLE: begin
             fill_idx_d = '0; // reset counter
-            if (pop_line_i) begin
+            if (pop_line_i & enable_i) begin
                 next = FILLING_LINE;
             end
         end

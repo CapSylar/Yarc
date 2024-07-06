@@ -214,12 +214,16 @@ logic text_mode_adapter_re;
 logic text_mode_adapter_rsize;
 logic [23:0] text_mode_rgb;
 
+logic is_active_frame_d, is_active_frame_q;
+
 video_text_mode #(.X_COUNTER_INIT_VALUE(X_COUNTER_INIT_VALUE),
 				  .Y_COUNTER_INIT_VALUE(Y_COUNTER_INIT_VALUE))
 video_text_mode_i
 (
 	.sys_clk_i(clk_i),
 	.sys_rstn_i(rstn_i),
+	
+	.enable_i(is_active_frame_q),
 
 	.pixel_clk_i(pixel_clk_i),
 	.pixel_rstn_i(pixel_rstn_i),
@@ -296,6 +300,12 @@ end
 
 assign fetch_start = (x_counter == '0 && y_counter == 'd500); // TODO: check for a potential CDC problem here
 
+assign is_active_frame_d = fetch_start ? video_config.is_enabled : is_active_frame_q;
+
+always_ff @(posedge pixel_clk_i, negedge pixel_rstn_i) begin
+	if (!pixel_rstn_i) is_active_frame_q <= '0;
+	else is_active_frame_q <= is_active_frame_d;
+end
 
 always_ff @(posedge pixel_clk_i or negedge pixel_rstn_i)
 begin

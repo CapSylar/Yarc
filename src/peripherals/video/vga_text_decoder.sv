@@ -10,6 +10,8 @@ module vga_text_decoder
     input [2:0] char_pixel_x_i,
     input [3:0] char_pixel_y_i,
 
+    input frame_pulse_i, // a signal that goes high for one cycle once per frame
+
     output logic [23:0] rgb_o
 );
 
@@ -27,15 +29,32 @@ glyphmap glyphmap_i
 );
 
 logic [23:0] fg_rgb, bg_rgb; // foreground and background
-
-// TODO: implement
-
+logic is_blink;
 logic bit_one;
+
+attribute_map attribute_map_i
+(
+    .attribute_i(attribute),
+    .fg_rgb_o(fg_rgb),
+    .bg_rgb_o(bg_rgb),
+    .is_blink_o(is_blink)
+);
+
+logic [5:0] blink_counter_q;
+// blink counter
+
+always_ff @(posedge clk_i, negedge rstn_i) begin
+    if (!rstn_i) begin
+        blink_counter_q <= '0;
+    end else if (frame_pulse_i)
+        blink_counter_q <= blink_counter_q + 1'b1;
+end
+
+assign show_fg = ~is_blink | is_blink & blink_counter_q[5];
 assign bit_one = glyph[{~char_pixel_y_i, ~char_pixel_x_i}];
 
 logic [23:0] rgb_d, rgb_q;
-
-assign rgb_d = bit_one ? 24'hff_ff_ff : '0;
+assign rgb_d = (bit_one & show_fg) ? fg_rgb : bg_rgb;
 
 always_ff @(posedge clk_i) begin
     rgb_q <= rgb_d;

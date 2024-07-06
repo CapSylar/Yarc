@@ -11,6 +11,7 @@ module video_text_mode
     input pixel_rstn_i,
 	
 	input enable_i,
+	input frame_pulse_i,
 
     // interface with fifo adapter
     input adapter_empty_i,
@@ -120,6 +121,8 @@ vga_text_decoder vga_text_decoder_i
 	.vga_data_i(text_mode_data),
 	.char_pixel_x_i(char_pixel_x_q),
 	.char_pixel_y_i(char_pixel_y_q),
+	
+	.frame_pulse_i(frame_pulse_i),
 
 	.rgb_o(rgb_o)
 );

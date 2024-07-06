@@ -19,7 +19,7 @@ ${PRJ_DIR}/peripherals/video/video_pkg.sv
 ${PRJ_DIR}/peripherals/video/video_core_ctrl.sv
 ${PRJ_DIR}/peripherals/video/text_mode_line_buffer.sv
 ${PRJ_DIR}/peripherals/video/glyphmap.sv
-${PRJ_DIR}/peripherals/video/attributemap.sv
+${PRJ_DIR}/peripherals/video/attribute_map.sv
 ${PRJ_DIR}/peripherals/video/vga_text_decoder.sv
 ${PRJ_DIR}/peripherals/video/tmds_encoder.sv
 ${PRJ_DIR}/peripherals/video/serializer.sv

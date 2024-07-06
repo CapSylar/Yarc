@@ -17,8 +17,8 @@ import video_pkg::*;
 );
 
 // the frame starts in the blanking area after reset
-localparam [9:0] X_COUNTER_INITIAL_VALUE = '0;
-localparam [9:0] Y_COUNTER_INITIAL_VALUE = 'd481;
+localparam [9:0] X_COUNTER_INIT_VALUE = '0;
+localparam [9:0] Y_COUNTER_INIT_VALUE = 'd481;
 
 // module configuration registers
 video_config_t video_config;
@@ -76,9 +76,7 @@ logic adapter_rsize;
 logic [31:0] adapter_rdata;
 logic adapter_empty;
 
-// 16-bit reads for text-mode
-// 32-bit reads for raw framebuffer mode
-assign adapter_rsize = video_config.is_text_mode ? 1'b0 : 1'b1;
+// assign adapter_rsize = video_config.is_text_mode ? 1'b0 : 1'b1;
 
 // fifo frontend adapter placed at the read side of the fifo above
 // allows use to read in 16 or 32-bit chunks without specializing the fifo
@@ -205,65 +203,57 @@ always_ff @(posedge clk_i) begin
 	end
 end
 
-/*
-	In the normal frambuffer mode, each fetched 4-byte word corresponds to a screen pixel. The pixel
-	is popped from the fifo and not needed again for this frame.
-	The matter at hand is different in the case of vga text mode, where a fetched glyph dictates the colors
-	of several pixels, crossing several lines. In this case, we can't simply pop from the fifo since the data
-	will be needed again.
+logic [9:0] x_counter;
+logic [9:0] y_counter;
+logic hsync, vsync;
+logic draw_area;
+logic [23:0] rgb; // final rgb value presented to the video phy
 
-	We devised a small 256 byte line buffer used for storing vga text mode characters after popping them from the fifo.
-*/
+// text mode
+logic text_mode_adapter_re;
+logic text_mode_adapter_rsize;
+logic [23:0] text_mode_rgb;
 
-logic line_buffer_re;
-logic read_char, flush_line_buffer;
-logic [7:0] char_idx;
-logic [15:0] text_mode_data;
-
-text_mode_line_buffer text_mode_line_buffer_i
+video_text_mode #(.X_COUNTER_INIT_VALUE(X_COUNTER_INIT_VALUE),
+				  .Y_COUNTER_INIT_VALUE(Y_COUNTER_INIT_VALUE))
+video_text_mode_i
 (
-	.clk_i(pixel_clk_i),
-	.rstn_i(pixel_rstn_i),
+	.sys_clk_i(clk_i),
+	.sys_rstn_i(rstn_i),
 
-	// fifo interface port
-	.empty_i(adapter_empty),
-	.re_o(line_buffer_re),
-	.rdata_i(adapter_rdata[15:0]),
+	.pixel_clk_i(pixel_clk_i),
+	.pixel_rstn_i(pixel_rstn_i),
 
-	// read port
-	.re_i(read_char),
-	.pop_line_i(flush_line_buffer),
-	.empty_o(),
-	.char_idx_i(char_idx),
-	.data_o(text_mode_data)
+	.adapter_empty_i(adapter_empty),
+	.adapter_rdata_i(adapter_rdata),
+	.adapter_re_o(text_mode_adapter_re),
+	.adapter_rsize_o(text_mode_adapter_rsize),
+
+	.rgb_o(text_mode_rgb)
 );
 
-logic raw_mode_re;
-assign adapter_re = video_config.is_text_mode ? line_buffer_re : raw_mode_re;
+logic [23:0] raw_mode_rgb;
+logic raw_mode_adapter_re;
+logic raw_mode_adapter_rsize;
+
+// in raw framebuffer mode, we can read just in time
+assign raw_mode_adapter_re = draw_area & ~adapter_empty;
+assign raw_mode_adapter_rsize = 1'b1;
+assign raw_mode_rgb = adapter_rdata[23:0];
+
+// Mux control signals between text mode and raw mode
+assign adapter_re = video_config.is_text_mode ? text_mode_adapter_re : raw_mode_adapter_re;
+
+// 16-bit reads for text-mode
+// 32-bit reads for raw framebuffer mode
+assign adapter_rsize = video_config.is_text_mode ? text_mode_adapter_rsize : raw_mode_adapter_rsize;
+assign rgb = video_config.is_text_mode ? text_mode_rgb : raw_mode_rgb;
 
 // ===================================== drawing part ==============================================
-// fetched data from the line fifos and display the pixels
 
 // testing a simple hdmi(really dvi) driver
 // create a 640x480 image
-
-logic [23:0] rgb; // final red, green and blue send to video
 // we really have a 800 x 525 pixel area
-
-logic [9:0] x_counter;
-logic [9:0] y_counter;
-
-// another set of counters that are 2 "pixels" ahead of the other ones
-// since we will pipeline the access to the fifo and its computation
-// we will use these counters to make things easier
-logic [9:0] ahead_x_counter;
-logic [9:0] ahead_y_counter;
-logic ahead_draw_area_x; // within bounds w.r.t x
-logic ahead_draw_area_y; // within bounds w.r.t y
-logic ahead_draw_area; // x & y duhh
-
-logic hsync, vsync;
-logic draw_area;
 
 // cross fetch start to the other domain
 logic [1:0] sys_clk_sync;
@@ -306,50 +296,13 @@ end
 
 assign fetch_start = (x_counter == '0 && y_counter == 'd500); // TODO: check for a potential CDC problem here
 
-// text mode line buffer only needs to be cleared every 7th line in the draw area only
-// since we don't to clear the line buffer in the vsync area
-assign flush_line_buffer = (ahead_y_counter < 'd479) & // 479 and not 480 because we don't want to flush on the last line of the frame
-	(ahead_x_counter == 'd640) &
-	(ahead_y_counter[3:0] == 4'hf); // flush every 16th line since characters span 16 lines
-
-// read 2 cycles before we actually need something
-assign read_char = ahead_draw_area; // read from line buffer only in draw area
-assign char_idx = ahead_x_counter[9:3]; // every 8 pixels, change character
-
-logic [2:0] char_pixel_x_d, char_pixel_x_q; // x pixel offset inside glyph
-logic [3:0] char_pixel_y_d, char_pixel_y_q; // y pixel offset inside glyph
-
-assign char_pixel_x_d = ahead_x_counter[2:0];
-assign char_pixel_y_d = ahead_y_counter[3:0];
-
-logic [23:0] text_mode_rgb;
-// outputs the final rgb data for text mode
-vga_text_decoder vga_text_decoder_i
-(
-	.clk_i(pixel_clk_i),
-	.rstn_i(pixel_rstn_i),
-
-	.vga_data_i(text_mode_data),
-	.char_pixel_x_i(char_pixel_x_q),
-	.char_pixel_y_i(char_pixel_y_q),
-
-	.rgb_o(text_mode_rgb)
-);
-
-logic [23:0] raw_mode_rgb;
-
-// in raw framebuffer mode, we can read just in time
-assign raw_mode_re = draw_area;
-assign raw_mode_rgb = adapter_rdata[23:0];
-
-assign rgb = video_config.is_text_mode ? text_mode_rgb : raw_mode_rgb;
 
 always_ff @(posedge pixel_clk_i or negedge pixel_rstn_i)
 begin
 	if (!pixel_rstn_i)
 	begin
-		x_counter <= X_COUNTER_INITIAL_VALUE;
-		y_counter <= Y_COUNTER_INITIAL_VALUE;
+		x_counter <= X_COUNTER_INIT_VALUE;
+		y_counter <= Y_COUNTER_INIT_VALUE;
 	end
 	else
 	begin
@@ -360,25 +313,6 @@ begin
 	end
 end
 
-always_ff @(posedge pixel_clk_i or negedge pixel_rstn_i)
-begin
-	if (!pixel_rstn_i)
-	begin
-		ahead_x_counter <= X_COUNTER_INITIAL_VALUE + 'd2; // 2 pixel ahead
-		ahead_y_counter <= Y_COUNTER_INITIAL_VALUE;
-	end
-	else
-	begin
-		ahead_x_counter <= (ahead_x_counter == 'd799) ? '0 : ahead_x_counter + 1'b1;
-
-		if (ahead_x_counter == 'd799)
-			ahead_y_counter <= (ahead_y_counter == 'd524) ? '0 : ahead_y_counter + 1'b1;
-	end
-end
-
-assign ahead_draw_area_x = (ahead_x_counter < 'd640);
-assign ahead_draw_area_y = (ahead_y_counter < 'd480);
-assign ahead_draw_area = ahead_draw_area_x & ahead_draw_area_y;
 
 // create the hsync and vsync signals
 assign hsync = (x_counter >= 'd656) & (x_counter < 'd757);
@@ -402,16 +336,6 @@ hdmi_phy hdmi_phy_i
 	// output hdmi channels
 	.hdmi_channel_o(hdmi_channel_o)
 );
-
-always_ff @(posedge pixel_clk_i, negedge pixel_rstn_i) begin
-	if (!pixel_rstn_i) begin
-		char_pixel_x_q <= '0;
-		char_pixel_y_q <= '0;
-	end else begin
-		char_pixel_x_q <= char_pixel_x_d;
-		char_pixel_y_q <= char_pixel_y_d;
-	end
-end
 
 // assign wishbone signals
 assign fetch_if.cyc = wb_cyc;

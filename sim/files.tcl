@@ -24,6 +24,7 @@ ${PRJ_DIR}/peripherals/video/vga_text_decoder.sv
 ${PRJ_DIR}/peripherals/video/tmds_encoder.sv
 ${PRJ_DIR}/peripherals/video/serializer.sv
 ${PRJ_DIR}/peripherals/video/hdmi_phy.sv
+${PRJ_DIR}/peripherals/video/video_text_mode.sv
 ${PRJ_DIR}/peripherals/video/video_core.sv
 
 // interfaces

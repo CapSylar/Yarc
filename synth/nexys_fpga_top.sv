@@ -4,8 +4,8 @@ module nexys_fpga_top
 import platform_pkg::*;
 import ddr3_parameters_pkg::*;
 #(
- parameter string DMEMFILE = "/home/robin/workdir/yarc_os/build/yarc.dvmem",
- parameter string IMEMFILE = "/home/robin/workdir/yarc_os/build/yarc.ivmem")
+ parameter string DMEMFILE = "/home/robin/workdir/yarc_os/build/bootloader.dvmem",
+ parameter string IMEMFILE = "/home/robin/workdir/yarc_os/build/bootloader.ivmem")
 (
     input clk,
     input cpu_resetn, // active low

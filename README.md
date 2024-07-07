@@ -4,7 +4,7 @@ Yet Another RiscV Core, implements RV32I with support for additional extensions 
 
 ## Yarc Platform Architecture
 
-![My Image](misc/plaform_arch.png)
+![My Image](misc/platform_arch.png)
 
 ## Core Microarchitecture
 

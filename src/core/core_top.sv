@@ -231,7 +231,7 @@ cs_registers cs_registers_i
     .irq_external_i(irq_external_i),
 
     // used by the performance counters
-    .instr_ret_i('0)
+    .instr_ret_i(mem2_wb_instr_valid && !mem2_wb_stall)
 );
 
 // Decode Stage

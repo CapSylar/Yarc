@@ -23,6 +23,7 @@ import platform_pkg::*;
 
     // Platform <-> IMEM
     wishbone_if.MASTER imem_wb_if,
+    wishbone_if.MASTER imem_rw_wb_if,
 
     // Platform <-> Framebuffer memory
     wishbone_if.MASTER fb_wb_if,
@@ -44,6 +45,20 @@ import platform_pkg::*;
 
 wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) lsu_wb_if();
 wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) instr_fetch_wb_if();
+wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) icache_wb_if();
+
+// fetch side interconnect
+fetch_intercon fetch_intercon_i
+(
+    .clk_i(clk_i),
+    .rstn_i(rstn_i),
+
+    .cpu_fetch_if(instr_fetch_wb_if),
+
+    .iccm_if(imem_wb_if),
+
+    .icache_if(icache_wb_if)
+);
 
 // Main wbxbar slaves
 wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) main_slave_wb_if [MAIN_XBAR_NUM_SLAVES]();
@@ -55,7 +70,7 @@ main_xbar main_xbar_i
 
     // masters
     .lsu_wb_if(lsu_wb_if),
-    .instr_fetch_wb_if(instr_fetch_wb_if),
+    // .instr_fetch_wb_if(instr_fetch_wb_if),
 
     // slaves
     .slave_wb_if(main_slave_wb_if)
@@ -65,7 +80,7 @@ main_xbar main_xbar_i
 wb_connect dmem_connect (.wb_if_i(main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX]), .wb_if_o(dmem_wb_if));
 
 // imem
-wb_connect imem_connect (.wb_if_i(main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX]), .wb_if_o(imem_wb_if));
+wb_connect imem_connect (.wb_if_i(main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX]), .wb_if_o(imem_rw_wb_if));
 
 // Peripheral wxbar
 wishbone_if #(.ADDRESS_WIDTH(PERIPH_WB_AW), .DATA_WIDTH(PERIPH_WB_DW)) periph_slave_wb_if [PERIPH_XBAR_NUM_SLAVES]();

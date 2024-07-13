@@ -5,8 +5,9 @@
 
 module wb_interconnect
 #(parameter int NUM_SLAVES = 2,
-parameter bit [31:0] START_ADDRESS[NUM_SLAVES],
-parameter bit [31:0] MASK[NUM_SLAVES])
+parameter int AW = 0,
+parameter bit [AW-1:0] START_ADDRESS[NUM_SLAVES],
+parameter bit [AW-1:0] MASK[NUM_SLAVES])
 (
     input clk_i,
     input rstn_i,
@@ -75,9 +76,9 @@ begin
             rdata_d = slave_rdata[i];
 end
 
-always_ff @(posedge clk_i)
-    if (!rstn_i) rdata_q <= '0;
-    else         rdata_q <= rdata_d;
+// always_ff @(posedge clk_i)
+//     if (!rstn_i) rdata_q <= '0;
+//     else         rdata_q <= rdata_d;
 
 always_comb
 begin
@@ -88,9 +89,9 @@ begin
             ack_d = 1'b1;
 end
 
-always_ff @(posedge clk_i)
-    if (!rstn_i) ack_q <= '0;
-    else         ack_q <= ack_d;
+// always_ff @(posedge clk_i)
+//     if (!rstn_i) ack_q <= '0;
+//     else         ack_q <= ack_d;
 
 always_comb
 begin
@@ -104,9 +105,9 @@ end
 assign error = trans_valid & !slave_valid;
 
 // wishbone interface with master
-assign intercon_if.rdata = rdata_q;
+assign intercon_if.rdata = rdata_d;
 assign intercon_if.rty = '0;
-assign intercon_if.ack = ack_q;
+assign intercon_if.ack = ack_d;
 assign intercon_if.stall = stall;
 assign intercon_if.err = error;
 
@@ -115,7 +116,7 @@ assign intercon_if.err = error;
 generate
     for (genvar i = 0; i < NUM_SLAVES; ++i)
     begin: slave_connections
-        assign wb_if[i].cyc = intercon_if.cyc; // FIXME: works for now, not ideal
+        assign wb_if[i].cyc = intercon_if.cyc;
         assign wb_if[i].stb = intercon_if.stb & addressed[i];
 
         assign wb_if[i].we = intercon_if.we;

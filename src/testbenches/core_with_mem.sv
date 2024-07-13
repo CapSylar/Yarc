@@ -64,29 +64,21 @@ begin
     rstn_t = 1'b1;
 
     repeat(5000000) @(posedge clk);
-    $finish;
+    // $finish;
 end
 
 wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) imem_wb_if();
+wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) imem_rw_wb_if();
 
 // Instruction Memory
-sp_mem_wb #(.MEMFILE(IMEMFILE), .SIZE_POT_WORDS(IMEM_SIZE_WORDS_POT), .DATA_WIDTH(MAIN_WB_DW)) imem
+dp_mem_wb #(.MEMFILE(IMEMFILE), .SIZE_POT_WORDS(IMEM_SIZE_WORDS_POT), .DATA_WIDTH(MAIN_WB_DW)) imem
 (
     .clk_i(clk),
+    .rstn_i(rstn),
 
-    .cyc_i(imem_wb_if.cyc),
-    .stb_i(imem_wb_if.stb),
+    .wb_if1(imem_wb_if),
 
-    .we_i(imem_wb_if.we),
-    .addr_i(imem_wb_if.addr[IMEM_SIZE_WORDS_POT-1:0]), // 4-byte addressable
-    .sel_i(imem_wb_if.sel),
-    .wdata_i(imem_wb_if.wdata),
-
-    .rdata_o(imem_wb_if.rdata),
-    .rty_o(imem_wb_if.rty),
-    .ack_o(imem_wb_if.ack),
-    .stall_o(imem_wb_if.stall),
-    .err_o(imem_wb_if.err)
+    .wb_if2(imem_rw_wb_if)
 );
 
 wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) dmem_wb_if();
@@ -245,6 +237,7 @@ yarc_platform yarc_platform_i
 
     // Platform <-> IMEM
     .imem_wb_if(imem_wb_if),
+    .imem_rw_wb_if(imem_rw_wb_if),
 
     // Platform <-> DDR3
     .fb_wb_if(ddr3_wb_if),

@@ -1,6 +1,6 @@
 // simulation memory with 2 read ports and 1 write port
 module dp_mem_wb
-#(parameter int WIDTH = 32, parameter int SIZE_POT = 10, parameter string MEMFILE = "")
+#(parameter int DATA_WIDTH = 32, parameter int SIZE_POT_WORDS = 10, parameter string MEMFILE = "")
 (
     input clk_i,
     input rstn_i,
@@ -13,11 +13,8 @@ module dp_mem_wb
     wishbone_if.SLAVE wb_if2
 );
 
-logic [WIDTH-1:0] mem [2**SIZE_POT];
-
-localparam ADDR_WIDTH = SIZE_POT;
-wire [ADDR_WIDTH-1:0] addr1 = wb_if1.addr[ADDR_WIDTH-1+2:2]; // 4-byte addressable
-wire [ADDR_WIDTH-1:0] addr2 = wb_if2.addr[ADDR_WIDTH-1+2:2]; // 4-byte addressable
+logic [DATA_WIDTH-1:0] mem [2**SIZE_POT_WORDS];
+localparam ADDR_WIDTH = SIZE_POT_WORDS;
 
 // load memory image
 initial
@@ -28,7 +25,7 @@ end
 // port1 logic
 wire port1_addressed = wb_if1.cyc & wb_if1.stb & !wb_if1.we;
 
-logic [WIDTH-1:0] port1_rdata_q, port1_rdata_d;
+logic [DATA_WIDTH-1:0] port1_rdata_q, port1_rdata_d;
 logic port1_ack_q, port1_ack_d;
 
 always_comb
@@ -39,7 +36,7 @@ begin
     if (port1_addressed)
     begin
         port1_ack_d = 1'b1;
-        port1_rdata_d = mem[addr1];
+        port1_rdata_d = mem[wb_if1.addr[ADDR_WIDTH-1:0]];
     end
 end
 
@@ -60,7 +57,7 @@ end
 // port2 logic
 wire port2_addressed = wb_if2.cyc & wb_if2.stb;
 
-logic [WIDTH-1:0] port2_rdata_d, port2_rdata_q;
+logic [DATA_WIDTH-1:0] port2_rdata_d, port2_rdata_q;
 logic port2_ack_d, port2_ack_q;
 
 always_comb
@@ -73,7 +70,7 @@ begin
         port2_ack_d = 1'b1;
 
         if (!wb_if2.we)
-            port2_rdata_d = mem[addr2];
+            port2_rdata_d = mem[wb_if2.addr[ADDR_WIDTH-1:0]];
     end
 end
 
@@ -97,9 +94,9 @@ begin
     if (port2_addressed & wb_if2.we)
     begin
         // for each byte, if the corresponding bit in wsel_byte in 1, write it
-        for (int i = 0; i < WIDTH/8 ; ++i)
+        for (int i = 0; i < DATA_WIDTH/8 ; ++i)
             if (wb_if2.sel[i])
-                mem[addr2][(i+1)*8 -1 -:8] <= wb_if2.wdata[(i+1)*8 -1 -:8];
+                mem[wb_if2.addr[ADDR_WIDTH-1:0]][(i+1)*8 -1 -:8] <= wb_if2.wdata[(i+1)*8 -1 -:8];
     end
 end
 

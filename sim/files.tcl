@@ -76,6 +76,9 @@ ${PRJ_DIR}/memories/dp_mem_wb.sv
 ${PRJ_DIR}/memories/sp_mem_wb.sv
 ${PRJ_DIR}/memories/tdp_mem.sv
 
+// caches
+${PRJ_DIR}/caches/instruction_cache.sv
+
 // ddr3 controller files
 ${PRJ_DIR}/ddr3_mem_controller/ddr3_controller.v
 ${PRJ_DIR}/ddr3_mem_controller/ddr3_phy.v

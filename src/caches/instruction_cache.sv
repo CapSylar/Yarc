@@ -2,7 +2,6 @@
 // Should be a pretty straighforward I$
 // all writes from the cpu's wb interface are ignored
 // 2-way set associative
-
 // TODO: could we rewrite this in a way to make the way associativity passed in as a parameter
 
 module instruction_cache
@@ -40,131 +39,18 @@ localparam unsigned LINE_W = OFFSET_W * DATA_W;
 // data store
 logic [LINE_W-1:0] data_mem [INDEX_W-1:0][WAYS-1:0];
 
-logic replace_way_idx; // index pointing to the way that will get replaced
-logic [LINE_W-1:0] mem_if_rdata_q;
-
-// wb sigs
 logic is_cpu_req_d, is_cpu_req_q;
-assign is_cpu_req_d = cpu_if.cyc & cpu_if.stb & !cpu_if.stall;
-
-logic read_stores; // this signals that the tag and data stores are to be read
-assign read_stores = is_cpu_req_d;
-
-logic get_decision;
-assign get_decision = is_cpu_req_q;
-
-logic send_cpu_ack;
-
-// cache FSM
-enum {RUNNING, WAIT_MEMORY, REFILL} state, next;
-always_ff @(posedge clk_i)
-    if (!rstn_i) state <= RUNNING;
-    else         state <= next;
-
-always_comb begin
-    next = state;
-
-    cpu_if_stall = '0;
-    data_from_stores = '0;
-
-    is_miss = '0;
-
-    unique case (state)
-        /*
-        In this state, the cache accepts pipelined requests and handles them
-        as soon as a request misses, the cpu wb bus is stalled and the state 
-        changes to REFILL
-        */
-        RUNNING: begin
-            if (miss) begin
-                cpu_if_stall = 1'b1; // can't accept anymore requests
-                memory_send_req = 1'b1;
-                next = WAIT_MEMORY;
-            end
-        end
-
-        // request the missing cache line from the backing storage
-        WAIT_MEMORY: begin
-            if (memory_resp_valid) begin
-                next = REFILL;
-            end
-        end
-
-        // the memory has given us a response, we need to place the 
-        // loaded line in the storage
-        REFILL: begin
-            // write the tag, data and valid bits in the way that will be replaced
-            tag_mem_we[replace_way_idx] = 1'b1;
-            tag_mem_waddr = index_addr_q;
-            tag_mem_wdata = offset_addr_q;
-            data_mem_we[replace_way_idx] = 1'b1;
-            data_mem_waddr = index_addr_q;
-            data_mem_wdata = mem_if_rdata_q;
-            valid_bits_we[replace_way_idx] = 1'b1;
-            valid_bits_waddr = index_addr_q;
-            valid_bits_wdata = 1'b1;
-
-            update_age = 1'b1;
-            next = IDLE;
-        end
-    endcase
-end
-
-logic mem_if_cyc;
-logic mem_if_stb;
-logic [$bits(mem_if.sel)-1:0] mem_if_sel;
-logic [$bits(mem_if.addr)-1:0] mem_if_addr;
-
-// memory wishbone fsm
-enum {IDLE, REFILL} wbstate, wbnext;
-always_ff @(posedge clk_i)
-    if (!rstn_i) wbstate <= IDLE;
-    else         wbstate <= wbnext;
-
-always_comb begin
-    wbnext = wbstate;
-
-    mem_if_addr = '0;
-    mem_if_cyc = '0;
-    mem_if_stb = '0;
-
-    unique case (wbstate)
-
-        IDLE: begin
-            if (memory_send_req) begin // FIXME: what is mem_if is stalled ?
-                mem_if_cyc = 1'b1;
-                mem_if_stb = 1'b1;
-                mem_if_addr = cpu_addr_q[CPU_AW : 2]; // TODO: localparam this
-            end
-        end
-
-        REQUEST: begin
-            mem_if_cyc = 1'b1;
-
-            if (mem_if.ack) begin
-                memory_resp_valid = 1'b1;
-                next = IDLE;
-            end
-        end
-    endcase
-end
-
-always_ff @(posedge clk_i) begin
-    if (memory_resp_valid) begin // hold the loaded word
-        mem_if_rdata_q <= mem_if.rdata;
-    end
-end
-
+// ***********************************************************
 logic [TAG_W-1:0] tag_addr_d, tag_addr_q;
 logic [INDEX_W-1:0] index_addr_d, index_addr_q;
 logic [OFFSET_W-1:0] offset_addr_d, offset_addr_q;
-logic [CPU_AW-1:0] cpu_addr_q;
+logic [CPU_AW-1:0] cpu_addr_d, cpu_addr_q;
 
 always_comb begin
     cpu_addr_d = cpu_addr_q;
 
     if (is_cpu_req_d) begin // save the address when a request happens
-        cpu_addr_q = cpu_if.addr;
+        cpu_addr_d = cpu_if.addr;
     end
 end
 
@@ -240,20 +126,142 @@ generate
         end
     end
 endgenerate
+// ***********************************************************
+
+logic replace_way_idx; // index pointing to the way that will get replaced
+logic [LINE_W-1:0] mem_if_rdata_q;
+
+// wb sigs
+assign is_cpu_req_d = cpu_if.cyc & cpu_if.stb & !cpu_if.stall;
+
+logic read_stores; // this signals that the tag and data stores are to be read
+assign read_stores = is_cpu_req_d;
+
+logic get_decision;
+assign get_decision = is_cpu_req_q;
+
+logic send_cpu_ack;
+logic cpu_if_stall;
+logic miss;
+logic memory_send_req;
+logic memory_resp_valid;
+logic update_age;
+logic restart;
+
+// cache FSM
+enum {RUNNING, WAIT_MEMORY, REFILL} state, next;
+always_ff @(posedge clk_i)
+    if (!rstn_i) state <= RUNNING;
+    else         state <= next;
+
+always_comb begin
+    next = state;
+
+    cpu_if_stall = '0;
+    memory_send_req = '0;
+    update_age = '0;
+    restart = '0;
+
+    unique case (state)
+        /*
+        In this state, the cache accepts pipelined requests and handles them
+        as soon as a request misses, the cpu wb bus is stalled and the state 
+        changes to REFILL
+        */
+        RUNNING: begin
+            if (miss) begin
+                cpu_if_stall = 1'b1; // can't accept anymore requests
+                memory_send_req = 1'b1;
+                next = WAIT_MEMORY;
+            end
+        end
+
+        // request the missing cache line from the backing storage
+        WAIT_MEMORY: begin
+            if (memory_resp_valid) begin
+                next = REFILL;
+            end
+        end
+
+        // the memory has given us a response, we need to place the 
+        // loaded line in the storage
+        REFILL: begin
+            // write the tag, data and valid bits in the way that will be replaced
+            tag_mem_we[replace_way_idx] = 1'b1;
+            tag_mem_waddr = index_addr_q;
+            tag_mem_wdata = offset_addr_q;
+            data_mem_we[replace_way_idx] = 1'b1;
+            data_mem_waddr = index_addr_q;
+            data_mem_wdata = mem_if_rdata_q;
+            valid_bits_we[replace_way_idx] = 1'b1;
+            valid_bits_waddr = index_addr_q;
+            valid_bits_wdata = 1'b1;
+
+            update_age = 1'b1;
+            next = RUNNING;
+        end
+    endcase
+end
+
+logic mem_if_cyc;
+logic mem_if_stb;
+logic [$bits(mem_if.sel)-1:0] mem_if_sel;
+logic [$bits(mem_if.addr)-1:0] mem_if_addr;
+
+// memory wishbone fsm
+enum {IDLE, REQUEST} wbstate, wbnext;
+always_ff @(posedge clk_i)
+    if (!rstn_i) wbstate <= IDLE;
+    else         wbstate <= wbnext;
+
+always_comb begin
+    wbnext = wbstate;
+
+    mem_if_addr = '0;
+    mem_if_cyc = '0;
+    mem_if_stb = '0;
+
+    memory_resp_valid = '0;
+
+    unique case (wbstate)
+
+        IDLE: begin
+            if (memory_send_req) begin // FIXME: what is mem_if is stalled ?
+                mem_if_cyc = 1'b1;
+                mem_if_stb = 1'b1;
+                mem_if_addr = cpu_addr_q[CPU_AW-1 : 2]; // TODO: localparam this
+                wbnext = REQUEST;
+            end
+        end
+
+        REQUEST: begin
+            mem_if_cyc = 1'b1;
+
+            if (mem_if.ack) begin
+                memory_resp_valid = 1'b1;
+                wbnext = IDLE;
+            end
+        end
+    endcase
+end
+
+always_ff @(posedge clk_i) begin
+    if (memory_resp_valid) begin // hold the loaded word
+        mem_if_rdata_q <= mem_if.rdata;
+    end
+end
 
 assign tag_mem_re = read_stores;
-assign read_stores = is_cpu_req_d;
-assign read_stores = is_cpu_req_d;
-assign read_stores = is_cpu_req_d;
+assign data_mem_re = read_stores;
+assign valid_bits_re = read_stores;
 assign tag_mem_raddr = index_addr_d;
 assign data_mem_raddr = index_addr_d;
 assign valid_bits_raddr = index_addr_d;
 
 // logic that determines if hit or miss
-logic line_valid [WAYS-1:0]; // determines which way is valid
-logic line_valid_idx [$clog2(WAYS)-1:0];
+logic [WAYS-1:0] line_valid ; // determines which way is valid
+logic [$clog2(WAYS)-1:0] line_valid_idx ;
 logic hit;
-logic miss;
 logic [DATA_W-1:0] read_word; // the word requested by the cpu
 
 generate
@@ -275,6 +283,9 @@ assign hit = get_decision ? |line_valid : '0;
 assign miss = get_decision ? !hit : '0;
 assign read_word = DATA_W'(data_mem_rdata_q[line_valid_idx] >> (DATA_W * offset_addr_q));
 
+logic cpu_if_ack;
+logic [DATA_W-1:0] cpu_if_rdata;
+
 // cpu wishbone logic
 always_comb begin
     cpu_if_ack = restart ? '0 : hit;
@@ -295,7 +306,7 @@ end
 
 always_ff @(posedge clk_i) begin
     if (!rstn_i) begin
-        set_age <= '0;
+        set_age <= '{default: '0};
     end else if (update_age) begin
         set_age[index_addr_q] = ~replace_way_idx; // the new points now points to the other way
     end

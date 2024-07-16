@@ -9,6 +9,7 @@ import platform_pkg::*;
 
     wishbone_if.SLAVE cpu_wb_if,
     wishbone_if.SLAVE video_wb_if,
+    wishbone_if.SLAVE instr_cache_wb_if,
 
     wishbone_if.MASTER slave_wb_if [SEC_XBAR_NUM_SLAVES]
 );
@@ -98,6 +99,19 @@ assign video_wb_if.ack = mack[SEC_XBAR_VIDEO_MASTER_IDX];
 assign video_wb_if.rdata = mdata_i[SEC_XBAR_VIDEO_MASTER_IDX*SEC_WB_DW +: SEC_WB_DW];
 assign video_wb_if.err = merr[SEC_XBAR_VIDEO_MASTER_IDX];
 assign video_wb_if.rty = '0;
+
+assign mcyc[SEC_XBAR_INSTR_CACHE_MASTER_IDX] = instr_cache_wb_if.cyc;
+assign mstb[SEC_XBAR_INSTR_CACHE_MASTER_IDX] = instr_cache_wb_if.stb;
+assign mwe[SEC_XBAR_INSTR_CACHE_MASTER_IDX] = instr_cache_wb_if.we;
+assign maddr[SEC_XBAR_INSTR_CACHE_MASTER_IDX*SEC_WB_AW +: SEC_WB_AW] = instr_cache_wb_if.addr;
+assign mdata_o[SEC_XBAR_INSTR_CACHE_MASTER_IDX*SEC_WB_DW +: SEC_WB_DW] = instr_cache_wb_if.wdata;
+assign msel[SEC_XBAR_INSTR_CACHE_MASTER_IDX*SEC_WB_DW/8 +: SEC_WB_DW/8] = instr_cache_wb_if.sel;
+
+assign instr_cache_wb_if.stall = mstall[SEC_XBAR_INSTR_CACHE_MASTER_IDX];
+assign instr_cache_wb_if.ack = mack[SEC_XBAR_INSTR_CACHE_MASTER_IDX];
+assign instr_cache_wb_if.rdata = mdata_i[SEC_XBAR_INSTR_CACHE_MASTER_IDX*SEC_WB_DW +: SEC_WB_DW];
+assign instr_cache_wb_if.err = merr[SEC_XBAR_INSTR_CACHE_MASTER_IDX];
+assign instr_cache_wb_if.rty = '0;
 
 // connect the slave wire side to the systemverilog interfaces
 generate

@@ -60,6 +60,19 @@ fetch_intercon fetch_intercon_i
     .icache_if(icache_wb_if)
 );
 
+wishbone_if #(.ADDRESS_WIDTH(SEC_WB_AW), .DATA_WIDTH(SEC_WB_DW)) mem_instr_cache_wb_if();
+// Instruction Cache for DDR3 Memory
+instruction_cache #(.NUM_SETS_LOG2(9)) // 512 sets => 1024 cache lines
+instruction_cache_i
+(
+    .clk_i(clk_i),
+    .rstn_i(rstn_i),
+
+    .cpu_if(icache_wb_if),
+
+    .mem_if(mem_instr_cache_wb_if)
+);
+
 // Main wbxbar slaves
 wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) main_slave_wb_if [MAIN_XBAR_NUM_SLAVES]();
 
@@ -190,6 +203,7 @@ sec_xbar sec_xbar_i
 
     .cpu_wb_if(main_slave_wb_if[MAIN_XBAR_FB_SLAVE_IDX]),
     .video_wb_if(video_fb_wb_if),
+    .instr_cache_wb_if(mem_instr_cache_wb_if),
 
     .slave_wb_if(sec_xbar_slaves_if)
 );

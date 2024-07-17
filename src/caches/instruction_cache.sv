@@ -22,22 +22,23 @@ module instruction_cache
 // offset is 2-bits => 4 words in a cache line
 // each block is 4-bytes
 // thus each cache line is 16-bytes or 128-bits
+localparam unsigned NUM_SETS = 2**NUM_SETS_LOG2;
 localparam unsigned INDEX_W = NUM_SETS_LOG2;
 localparam unsigned OFFSET_W = 2;
-localparam unsigned WAYS = 2;
+localparam unsigned NUM_WAYS = 2;
 
 localparam unsigned CPU_AW = $bits(cpu_if.addr);
 localparam unsigned TAG_W = CPU_AW - INDEX_W - OFFSET_W;
 // tag store
-logic [TAG_W-1:0] tag_mem [INDEX_W-1:0][WAYS-1:0];
-logic valid_bits [INDEX_W-1:0][WAYS-1:0]; // indicates that the corresponding cache line in valid
-logic set_age [INDEX_W-1:0]; // a bit for each set for now
+logic [TAG_W-1:0] tag_mem [NUM_SETS-1:0][NUM_WAYS-1:0];
+logic valid_bits [NUM_SETS-1:0][NUM_WAYS-1:0]; // indicates that the corresponding cache line in valid
+logic set_age [NUM_SETS-1:0]; // a bit for each set for now
 
 localparam unsigned DATA_W = 32;
-localparam unsigned LINE_W = OFFSET_W * DATA_W;
+localparam unsigned LINE_W = (2**OFFSET_W) * DATA_W;
 
 // data store
-logic [LINE_W-1:0] data_mem [INDEX_W-1:0][WAYS-1:0];
+logic [LINE_W-1:0] data_mem [NUM_SETS-1:0][NUM_WAYS-1:0];
 
 logic is_cpu_req_d, is_cpu_req_q;
 // ***********************************************************
@@ -58,25 +59,25 @@ assign {tag_addr_d, index_addr_d, offset_addr_d} = cpu_addr_d;
 assign {tag_addr_q, index_addr_q, offset_addr_q} = cpu_addr_q;
 
 logic valid_bits_re; // we read all of them at once
-logic valid_bits_we [WAYS-1:0];
-logic valid_bits_rdata_q [WAYS-1:0];
+logic valid_bits_we [NUM_WAYS-1:0];
+logic valid_bits_rdata_q [NUM_WAYS-1:0];
 logic valid_bits_wdata; // only one is written at a time
 logic [INDEX_W-1:0] valid_bits_raddr;
 logic [INDEX_W-1:0] valid_bits_waddr;
 
 // valid_bits_e read and write
 generate
-    for (genvar i = 0; i < WAYS; ++i) begin
+    for (genvar i = 0; i < NUM_WAYS; ++i) begin
         always_ff@(posedge clk_i) begin
             if (!rstn_i) begin
                 valid_bits <= '{default: '0};
             end else begin
                 if (valid_bits_re) begin
-                    valid_bits_rdata_q[i] <= valid_bits[i][valid_bits_raddr];
+                    valid_bits_rdata_q[i] <= valid_bits[valid_bits_raddr][i];
                 end
 
                 if (valid_bits_we[i]) begin
-                    valid_bits[i][valid_bits_waddr] <= valid_bits_wdata;
+                    valid_bits[valid_bits_waddr][i] <= valid_bits_wdata;
                 end
             end
         end
@@ -84,44 +85,44 @@ generate
 endgenerate
 
 logic tag_mem_re; // we read all of them at once
-logic tag_mem_we [WAYS-1:0];
-logic [TAG_W-1:0] tag_mem_rdata_q [WAYS-1:0];
+logic tag_mem_we [NUM_WAYS-1:0];
+logic [TAG_W-1:0] tag_mem_rdata_q [NUM_WAYS-1:0];
 logic [TAG_W-1:0] tag_mem_wdata; // only one is written at a time
 logic [INDEX_W-1:0] tag_mem_raddr;
 logic [INDEX_W-1:0] tag_mem_waddr;
 
 // tag store read and write
 generate
-    for (genvar i = 0; i < WAYS; ++i) begin
+    for (genvar i = 0; i < NUM_WAYS; ++i) begin
         always_ff@(posedge clk_i) begin
             if (tag_mem_re) begin
-                tag_mem_rdata_q[i] <= tag_mem[i][tag_mem_raddr];
+                tag_mem_rdata_q[i] <= tag_mem[tag_mem_raddr][i];
             end
 
             if (tag_mem_we[i]) begin
-                tag_mem[i][tag_mem_waddr] <= tag_mem_wdata;
+                tag_mem[tag_mem_waddr][i] <= tag_mem_wdata;
             end
         end
     end
 endgenerate
 
 logic data_mem_re;
-logic data_mem_we [WAYS-1:0];
-logic [LINE_W-1:0] data_mem_rdata_q [WAYS-1:0];
+logic data_mem_we [NUM_WAYS-1:0];
+logic [LINE_W-1:0] data_mem_rdata_q [NUM_WAYS-1:0];
 logic [LINE_W-1:0] data_mem_wdata;
 logic [INDEX_W-1:0] data_mem_raddr;
 logic [INDEX_W-1:0] data_mem_waddr;
 
 // data store read and write
 generate
-    for (genvar i = 0; i < WAYS; ++i) begin
+    for (genvar i = 0; i < NUM_WAYS; ++i) begin
         always_ff@(posedge clk_i) begin
             if (data_mem_re) begin
-                data_mem_rdata_q[i] <= data_mem[i][data_mem_raddr];
+                data_mem_rdata_q[i] <= data_mem[data_mem_raddr][i];
             end
 
             if (data_mem_we[i]) begin
-                data_mem[i][data_mem_waddr] <= data_mem_wdata;
+                data_mem[data_mem_waddr][i] <= data_mem_wdata;
             end
         end
     end
@@ -162,6 +163,10 @@ always_comb begin
     update_age = '0;
     restart = '0;
 
+    valid_bits_we = '{default: '0};
+    tag_mem_we = '{default: '0};
+    data_mem_we = '{default: '0};
+
     unique case (state)
         /*
         In this state, the cache accepts pipelined requests and handles them
@@ -178,6 +183,7 @@ always_comb begin
 
         // request the missing cache line from the backing storage
         WAIT_MEMORY: begin
+            cpu_if_stall = 1'b1; // can't accept anymore requests
             if (memory_resp_valid) begin
                 next = REFILL;
             end
@@ -186,16 +192,21 @@ always_comb begin
         // the memory has given us a response, we need to place the 
         // loaded line in the storage
         REFILL: begin
+            cpu_if_stall = 1'b1; // can't accept anymore requests
+
             // write the tag, data and valid bits in the way that will be replaced
             tag_mem_we[replace_way_idx] = 1'b1;
             tag_mem_waddr = index_addr_q;
-            tag_mem_wdata = offset_addr_q;
+            tag_mem_wdata = tag_addr_q;
             data_mem_we[replace_way_idx] = 1'b1;
             data_mem_waddr = index_addr_q;
             data_mem_wdata = mem_if_rdata_q;
             valid_bits_we[replace_way_idx] = 1'b1;
             valid_bits_waddr = index_addr_q;
             valid_bits_wdata = 1'b1;
+
+            // early restart
+            restart = 1'b1;
 
             update_age = 1'b1;
             next = RUNNING;
@@ -217,6 +228,7 @@ always_ff @(posedge clk_i)
 always_comb begin
     wbnext = wbstate;
 
+    mem_if_sel = '1;
     mem_if_addr = '0;
     mem_if_cyc = '0;
     mem_if_stb = '0;
@@ -259,19 +271,19 @@ assign data_mem_raddr = index_addr_d;
 assign valid_bits_raddr = index_addr_d;
 
 // logic that determines if hit or miss
-logic [WAYS-1:0] line_valid ; // determines which way is valid
-logic [$clog2(WAYS)-1:0] line_valid_idx ;
+logic [NUM_WAYS-1:0] line_valid ; // determines which way is valid
+logic [$clog2(NUM_WAYS)-1:0] line_valid_idx ;
 logic hit;
 logic [DATA_W-1:0] read_word; // the word requested by the cpu
 
 generate
-    for (genvar i = 0; i < WAYS; ++i) begin: calc_line_valid
+    for (genvar i = 0; i < NUM_WAYS; ++i) begin: calc_line_valid
         assign line_valid[i] = (tag_addr_q == tag_mem_rdata_q[i]) & (valid_bits_rdata_q[i]);
     end
 endgenerate
 
 always_comb begin: calc_valid_index
-    for (int i = 0 ; i < WAYS; ++i) begin
+    for (int i = 0 ; i < NUM_WAYS; ++i) begin
         line_valid_idx = i;
         if (line_valid[i]) begin
             break;
@@ -281,15 +293,20 @@ end
 
 assign hit = get_decision ? |line_valid : '0;
 assign miss = get_decision ? !hit : '0;
-assign read_word = DATA_W'(data_mem_rdata_q[line_valid_idx] >> (DATA_W * offset_addr_q));
+assign read_word = get_data_from_line(offset_addr_q, data_mem_rdata_q[line_valid_idx]);
+
+function [DATA_W-1:0] get_data_from_line (logic [OFFSET_W-1:0] offset, logic [LINE_W-1:0] line_data);
+    get_data_from_line = DATA_W'(line_data >> (DATA_W * offset));
+endfunction
 
 logic cpu_if_ack;
 logic [DATA_W-1:0] cpu_if_rdata;
 
 // cpu wishbone logic
 always_comb begin
-    cpu_if_ack = restart ? '0 : hit;
-    cpu_if_rdata = restart ? '0 : read_word;
+    cpu_if_ack = restart | hit;
+    cpu_if_rdata = restart ? get_data_from_line(offset_addr_q, mem_if_rdata_q)
+        : read_word;
 end
 
 always_ff @(posedge clk_i) begin

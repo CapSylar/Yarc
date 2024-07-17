@@ -326,6 +326,21 @@ add wave ${CORE}/controller_i/csr_mret_o;
 add wave ${CORE}/controller_i/csr_mcause_o;
 add wave ${CORE}/controller_i/is_trap_o;
 add wave ${CORE}/controller_i/exc_pc_o;
+
+# ---------------------------------------------------------
+set ICACHE ${PLATFORM}/instruction_cache_i
+add wave -divider {Instruction Cache}
+add wave -group {CPU_IF} ${ICACHE}/cpu_if/*;
+add wave -group {MEM_IF} ${ICACHE}/mem_if/*;
+add wave ${ICACHE}/valid_bits_we;
+add wave ${ICACHE}/valid_bits_rdata_q;
+add wave ${ICACHE}/tag_mem_we;
+add wave ${ICACHE}/tag_mem_rdata_q;
+add wave ${ICACHE}/data_mem_we;
+add wave ${ICACHE}/data_mem_rdata_q;
+add wave ${ICACHE}/valid_bits;
+add wave ${ICACHE}/*;
+
 # ---------------------------------------------------------
 add wave -divider {Riscv Timer}
 add wave ${PLATFORM}/mtimer_i/timer_int_o;
@@ -377,7 +392,8 @@ add wave -group {VIDEO Interface} -color Gold ${periph_xbar}/slave_wb_if[3]/*;
 
 add wave -divider {Secondary Xbar}
 add wave -group {Sec Xbar cpu input} ${sec_xbar}/cpu_wb_if/*;
-add wave -group {Sec Xbar input 0 video} ${sec_xbar}/video_wb_if/*;
+add wave -group {Sec Xbar video input} ${sec_xbar}/video_wb_if/*;
+add wave -group {Sec Xbar Icache input} ${sec_xbar}/instr_cache_wb_if/*;
 add wave -group {Sec Xbar Output} ${sec_xbar}/slave_wb_if[0]/*;
 
 # add wave -group {Framebuffer WB Interface} -color Gold ${PLATFORM}/slave_wb_if[2]/*;
@@ -389,6 +405,8 @@ add wave -group {Sec Xbar Output} ${sec_xbar}/slave_wb_if[0]/*;
 # add wave -group {DDR3 Controller} ${ddr3_top}/i_rst_n;
 add wave -group {DDR3 Controller} ${TOP}/ddr3_wb_if/*;
 add wave -group {Simple WB Memory} ${TOP}/replace_with_wb_model/wb_sim_memory_i/*;
+# add wave -group {Simple WB Memory} ${TOP}/replace_with_wb_model/wb_sim_memory_i/INIT_DDR3_MEMORY;
+# add wave -group {Simple WB Memory} ${TOP}/replace_with_wb_model/wb_sim_memory_i/DDR3_MEMFILE;
 
 # add wave -group {DDR3 External Interface} -divider {DDR3 External Interface}
 # add wave -group {DDR3 External Interface} ${ddr3_top}/wb_if/*;

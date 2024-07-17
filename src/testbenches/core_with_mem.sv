@@ -2,7 +2,8 @@
 // instantiated by testbenches
 
 module core_with_mem
-#(parameter string DMEMFILE = "", parameter string IMEMFILE = "") ();
+#(parameter string DMEMFILE = "", parameter string IMEMFILE = "",
+    parameter bit INIT_DDR3_MEMORY = '0,  parameter string DDR3_MEMFILE = "") ();
 
 import platform_pkg::*;
 import ddr3_parameters_pkg::*;
@@ -205,7 +206,8 @@ generate
         assign odt[1] = 1'b0; 
 
     end else begin: replace_with_wb_model
-        wb_sim_memory #(.DATA_WIDTH(SEC_WB_DW), .SIZE_POT_WORDS(SEC_WB_AW))
+        wb_sim_memory #(.DATA_WIDTH(SEC_WB_DW), .SIZE_POT_WORDS(SEC_WB_AW),
+            .INIT_MEM(INIT_DDR3_MEMORY), .MEMFILE(DDR3_MEMFILE))
         wb_sim_memory_i
         (
             .clk_i(clk),

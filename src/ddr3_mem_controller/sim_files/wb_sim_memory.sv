@@ -1,6 +1,6 @@
 
 module wb_sim_memory
-#(parameter DATA_WIDTH = 128, parameter SIZE_POT_WORDS = 22)
+#(parameter DATA_WIDTH = 128, parameter SIZE_POT_WORDS = 22, parameter bit INIT_MEM = 0, parameter string MEMFILE = "" )
 (
     input clk_i,
 
@@ -29,11 +29,18 @@ localparam SAME_DELAY = 5;
 localparam MAX_DELAY = (SWITCH_DELAY > SAME_DELAY) ? SWITCH_DELAY : SAME_DELAY;
 
 // memory
-logic [127:0] mem [logic [AW-1:0]]; // associate memory
+logic [127:0] mem [logic [AW-1:0]]; // associative memory
 
 wire request = cyc_i & stb_i & ~stall_o;
 wire read_req = request & ~we_i;
 wire write_req = request & we_i;
+
+// initialize memory
+initial begin
+    if (INIT_MEM) begin
+        $readmemh(MEMFILE, mem);
+    end
+end
 
 initial begin
     // stall for some time

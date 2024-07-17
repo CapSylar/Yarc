@@ -320,7 +320,7 @@ assign id_is_csr_o = is_csr;
 
 always_ff @(posedge clk_i)
 begin : id_ex_pip
-    if (!rstn_i || flush_i || !instr_valid_i)
+    if (!rstn_i || flush_i)
     begin
         pc_o <= 0;
         rs1_data_o <= 0;

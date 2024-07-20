@@ -75,6 +75,7 @@ ${PRJ_DIR}/platform/yarc_platform.sv
 ${PRJ_DIR}/memories/dp_mem_wb.sv
 ${PRJ_DIR}/memories/sp_mem_wb.sv
 ${PRJ_DIR}/memories/tdp_mem.sv
+${PRJ_DIR}/memories/sdp_mem.sv
 
 // caches
 ${PRJ_DIR}/caches/instruction_cache.sv

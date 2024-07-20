@@ -30,15 +30,11 @@ localparam unsigned NUM_WAYS = 2;
 localparam unsigned CPU_AW = $bits(cpu_if.addr);
 localparam unsigned TAG_W = CPU_AW - INDEX_W - OFFSET_W;
 // tag store
-logic [TAG_W-1:0] tag_mem [NUM_SETS-1:0][NUM_WAYS-1:0];
-logic valid_bits [NUM_SETS-1:0][NUM_WAYS-1:0]; // indicates that the corresponding cache line in valid
+logic valid_bits [NUM_WAYS-1:0][NUM_SETS-1:0];// indicates that the corresponding cache line in valid
 logic [NUM_SETS-1:0] set_age; // a bit for each set for now
 
 localparam unsigned DATA_W = 32;
 localparam unsigned LINE_W = (2**OFFSET_W) * DATA_W;
-
-// data store
-logic [LINE_W-1:0] data_mem [NUM_SETS-1:0][NUM_WAYS-1:0];
 
 logic is_cpu_req_d, is_cpu_req_q;
 
@@ -72,14 +68,14 @@ generate
     for (genvar i = 0; i < NUM_WAYS; ++i) begin
         always_ff@(posedge clk_i) begin
             if (!rstn_i) begin
-                valid_bits <= '{default: '0};
+                valid_bits[i] <= '{default: '0};
             end else begin
                 if (valid_bits_re) begin
-                    valid_bits_rdata[i] <= valid_bits[valid_bits_raddr][i];
+                    valid_bits_rdata[i] <= valid_bits[i][valid_bits_raddr];
                 end
 
                 if (valid_bits_we[i]) begin
-                    valid_bits[valid_bits_waddr][i] <= valid_bits_wdata;
+                    valid_bits[i][valid_bits_waddr] <= valid_bits_wdata;
                 end
             end
         end
@@ -95,7 +91,7 @@ logic [INDEX_W-1:0] tag_mem_waddr;
 
 generate
     for (genvar i = 0; i < NUM_WAYS; ++i) begin
-        sdp_mem #(.DW(TAG_W), .AW(INDEX_W), .INIT_MEM('0)) data_mem
+        sdp_mem #(.DW(TAG_W), .AW(INDEX_W), .INIT_MEM('0)) tag_mem
         (
             .clk_i(clk_i),
 

@@ -6,8 +6,8 @@
 module wb_interconnect
 #(parameter int NUM_SLAVES = 2,
 parameter int AW = 0,
-parameter bit [AW-1:0] START_ADDRESS[NUM_SLAVES],
-parameter bit [AW-1:0] MASK[NUM_SLAVES])
+parameter bit [AW-1:0] START_ADDRESS[NUM_SLAVES] = '{default: '0},
+parameter bit [AW-1:0] MASK[NUM_SLAVES] = '{default: '0})
 (
     input clk_i,
     input rstn_i,

@@ -333,7 +333,7 @@ add wave -divider {Instruction Cache}
 add wave -group {CPU_IF} ${ICACHE}/cpu_if/*;
 add wave -group {MEM_IF} ${ICACHE}/mem_if/*;
 add wave ${ICACHE}/valid_bits_we;
-add wave ${ICACHE}/valid_bits_rdata_q;
+add wave ${ICACHE}/valid_bits_rdata;
 add wave ${ICACHE}/tag_mem_we;
 add wave ${ICACHE}/tag_mem_rdata;
 add wave ${ICACHE}/data_mem_we;

@@ -8,23 +8,16 @@ module sp_mem_wb
 (
     input clk_i,
 
-    input cyc_i,
-    input stb_i,
-
-    input we_i,
-    input [SIZE_POT_WORDS-1:0] addr_i,
-    input [DATA_WIDTH/8 -1:0] sel_i,
-    input [DATA_WIDTH-1:0] wdata_i,
-
-    output logic [DATA_WIDTH-1:0] rdata_o,
-    output logic rty_o,
-    output logic ack_o,
-    output logic stall_o,
-    output logic err_o
+    wishbone_if.SLAVE wb_if
 );
 
 logic [DATA_WIDTH-1:0] mem [2**SIZE_POT_WORDS];
 logic [DATA_WIDTH-1:0] rdata_q, rdata_d;
+
+localparam AW = SIZE_POT_WORDS;
+logic [AW-1:0] mem_addr;
+
+assign mem_addr = wb_if.addr[AW-1:0];
 
 // load memory image
 initial
@@ -33,24 +26,24 @@ begin
 end
 
 logic is_addressed;
-assign is_addressed = cyc_i & stb_i;
+assign is_addressed = wb_if.cyc & wb_if.stb;
 
 always_comb
 begin: handle_reads
     rdata_d = rdata_q;
 
-    if (is_addressed & !we_i)
-        rdata_d = mem[addr_i];
+    if (is_addressed & !wb_if.we)
+        rdata_d = mem[mem_addr];
 end
 
 always_ff @(posedge clk_i)
 begin : write_mem
-    if (is_addressed & we_i)
+    if (is_addressed & wb_if.we)
     begin
         // for each byte, if the corresponding bit in wsel_byte in 1, write it
         for (int i = 0; i < DATA_WIDTH/8 ; ++i)
-            if (sel_i[i])
-                mem[addr_i][(i+1)*8 -1 -:8] <= wdata_i[(i+1)*8 -1 -:8];
+            if (wb_if.sel[i])
+                mem[mem_addr][(i+1)*8 -1 -:8] <= wb_if.wdata[(i+1)*8 -1 -:8];
     end
 end
 
@@ -72,10 +65,10 @@ begin
 end
 
 // assign outputs
-assign rdata_o = rdata_q;
-assign rty_o = '0;
-assign ack_o = ack_q;
-assign stall_o = '0;
-assign err_o = '0;
+assign wb_if.rdata = rdata_q;
+assign wb_if.rty = '0;
+assign wb_if.ack = ack_q;
+assign wb_if.stall = '0;
+assign wb_if.err = '0;
 
 endmodule: sp_mem_wb

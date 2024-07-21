@@ -39,6 +39,9 @@ ${PRJ_DIR}/utils/reg_bw.sv
 ${PRJ_DIR}/utils/afifo.v
 ${PRJ_DIR}/utils/async_fifo.sv
 
+// testbench utils
+${PRJ_DIR}/utils/simulation/clk_gen.sv
+
 // fetch modules
 // ${PRJ_DIR}/core/simple_fetch.sv
 ${PRJ_DIR}/core/fetch_modules/wb_prefetch.sv
@@ -69,6 +72,7 @@ ${PRJ_DIR}/platform/main_xbar.sv
 ${PRJ_DIR}/platform/sec_xbar.sv
 ${PRJ_DIR}/platform/periph_xbar.sv
 ${PRJ_DIR}/platform/fetch_intercon.sv
+${PRJ_DIR}/platform/data_intercon.sv
 ${PRJ_DIR}/platform/yarc_platform.sv
 
 // memories

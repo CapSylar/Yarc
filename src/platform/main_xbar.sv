@@ -7,7 +7,6 @@ import platform_pkg::*;
     input rstn_i,
 
     wishbone_if.SLAVE lsu_wb_if,
-    // wishbone_if.SLAVE instr_fetch_wb_if,
 
     wishbone_if.MASTER slave_wb_if [MAIN_XBAR_NUM_SLAVES]
 );
@@ -30,20 +29,6 @@ logic [MAIN_XBAR_NUM_SLAVES*MAIN_WB_DW-1:0] sdata_o;
 
 // connect the master side to the systemverilog interfaces
 // shit needs to be done manually unfortunately
-
-// for the cpu's fetch interface
-// assign mcyc[MAIN_XBAR_FETCH_MASTER_IDX] = instr_fetch_wb_if.cyc;
-// assign mstb[MAIN_XBAR_FETCH_MASTER_IDX] = instr_fetch_wb_if.stb;
-// assign mwe[MAIN_XBAR_FETCH_MASTER_IDX] = instr_fetch_wb_if.we;
-// assign maddr[MAIN_XBAR_FETCH_MASTER_IDX*MAIN_WB_AW +: MAIN_WB_AW] = instr_fetch_wb_if.addr;
-// assign mdata_o[MAIN_XBAR_FETCH_MASTER_IDX*MAIN_WB_DW +: MAIN_WB_DW] = instr_fetch_wb_if.wdata;
-// assign msel[MAIN_XBAR_FETCH_MASTER_IDX*MAIN_WB_DW/8 +: MAIN_WB_DW/8] = instr_fetch_wb_if.sel;
-
-// assign instr_fetch_wb_if.stall = mstall[MAIN_XBAR_FETCH_MASTER_IDX];
-// assign instr_fetch_wb_if.ack = mack[MAIN_XBAR_FETCH_MASTER_IDX];
-// assign instr_fetch_wb_if.rdata = mdata_i[MAIN_XBAR_FETCH_MASTER_IDX*MAIN_WB_DW +: MAIN_WB_DW];
-// assign instr_fetch_wb_if.err = merr[MAIN_XBAR_FETCH_MASTER_IDX];
-// assign instr_fetch_wb_if.rty = '0;
 
 // for the cpu's lsu interface
 assign mcyc[MAIN_XBAR_LSU_MASTER_IDX] = lsu_wb_if.cyc;

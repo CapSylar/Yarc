@@ -13,8 +13,6 @@ import platform_pkg::*;
 
     // I$ Slave <-> Fetch mux
     wishbone_if.MASTER icache_if
-
-    // Main Xbar <-> Fetch mux
 );
 
 wishbone_if #() slave_wb_if[FETCH_INTERCON_NUM_SLAVES]();
@@ -26,7 +24,8 @@ wb_interconnect
 #(  .NUM_SLAVES(FETCH_INTERCON_NUM_SLAVES),
     .AW(FETCH_INTERCON_WB_AW),
     .START_ADDRESS(FETCH_INTERCON_BASE_ADDRESSES),
-    .MASK(FETCH_INTERCON_MASKS)
+    .MASK(FETCH_INTERCON_MASKS),
+    .SLAVE_FOR_NO_MATCH(1'b0)
 )
 wb_interconnect_i
 (

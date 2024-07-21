@@ -43,7 +43,6 @@ import platform_pkg::*;
 	output logic [3:0] hdmi_channel_o
 );
 
-wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) lsu_wb_if();
 wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) instr_fetch_wb_if();
 wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) icache_wb_if();
 
@@ -73,6 +72,25 @@ instruction_cache_i
     .mem_if(mem_instr_cache_wb_if)
 );
 
+wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) lsu_wb_if();
+wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) dcache_wb_if();
+wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) data_intercon_to_main_mux();
+
+// data side interconnect
+data_intercon data_intercon_i
+(
+    .clk_i(clk_i),
+    .rstn_i(rstn_i),
+
+    .cpu_if(lsu_wb_if),
+
+    .dccm_if(dmem_wb_if),
+
+    .dcache_if(dcache_wb_if),
+
+    .main_mux_if(data_intercon_to_main_mux)
+);
+
 // Main wbxbar slaves
 wishbone_if #(.ADDRESS_WIDTH(MAIN_WB_AW), .DATA_WIDTH(MAIN_WB_DW)) main_slave_wb_if [MAIN_XBAR_NUM_SLAVES]();
 
@@ -82,15 +100,11 @@ main_xbar main_xbar_i
     .rstn_i(rstn_i),
 
     // masters
-    .lsu_wb_if(lsu_wb_if),
-    // .instr_fetch_wb_if(instr_fetch_wb_if),
+    .lsu_wb_if(data_intercon_to_main_mux),
 
     // slaves
     .slave_wb_if(main_slave_wb_if)
 );
-
-// dmem
-wb_connect dmem_connect (.wb_if_i(main_slave_wb_if[MAIN_XBAR_DMEM_SLAVE_IDX]), .wb_if_o(dmem_wb_if));
 
 // imem
 wb_connect imem_connect (.wb_if_i(main_slave_wb_if[MAIN_XBAR_IMEM_SLAVE_IDX]), .wb_if_o(imem_rw_wb_if));

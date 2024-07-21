@@ -369,6 +369,7 @@ add wave ${PLATFORM}/video_core_i/hdmi_phy_i/*;
 set ddr3_top ${TOP}/true_ddr3_model_sim/yarc_ddr3_top_i
 set main_xbar ${PLATFORM}/main_xbar_i;
 set fetch_intercon ${PLATFORM}/fetch_intercon_i;
+set data_intercon ${PLATFORM}/data_intercon_i;
 set periph_xbar ${PLATFORM}/periph_xbar_i;
 set sec_xbar ${PLATFORM}/sec_xbar_i;
 
@@ -381,10 +382,16 @@ add wave -group {FB WB Interface} -color Gold ${main_xbar}/slave_wb_if[2]/*;
 add wave -group {Peripherals WB Interface} -color Gold ${main_xbar}/slave_wb_if[3]/*;
 
 add wave -divider {Fetch Interconnect}
-add wave ${fetch_intercon}/wb_interconnect_i/*;
 add wave -group {FETCH IN} -color Gold ${fetch_intercon}/cpu_fetch_if/*;
 add wave -group {ICCM IF} -color Gold ${fetch_intercon}/iccm_if/*;
 add wave -group {ICACHE IF} -color Gold ${fetch_intercon}/icache_if/*;
+
+add wave -divider {Data Interconnect}
+add wave ${data_intercon}/wb_interconnect_i/*;
+add wave -group {CPU LSU} -color Gold ${data_intercon}/cpu_if/*;
+add wave -group {DCCM IF} -color Gold ${data_intercon}/dccm_if/*;
+add wave -group {DCACHE IF} -color Gold ${data_intercon}/dcache_if/*;
+add wave -group {MAIN MUX IF} -color Gold ${data_intercon}/main_mux_if/*;
 
 add wave -divider {Peripheral Xbar}
 add wave -group {MTIMER WB Interface} -color Gold ${periph_xbar}/slave_wb_if[0]/*;

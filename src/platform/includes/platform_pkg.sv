@@ -109,13 +109,14 @@ localparam bit [DATA_INTERCON_WB_AW-1:0] DATA_INTERCON_MASKS [DATA_INTERCON_NUM_
 localparam SEC_WB_AW = ddr3_parameters_pkg::wb_addr_bits;
 localparam SEC_WB_DW = ddr3_parameters_pkg::wb_data_bits;
 
-localparam SEC_XBAR_NUM_MASTERS = 3;
+localparam SEC_XBAR_NUM_MASTERS = 4;
 localparam SEC_XBAR_NUM_SLAVES = 1;
 
 // master indices
 localparam SEC_XBAR_VIDEO_MASTER_IDX = 0;
 localparam SEC_XBAR_CPU_MASTER_IDX = 1;
 localparam SEC_XBAR_INSTR_CACHE_MASTER_IDX = 2;
+localparam SEC_XBAR_DATA_CACHE_MASTER_IDX = 3;
 
 // slave indices
 localparam SEC_XBAR_FB_SLAVE_IDX = 0;

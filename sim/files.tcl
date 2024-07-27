@@ -83,6 +83,8 @@ ${PRJ_DIR}/memories/sdp_mem.sv
 
 // caches
 ${PRJ_DIR}/caches/instruction_cache.sv
+${PRJ_DIR}/caches/data_cache/write_buffer.sv
+${PRJ_DIR}/caches/data_cache/data_cache.sv
 
 // ddr3 controller files
 ${PRJ_DIR}/ddr3_mem_controller/ddr3_controller.v

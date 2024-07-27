@@ -10,6 +10,7 @@ import platform_pkg::*;
     wishbone_if.SLAVE cpu_wb_if,
     wishbone_if.SLAVE video_wb_if,
     wishbone_if.SLAVE instr_cache_wb_if,
+    wishbone_if.SLAVE data_cache_wb_if,
 
     wishbone_if.MASTER slave_wb_if [SEC_XBAR_NUM_SLAVES]
 );
@@ -71,47 +72,78 @@ logic [SEC_XBAR_NUM_SLAVES-1:0] sstall, sack, serr;
 logic [SEC_XBAR_NUM_SLAVES*SEC_WB_DW-1:0] sdata_o;
 
 // shit needs to be done manually unfortunately
+`define CONNECT_INTERFACE_TO_LINES(MASTER_IDX, INTERF) \
+    assign mcyc[MASTER_IDX] = INTERF.cyc; \
+    assign mstb[MASTER_IDX] = INTERF.stb; \
+    assign mwe[MASTER_IDX] = INTERF.we; \
+    assign maddr[MASTER_IDX*SEC_WB_AW +: SEC_WB_AW] = INTERF.addr; \
+    assign mdata_o[MASTER_IDX*SEC_WB_DW +: SEC_WB_DW] = INTERF.wdata; \
+    assign msel[MASTER_IDX*SEC_WB_DW/8 +: SEC_WB_DW/8] = INTERF.sel; \
+    \
+    assign INTERF.stall = mstall[MASTER_IDX]; \
+    assign INTERF.ack = mack[MASTER_IDX]; \
+    assign INTERF.rdata = mdata_i[MASTER_IDX*SEC_WB_DW +: SEC_WB_DW]; \
+    assign INTERF.err = merr[MASTER_IDX]; \
+    assign INTERF.rty = '0; \
+
+`CONNECT_INTERFACE_TO_LINES(SEC_XBAR_CPU_MASTER_IDX, cpu_wb_wide_if);
+`CONNECT_INTERFACE_TO_LINES(SEC_XBAR_VIDEO_MASTER_IDX, video_wb_if);
+`CONNECT_INTERFACE_TO_LINES(SEC_XBAR_INSTR_CACHE_MASTER_IDX, instr_cache_wb_if);
+`CONNECT_INTERFACE_TO_LINES(SEC_XBAR_DATA_CACHE_MASTER_IDX, data_cache_wb_if);
 
 // for the cpu widened master interface
-assign mcyc[SEC_XBAR_CPU_MASTER_IDX] = cpu_wb_wide_if.cyc;
-assign mstb[SEC_XBAR_CPU_MASTER_IDX] = cpu_wb_wide_if.stb;
-assign mwe[SEC_XBAR_CPU_MASTER_IDX] = cpu_wb_wide_if.we;
-assign maddr[SEC_XBAR_CPU_MASTER_IDX*SEC_WB_AW +: SEC_WB_AW] = cpu_wb_wide_if.addr;
-assign mdata_o[SEC_XBAR_CPU_MASTER_IDX*SEC_WB_DW +: SEC_WB_DW] = cpu_wb_wide_if.wdata;
-assign msel[SEC_XBAR_CPU_MASTER_IDX*SEC_WB_DW/8 +: SEC_WB_DW/8] = cpu_wb_wide_if.sel;
+// assign mcyc[SEC_XBAR_CPU_MASTER_IDX] = cpu_wb_wide_if.cyc;
+// assign mstb[SEC_XBAR_CPU_MASTER_IDX] = cpu_wb_wide_if.stb;
+// assign mwe[SEC_XBAR_CPU_MASTER_IDX] = cpu_wb_wide_if.we;
+// assign maddr[SEC_XBAR_CPU_MASTER_IDX*SEC_WB_AW +: SEC_WB_AW] = cpu_wb_wide_if.addr;
+// assign mdata_o[SEC_XBAR_CPU_MASTER_IDX*SEC_WB_DW +: SEC_WB_DW] = cpu_wb_wide_if.wdata;
+// assign msel[SEC_XBAR_CPU_MASTER_IDX*SEC_WB_DW/8 +: SEC_WB_DW/8] = cpu_wb_wide_if.sel;
 
-assign cpu_wb_wide_if.stall = mstall[SEC_XBAR_CPU_MASTER_IDX];
-assign cpu_wb_wide_if.ack = mack[SEC_XBAR_CPU_MASTER_IDX];
-assign cpu_wb_wide_if.rdata = mdata_i[SEC_XBAR_CPU_MASTER_IDX*SEC_WB_DW +: SEC_WB_DW];
-assign cpu_wb_wide_if.err = merr[SEC_XBAR_CPU_MASTER_IDX];
-assign cpu_wb_wide_if.rty = '0;
+// assign cpu_wb_wide_if.stall = mstall[SEC_XBAR_CPU_MASTER_IDX];
+// assign cpu_wb_wide_if.ack = mack[SEC_XBAR_CPU_MASTER_IDX];
+// assign cpu_wb_wide_if.rdata = mdata_i[SEC_XBAR_CPU_MASTER_IDX*SEC_WB_DW +: SEC_WB_DW];
+// assign cpu_wb_wide_if.err = merr[SEC_XBAR_CPU_MASTER_IDX];
+// assign cpu_wb_wide_if.rty = '0;
 
-// for the video master interface
-assign mcyc[SEC_XBAR_VIDEO_MASTER_IDX] = video_wb_if.cyc;
-assign mstb[SEC_XBAR_VIDEO_MASTER_IDX] = video_wb_if.stb;
-assign mwe[SEC_XBAR_VIDEO_MASTER_IDX] = video_wb_if.we;
-assign maddr[SEC_XBAR_VIDEO_MASTER_IDX*SEC_WB_AW +: SEC_WB_AW] = video_wb_if.addr;
-assign mdata_o[SEC_XBAR_VIDEO_MASTER_IDX*SEC_WB_DW +: SEC_WB_DW] = video_wb_if.wdata;
-assign msel[SEC_XBAR_VIDEO_MASTER_IDX*SEC_WB_DW/8 +: SEC_WB_DW/8] = video_wb_if.sel;
+// // for the video master interface
+// assign mcyc[SEC_XBAR_VIDEO_MASTER_IDX] = video_wb_if.cyc;
+// assign mstb[SEC_XBAR_VIDEO_MASTER_IDX] = video_wb_if.stb;
+// assign mwe[SEC_XBAR_VIDEO_MASTER_IDX] = video_wb_if.we;
+// assign maddr[SEC_XBAR_VIDEO_MASTER_IDX*SEC_WB_AW +: SEC_WB_AW] = video_wb_if.addr;
+// assign mdata_o[SEC_XBAR_VIDEO_MASTER_IDX*SEC_WB_DW +: SEC_WB_DW] = video_wb_if.wdata;
+// assign msel[SEC_XBAR_VIDEO_MASTER_IDX*SEC_WB_DW/8 +: SEC_WB_DW/8] = video_wb_if.sel;
 
-assign video_wb_if.stall = mstall[SEC_XBAR_VIDEO_MASTER_IDX];
-assign video_wb_if.ack = mack[SEC_XBAR_VIDEO_MASTER_IDX];
-assign video_wb_if.rdata = mdata_i[SEC_XBAR_VIDEO_MASTER_IDX*SEC_WB_DW +: SEC_WB_DW];
-assign video_wb_if.err = merr[SEC_XBAR_VIDEO_MASTER_IDX];
-assign video_wb_if.rty = '0;
+// assign video_wb_if.stall = mstall[SEC_XBAR_VIDEO_MASTER_IDX];
+// assign video_wb_if.ack = mack[SEC_XBAR_VIDEO_MASTER_IDX];
+// assign video_wb_if.rdata = mdata_i[SEC_XBAR_VIDEO_MASTER_IDX*SEC_WB_DW +: SEC_WB_DW];
+// assign video_wb_if.err = merr[SEC_XBAR_VIDEO_MASTER_IDX];
+// assign video_wb_if.rty = '0;
 
-assign mcyc[SEC_XBAR_INSTR_CACHE_MASTER_IDX] = instr_cache_wb_if.cyc;
-assign mstb[SEC_XBAR_INSTR_CACHE_MASTER_IDX] = instr_cache_wb_if.stb;
-assign mwe[SEC_XBAR_INSTR_CACHE_MASTER_IDX] = instr_cache_wb_if.we;
-assign maddr[SEC_XBAR_INSTR_CACHE_MASTER_IDX*SEC_WB_AW +: SEC_WB_AW] = instr_cache_wb_if.addr;
-assign mdata_o[SEC_XBAR_INSTR_CACHE_MASTER_IDX*SEC_WB_DW +: SEC_WB_DW] = instr_cache_wb_if.wdata;
-assign msel[SEC_XBAR_INSTR_CACHE_MASTER_IDX*SEC_WB_DW/8 +: SEC_WB_DW/8] = instr_cache_wb_if.sel;
+// assign mcyc[SEC_XBAR_INSTR_CACHE_MASTER_IDX] = instr_cache_wb_if.cyc;
+// assign mstb[SEC_XBAR_INSTR_CACHE_MASTER_IDX] = instr_cache_wb_if.stb;
+// assign mwe[SEC_XBAR_INSTR_CACHE_MASTER_IDX] = instr_cache_wb_if.we;
+// assign maddr[SEC_XBAR_INSTR_CACHE_MASTER_IDX*SEC_WB_AW +: SEC_WB_AW] = instr_cache_wb_if.addr;
+// assign mdata_o[SEC_XBAR_INSTR_CACHE_MASTER_IDX*SEC_WB_DW +: SEC_WB_DW] = instr_cache_wb_if.wdata;
+// assign msel[SEC_XBAR_INSTR_CACHE_MASTER_IDX*SEC_WB_DW/8 +: SEC_WB_DW/8] = instr_cache_wb_if.sel;
 
-assign instr_cache_wb_if.stall = mstall[SEC_XBAR_INSTR_CACHE_MASTER_IDX];
-assign instr_cache_wb_if.ack = mack[SEC_XBAR_INSTR_CACHE_MASTER_IDX];
-assign instr_cache_wb_if.rdata = mdata_i[SEC_XBAR_INSTR_CACHE_MASTER_IDX*SEC_WB_DW +: SEC_WB_DW];
-assign instr_cache_wb_if.err = merr[SEC_XBAR_INSTR_CACHE_MASTER_IDX];
-assign instr_cache_wb_if.rty = '0;
+// assign instr_cache_wb_if.stall = mstall[SEC_XBAR_INSTR_CACHE_MASTER_IDX];
+// assign instr_cache_wb_if.ack = mack[SEC_XBAR_INSTR_CACHE_MASTER_IDX];
+// assign instr_cache_wb_if.rdata = mdata_i[SEC_XBAR_INSTR_CACHE_MASTER_IDX*SEC_WB_DW +: SEC_WB_DW];
+// assign instr_cache_wb_if.err = merr[SEC_XBAR_INSTR_CACHE_MASTER_IDX];
+// assign instr_cache_wb_if.rty = '0;
+
+// assign mcyc[SEC_XBAR_DATA_CACHE_MASTER_IDX] = data_cache_wb_if.cyc;
+// assign mstb[SEC_XBAR_DATA_CACHE_MASTER_IDX] = data_cache_wb_if.stb;
+// assign mwe[SEC_XBAR_DATA_CACHE_MASTER_IDX] = data_cache_wb_if.we;
+// assign maddr[SEC_XBAR_DATA_CACHE_MASTER_IDX*SEC_WB_AW +: SEC_WB_AW] = data_cache_wb_if.addr;
+// assign mdata_o[SEC_XBAR_DATA_CACHE_MASTER_IDX*SEC_WB_DW +: SEC_WB_DW] = data_cache_wb_if.wdata;
+// assign msel[SEC_XBAR_DATA_CACHE_MASTER_IDX*SEC_WB_DW/8 +: SEC_WB_DW/8] = data_cache_wb_if.sel;
+
+// assign data_cache_wb_if.stall = mstall[SEC_XBAR_DATA_CACHE_MASTER_IDX];
+// assign data_cache_wb_if.ack = mack[SEC_XBAR_DATA_CACHE_MASTER_IDX];
+// assign data_cache_wb_if.rdata = mdata_i[SEC_XBAR_DATA_CACHE_MASTER_IDX*SEC_WB_DW +: SEC_WB_DW];
+// assign data_cache_wb_if.err = merr[SEC_XBAR_DATA_CACHE_MASTER_IDX];
+// assign data_cache_wb_if.rty = '0;
 
 // connect the slave wire side to the systemverilog interfaces
 generate

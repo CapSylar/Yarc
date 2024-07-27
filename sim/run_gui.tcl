@@ -327,11 +327,11 @@ add wave ${CORE}/controller_i/csr_mcause_o;
 add wave ${CORE}/controller_i/is_trap_o;
 add wave ${CORE}/controller_i/exc_pc_o;
 
-# ---------------------------------------------------------
+# ----------------Instruction Cache----------------
 set ICACHE ${PLATFORM}/instruction_cache_i
 add wave -divider {Instruction Cache}
-add wave -group {CPU_IF} ${ICACHE}/cpu_if/*;
-add wave -group {MEM_IF} ${ICACHE}/mem_if/*;
+add wave -group {INSTR_CACHE CPU_IF} ${ICACHE}/cpu_if/*;
+add wave -group {INSTR_CACHE MEM_IF} ${ICACHE}/mem_if/*;
 add wave ${ICACHE}/valid_bits_we;
 add wave ${ICACHE}/valid_bits_rdata;
 add wave ${ICACHE}/tag_mem_we;
@@ -342,6 +342,22 @@ add wave ${ICACHE}/valid_bits;
 # add wave ${ICACHE}/tag_mem;
 # add wave ${ICACHE}/data_mem;
 add wave ${ICACHE}/*;
+
+# ----------------Data Cache----------------
+set DCACHE ${PLATFORM}/data_cache_i;
+add wave -divider {Data Cache}
+add wave -group {DATA_CACHE CPU_IF} ${DCACHE}/cpu_if/*;
+add wave -group {DATA_CACHE MEM_IF} ${DCACHE}/mem_if/*;
+add wave ${DCACHE}/valid_bits_we;
+add wave ${DCACHE}/valid_bits_rdata;
+add wave ${DCACHE}/tag_mem_we;
+add wave ${DCACHE}/tag_mem_rdata;
+add wave ${DCACHE}/data_mem_we;
+add wave ${DCACHE}/data_mem_rdata;
+add wave ${DCACHE}/valid_bits;
+# add wave ${DCACHE}/tag_mem;
+# add wave ${DCACHE}/data_mem;
+add wave ${DCACHE}/*;
 
 # ---------------------------------------------------------
 add wave -divider {Riscv Timer}
@@ -403,6 +419,7 @@ add wave -divider {Secondary Xbar}
 add wave -group {Sec Xbar cpu input} ${sec_xbar}/cpu_wb_if/*;
 add wave -group {Sec Xbar video input} ${sec_xbar}/video_wb_if/*;
 add wave -group {Sec Xbar Icache input} ${sec_xbar}/instr_cache_wb_if/*;
+add wave -group {Sec Xbar Dcache input} ${sec_xbar}/data_cache_wb_if/*;
 add wave -group {Sec Xbar Output} ${sec_xbar}/slave_wb_if[0]/*;
 
 # add wave -group {Framebuffer WB Interface} -color Gold ${PLATFORM}/slave_wb_if[2]/*;

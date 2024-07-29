@@ -403,7 +403,6 @@ add wave -group {ICCM IF} -color Gold ${fetch_intercon}/iccm_if/*;
 add wave -group {ICACHE IF} -color Gold ${fetch_intercon}/icache_if/*;
 
 add wave -divider {Data Interconnect}
-add wave ${data_intercon}/wb_interconnect_i/*;
 add wave -group {CPU LSU} -color Gold ${data_intercon}/cpu_if/*;
 add wave -group {DCCM IF} -color Gold ${data_intercon}/dccm_if/*;
 add wave -group {DCACHE IF} -color Gold ${data_intercon}/dcache_if/*;

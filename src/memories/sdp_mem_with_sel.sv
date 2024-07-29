@@ -3,7 +3,7 @@
 // Read access through port A
 // Write access is allowed through port B
 
-module sdp_mem
+module sdp_mem_with_sel
 #(parameter int DW = 32, parameter int AW = 10, parameter bit INIT_MEM = '0, parameter string MEMFILE = "")
 (
     input clk_i,
@@ -48,4 +48,4 @@ always_ff @(posedge clk_i) begin
     end
 end
 
-endmodule: sdp_mem
+endmodule: sdp_mem_with_sel

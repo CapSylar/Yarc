@@ -1,4 +1,5 @@
 // Implements pseudo least recently used
+// Pure combinational module
 `default_nettype none
 
 module plru
@@ -8,13 +9,13 @@ module plru
     localparam unsigned WAY_WIDTH = $clog2(NUM_WAYS))
 (
     input wire [AGE_WIDTH-1:0] age_bits_i,
-    output logic [AGE_WIDTH-1:0] age_bits_next_o,
+    input wire [WAY_WIDTH-1:0] access_idx_i,
 
+    output logic [AGE_WIDTH-1:0] age_bits_next_o,
     output logic [WAY_WIDTH-1:0] lru_idx_o
 );
 
 // TODO: document
-
 logic [$clog2(AGE_WIDTH)-1:0] idx0; // index into the age vector
 
 // determine the LRU way from the age_bits
@@ -34,18 +35,27 @@ always_comb begin: plru_get_lru
 end
 
 logic [$clog2(AGE_WIDTH)-1:0] idx1; // index into the age vector
+logic [$clog2(AGE_WIDTH):0] old_idx1; // index into the age vector
 
+// calculate the next state according to what way was currently accessed
 always_comb begin
-    idx1 = '0;
+    old_idx1 = access_idx_i + (AGE_WIDTH);
+    idx1 = (old_idx1-1) / 2; // TODO: document
+
     age_bits_next_o = age_bits_i;
 
     for (int i = 0; i < WAY_WIDTH; ++i) begin
 
-        // flip the nodes we travel through
-        age_bits_next_o[idx1] = ~age_bits_next_o[idx1];
+        /*
+            * If index is odd -> we are the left subchild and we want
+            * to set the parent to point right
+            * so simply assign
+        */
+        age_bits_next_o[idx1] = old_idx1[0];
 
-        // update index
-        idx1 = 2 * idx1 + (age_bits_i[idx1] ? 2 : 1);
+        // update indices to travel up the tree
+        old_idx1 = idx1;
+        idx1 = (idx1-1) / 2;
     end
 end
 

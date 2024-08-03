@@ -358,6 +358,7 @@ add wave ${DCACHE}/valid_bits;
 # add wave ${DCACHE}/tag_mem;
 # add wave ${DCACHE}/data_mem;
 add wave ${DCACHE}/*;
+add wave ${DCACHE}/write_buffer_i/*;
 
 # ---------------------------------------------------------
 add wave -divider {Riscv Timer}

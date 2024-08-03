@@ -22,7 +22,7 @@ module write_buffer
     // write side
     input wire we_i,
     input wire [STORED_DATA_WIDTH-1:0] store_data_i,
-    input wire [STORED_DATA_WIDTH/8-1:0] store_sel_i,
+    input wire [SEL_W-1:0] store_sel_i,
     input wire [STORED_ADDRESS_WIDTH-1:0] store_address_i,
 
     // read side
@@ -36,12 +36,11 @@ module write_buffer
     // hit logic for load hazard detection
     input wire check_i,
 
-    input wire check_we_i,
     input wire [STORED_ADDRESS_WIDTH-1:0] check_address_i,
-    input wire [STORED_DATA_WIDTH-1:0] check_data_i,
     input wire [SEL_W-1:0] check_sel_i,
 
-    output logic hit_o
+    output logic hit_o,
+    output logic [STORED_DATA_WIDTH-1:0] hit_data_o
 );
 
 typedef struct packed {
@@ -124,9 +123,7 @@ end
 // transit buffer
 // for now, saves the last check request
 logic req_q;
-logic check_we_q;
 logic [STORED_ADDRESS_WIDTH-1:0] check_address_q;
-logic [STORED_DATA_WIDTH-1:0] check_data_q;
 logic [SEL_W-1:0] check_sel_q;
 
 always_ff @(posedge clk_i) begin
@@ -134,9 +131,7 @@ always_ff @(posedge clk_i) begin
         req_q <= '0;
     end else begin
         req_q <= check_i;
-        check_we_q <= check_we_i;
         check_address_q <= check_address_i;
-        check_data_q <= check_data_i;
         check_sel_q <= check_sel_i;
     end
 end
@@ -145,13 +140,20 @@ end
 // when a check comes in, check the tag address of all valid entries
 logic [NUM_ELEMS-1:0] line_address_match;
 logic [NUM_ELEMS-1:0] line_hit;
+logic [$clog2(NUM_ELEMS)-1:0] line_hit_idx;
 logic hit_d, hit_q;
+logic [STORED_DATA_WIDTH-1:0] hit_data_d, hit_data_q;
 
 always_comb begin
     line_address_match = '0;
 
+    /*
+     * - addresses need to check
+     * - read word needs to be included the written word of the entry
+    */
     for (int i = 0; i < NUM_ELEMS; ++i) begin
-        line_address_match[i] = (mem[i].address == check_address_i);
+        line_address_match[i] = (mem[i].address == check_address_i) &&
+            ((mem[i].sel & check_sel_i) == check_sel_i);
     end
 end
 
@@ -166,16 +168,31 @@ always_comb begin
     end
 end
 
+always_comb begin
+    line_hit_idx = '0;
+
+    for (int i = 0; i < NUM_ELEMS; ++i) begin
+        if (line_hit[i]) begin
+            line_hit_idx = i;
+            break;
+        end
+    end
+end
+
 assign hit_d = |line_hit; // is any line hit
+assign hit_data_d = mem[line_hit_idx].data;
 
 always_ff @(posedge clk_i) begin
     if (!rstn_i) begin
         hit_q <= '0;
+        hit_data_q <= '0;
     end else begin
         hit_q <= hit_d;
+        hit_data_q <= hit_data_d;
     end
 end
 
 assign hit_o = hit_q;
+assign hit_data_o = hit_data_q;
 
 endmodule: write_buffer

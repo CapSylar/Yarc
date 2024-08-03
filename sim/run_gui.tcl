@@ -355,8 +355,7 @@ add wave ${DCACHE}/tag_mem_rdata;
 add wave ${DCACHE}/data_mem_we;
 add wave ${DCACHE}/data_mem_rdata;
 add wave ${DCACHE}/valid_bits;
-# add wave ${DCACHE}/tag_mem;
-# add wave ${DCACHE}/data_mem;
+add wave ${DCACHE}/set_age;
 add wave ${DCACHE}/*;
 add wave ${DCACHE}/write_buffer_i/*;
 

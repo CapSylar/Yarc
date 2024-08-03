@@ -1,3 +1,4 @@
+`default_nettype none
 
 // Should be a pretty straighforward D$
 // 4-way set associative
@@ -9,8 +10,8 @@ module data_cache
     parameter unsigned NUM_SETS_LOG2 = 0
 )
 (
-    input clk_i,
-    input rstn_i,
+    input wire clk_i,
+    input wire rstn_i,
 
     // cpu <-> D$
     wishbone_if.SLAVE cpu_if,
@@ -19,11 +20,11 @@ module data_cache
     wishbone_if.MASTER mem_if
 );
 
-
 localparam unsigned NUM_SETS = 2**NUM_SETS_LOG2;
 localparam unsigned INDEX_W = NUM_SETS_LOG2;
 localparam unsigned OFFSET_W = 2;
 localparam unsigned NUM_WAYS = 4;
+localparam unsigned AGE_BITS = NUM_WAYS-1; // per set, for PLRU
 
 localparam unsigned CPU_AW = $bits(cpu_if.addr);
 localparam unsigned CPU_DW = $bits(cpu_if.wdata);
@@ -31,7 +32,7 @@ localparam unsigned CPU_DW = $bits(cpu_if.wdata);
 localparam unsigned TAG_W = CPU_AW - INDEX_W - OFFSET_W;
 // tag store
 logic valid_bits [NUM_WAYS-1:0][NUM_SETS-1:0];// indicates that the corresponding cache line in valid
-logic [NUM_SETS-1:0] set_age; // a bit for each set for now
+logic [AGE_BITS-1:0] set_age [NUM_SETS-1:0]; // a bit for each set for now
 
 localparam unsigned DATA_W = 32;
 localparam unsigned LINE_W = (2**OFFSET_W) * DATA_W;
@@ -151,7 +152,10 @@ endgenerate
 
 // ***********************************************************
 
-logic replace_way_idx; // index pointing to the way that will get replaced
+logic [$clog2(NUM_WAYS)-1:0] replace_way_idx; // index pointing to the way that will get replaced
+logic [$clog2(NUM_WAYS)-1:0] access_way_idx; // index pointing to the way that will get replaced
+
+logic [AGE_BITS-1:0] age_bits_next; // index pointing to the way that will get replaced
 logic [LINE_W-1:0] mem_if_rdata_q;
 
 // wb sigs
@@ -164,15 +168,27 @@ logic get_decision;
 assign get_decision = is_cpu_req_q;
 
 logic cpu_if_stall;
-logic miss, read_miss, read_hit;
+logic fsm_stall_cpu_reqs;
+logic read_miss, read_hit;
 logic write_miss, write_hit;
 logic memory_send_req;
 logic memory_resp_valid;
-logic update_age;
+logic update_age_fill;
+logic update_age_hit;
 logic restart;
 
 logic install_cache_line;
 logic write_into_cache_line;
+
+// data hazard detection
+// detect when a read hits the word that was hit by a write in the previous cycle
+// we need to stall a cycle in this case since the read may get stale data
+logic data_hazard;
+assign data_hazard = is_cpu_req_q & write_hit & is_cpu_req_d & cpu_if_we_d & (cpu_if_addr_d == cpu_if_addr_q);
+
+assign cpu_if_stall = fsm_stall_cpu_reqs | data_hazard;
+
+assign sb_we = cpu_if_we_d & is_cpu_req_d;
 
 // cache FSM
 enum {RUNNING, WAIT_MEMORY, REFILL} state, next;
@@ -183,12 +199,13 @@ always_ff @(posedge clk_i)
 always_comb begin
     next = state;
 
-    cpu_if_stall = '0;
+    fsm_stall_cpu_reqs = '0;
+    install_cache_line = '0;
     memory_send_req = '0;
-    update_age = '0;
+    update_age_fill = '0;
     restart = '0;
 
-    sb_we = '0;
+    // sb_we = '0;
     sb_wdata = '0;
 
     unique case (state)
@@ -200,19 +217,19 @@ always_comb begin
         RUNNING: begin
             unique case (1'b1)
                 read_miss: begin
-                    cpu_if_stall = 1'b1; // can't access anymore requests
+                    fsm_stall_cpu_reqs = 1'b1; // can't access anymore requests
                     memory_send_req = 1'b1;
                     next = WAIT_MEMORY;
                 end
 
                 write_miss: begin
-                    sb_we = 1'b1; // append to write buffer
+                    // sb_we = 1'b1; // append to write buffer
                     // TODO: do we need to stall the interface ? we can keep going i think
                     // FIXME: need to stall if the write buffer is full 
                 end
 
                 write_hit: begin
-                    sb_we = 1'b1; // append to write buffer
+                    // sb_we = 1'b1; // append to write buffer
                     write_into_cache_line = 1'b1;
                     // update the cache line
                 end
@@ -222,7 +239,7 @@ always_comb begin
 
         // request the missing cache line from the backing storage
         WAIT_MEMORY: begin
-            cpu_if_stall = 1'b1; // can't accept anymore requests
+            fsm_stall_cpu_reqs = 1'b1; // can't accept anymore requests
             if (memory_resp_valid) begin
                 next = REFILL;
             end
@@ -231,13 +248,13 @@ always_comb begin
         // the memory has given us a response, we need to place the 
         // loaded line in the storage
         REFILL: begin
-            cpu_if_stall = 1'b1; // can't accept anymore requests
+            fsm_stall_cpu_reqs = 1'b1; // can't accept anymore requests
             install_cache_line = 1'b1;
 
             // early restart
             restart = 1'b1;
 
-            update_age = 1'b1;
+            update_age_fill = 1'b1;
             next = RUNNING;
         end
     endcase
@@ -307,12 +324,16 @@ assign valid_bits_raddr = cpu_if_addr_d.index;
 logic [NUM_WAYS-1:0] cache_line_valid ; // determines which way is valid
 logic [$clog2(NUM_WAYS)-1:0] cache_line_valid_idx ;
 logic cache_hit;
+logic read_hit_cache, read_hit_sb;
 logic sb_hit;
-logic [DATA_W-1:0] read_word; // the word requested by the cpu
+logic [DATA_W-1:0] read_word_cacheline; // the word requested by the cpu
 
 logic sb_check;
 logic [CPU_AW-1:0] sb_check_address;
+logic [CPU_DW/8-1:0] sb_check_sel;
+
 logic sb_match;
+logic [SB_DW-1:0] sb_match_data;
 
 // read hit = hit in cache line | hit in write buffer
 // write hit = hit in cache line only (we don't check the write buffer)
@@ -325,6 +346,7 @@ endgenerate
 
 assign sb_check = is_cpu_req_d; // results are valid at the next posedge
 assign sb_check_address = cpu_if_addr_d;
+assign sb_check_sel = cpu_if_sel_d;
 assign sb_hit = get_decision & sb_match;
 
 always_comb begin: calc_valid_index
@@ -336,15 +358,20 @@ always_comb begin: calc_valid_index
     end
 end
 
+// TODO: refactor these
 assign cache_hit = get_decision & |cache_line_valid;
 
-assign read_hit = !cpu_if_we_q & (cache_hit | sb_hit);
+assign read_hit_cache = !cpu_if_we_q & (cache_hit);
+assign read_hit_sb = !cpu_if_we_q & (sb_hit);
+
+assign read_hit = read_hit_cache | read_hit_sb;
 assign write_hit = cpu_if_we_q & (cache_hit);
+assign update_age_hit = read_hit | write_hit;
 
 assign read_miss = get_decision & !cpu_if_we_q & !read_hit;
 assign write_miss = get_decision & cpu_if_we_q & !write_hit;
 
-assign read_word = get_data_from_line(cpu_if_addr_q.offset, data_mem_rdata[cache_line_valid_idx]);
+assign read_word_cacheline = get_data_from_line(cpu_if_addr_q.offset, data_mem_rdata[cache_line_valid_idx]);
 
 function [DATA_W-1:0] get_data_from_line (logic [OFFSET_W-1:0] offset, logic [LINE_W-1:0] line_data);
     get_data_from_line = DATA_W'(line_data >> (DATA_W * offset));
@@ -353,11 +380,16 @@ endfunction
 logic cpu_if_ack;
 logic [DATA_W-1:0] cpu_if_rdata;
 
+assign cpu_if_ack = restart | read_hit | write_hit | write_miss;
+
 // cpu wishbone logic
 always_comb begin
-    cpu_if_ack = restart | cache_hit;
-    cpu_if_rdata = restart ? get_data_from_line(cpu_if_addr_q.offset, mem_if_rdata_q)
-        : read_word;
+    case (1'b1)
+        restart:        cpu_if_rdata = get_data_from_line(cpu_if_addr_q.offset, mem_if_rdata_q);
+        read_hit_cache: cpu_if_rdata = read_word_cacheline;
+        read_hit_sb:    cpu_if_rdata = sb_match_data;
+        default:        cpu_if_rdata = '0;
+    endcase
 end
 
 always_ff @(posedge clk_i) begin
@@ -376,16 +408,27 @@ always_ff @(posedge clk_i) begin
     end
 end
 
+//  --------------------- Age Update Logic, Replacement PLRU ---------------------
+
+assign access_way_idx = update_age_fill ? replace_way_idx : cache_line_valid_idx;
+
+plru #(.NUM_WAYS(NUM_WAYS))
+plru_i
+(
+    .age_bits_i(set_age[cpu_if_addr_q.index]),
+    .access_idx_i(access_way_idx),
+
+    .age_bits_next_o(age_bits_next),
+    .lru_idx_o(replace_way_idx)
+);
+
 always_ff @(posedge clk_i) begin
     if (!rstn_i) begin
         set_age <= '{default: '0};
-    end else if (update_age) begin
-        set_age[cpu_if_addr_q.index] = ~replace_way_idx; // the new points now points to the other way
+    end else if (update_age_fill | update_age_hit) begin
+        set_age[cpu_if_addr_q.index] = age_bits_next;
     end
 end
-
-// Replacement logic
-assign replace_way_idx = set_age[cpu_if_addr_q.index];
 
 // ------------------- Logic that interacts with the tag, data memories -------------------
 always_comb begin
@@ -418,6 +461,8 @@ always_comb begin
             data_mem_wdata = cpu_if_wdata_q << (8 * cpu_if_addr_q.offset);
             data_mem_wsel = cpu_if_sel_q << (8 * cpu_if_addr_q.offset);
         end
+
+        default: begin end
     endcase
 end
 
@@ -435,9 +480,9 @@ write_buffer_i
 
     // write side
     .we_i(sb_we),
-    .store_data_i(cpu_if_wdata_q),
-    .store_sel_i(cpu_if_sel_q),
-    .store_address_i(cpu_if_addr_q),
+    .store_data_i(cpu_if_wdata_d),
+    .store_sel_i(cpu_if_sel_d),
+    .store_address_i(cpu_if_addr_d),
 
     // read side
     .re_i(sb_re),
@@ -451,10 +496,10 @@ write_buffer_i
     // logic for load hazard detection
     .check_i(sb_check),
     .check_address_i(sb_check_address),
-    .check_sel_i('0),
-    .check_data_i('0),
-    .check_we_i('0),
-    .hit_o(sb_match)
+    .check_sel_i(sb_check_sel),
+
+    .hit_o(sb_match),
+    .hit_data_o(sb_match_data)
 );
 
 // assign cpu wishbone outputs
@@ -465,11 +510,11 @@ assign cpu_if.stall = cpu_if_stall;
 assign cpu_if.err = '0;
 
 // assign memory wishbone outputs
-assign mem_if.cyc = '0;
-assign mem_if.stb = '0;
-assign mem_if.we = mem_if_we;
+assign mem_if.cyc = mem_if_cyc;
+assign mem_if.stb = mem_if_stb;
+assign mem_if.we = '0;
 assign mem_if.addr = mem_if_addr;
 assign mem_if.sel = mem_if_sel;
-assign mem_if.wdata = mem_if_wdata;
+assign mem_if.wdata = '0;
 
 endmodule: data_cache

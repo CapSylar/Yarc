@@ -38,6 +38,7 @@ ${PRJ_DIR}/utils/sfifo.v
 ${PRJ_DIR}/utils/reg_bw.sv
 ${PRJ_DIR}/utils/afifo.v
 ${PRJ_DIR}/utils/async_fifo.sv
+${PRJ_DIR}/utils/skid_buffer.sv
 
 // testbench utils
 ${PRJ_DIR}/utils/simulation/clk_gen.sv
@@ -83,6 +84,7 @@ ${PRJ_DIR}/memories/sdp_mem.sv
 ${PRJ_DIR}/memories/sdp_mem_with_sel.sv
 
 // caches
+${PRJ_DIR}/caches/data_cache/write_buffer_if.sv
 ${PRJ_DIR}/caches/data_cache/plru.sv
 ${PRJ_DIR}/caches/data_cache/write_buffer.sv
 ${PRJ_DIR}/caches/instruction_cache.sv

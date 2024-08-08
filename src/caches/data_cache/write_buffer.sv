@@ -29,7 +29,7 @@ module write_buffer
     input wire re_i,
     output logic [FIFO_DW-1:0] rdata_o,
 
-    output logic [STORED_ADDRESS_WIDTH:0] fill_count_o,
+    output logic [DEPTH_LOG2:0] fill_count_o,
     output logic empty_o,
     output logic full_o,
 
@@ -43,21 +43,18 @@ module write_buffer
     output logic [STORED_DATA_WIDTH-1:0] hit_data_o
 );
 
-typedef struct packed {
-    logic [STORED_DATA_WIDTH-1:0] data;
-    logic [SEL_W-1:0] sel;
-    logic [STORED_ADDRESS_WIDTH-1:0] address;
-} fifo_line_t;
+fifo_types #(.DW(STORED_DATA_WIDTH), .SEL_W(SEL_W), .AW(STORED_ADDRESS_WIDTH)) types_i ();
+typedef types_i.fifo_line_t fifo_line_t;
 
 // -------------------------- FIFO LOGIC --------------------------
 fifo_line_t mem [NUM_ELEMS];
 
 // one additional bit that allows us to detect wrap arounds
-logic [STORED_ADDRESS_WIDTH:0] wr_addr, rd_addr; 
-logic [STORED_ADDRESS_WIDTH-1:0] wr_addr_mem, rd_addr_mem; // these are used to access fifo memory
+logic [DEPTH_LOG2:0] wr_addr, rd_addr; 
+logic [DEPTH_LOG2-1:0] wr_addr_mem, rd_addr_mem; // these are used to access fifo memory
 
-assign wr_addr_mem = wr_addr[STORED_ADDRESS_WIDTH-1:0];
-assign rd_addr_mem = rd_addr[STORED_ADDRESS_WIDTH-1:0];
+assign wr_addr_mem = wr_addr[DEPTH_LOG2-1:0];
+assign rd_addr_mem = rd_addr[DEPTH_LOG2-1:0];
 
 logic we, re;
 assign we = we_i & ~full_o;
@@ -87,15 +84,12 @@ always_ff @(posedge clk_i) begin
 end
 
 // reading from fifo
-always_ff @(posedge clk_i) begin
-    if (re) begin
-        rdata_o <= mem[rd_addr_mem];
-    end
-end
+// no delay read
+assign rdata_o = mem[rd_addr_mem];
 
 // assign status signals
 assign fill_count_o = wr_addr - rd_addr;
-assign full_o = (fill_count_o == {1'b1, {(STORED_ADDRESS_WIDTH){1'b0}}});
+assign full_o = (fill_count_o == {1'b1, {(DEPTH_LOG2){1'b0}}});
 assign empty_o = (fill_count_o == '0);
 
 logic [NUM_ELEMS-1:0] valid_d, valid_q;

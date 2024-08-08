@@ -2,24 +2,24 @@
 `default_nettype none
 
 module skid_buffer
-#(parameter unsigned DATA_WIDTH = 0)
+#(parameter type T = logic)
 (
     input wire clk_i,
     input wire rstn_i,
 
     // input side
     input wire valid_i,
-    input wire [DATA_WIDTH-1:0] data_i,
+    input T data_i,
     output logic ready_o,
 
     // output side
     output logic valid_o,
-    output logic [DATA_WIDTH-1:0] data_o,
+    output T data_o,
     input wire ready_i
 );
 
 logic internal_valid_d, internal_valid_q;
-logic [DATA_WIDTH-1:0] buffer_d, buffer_q;
+T buffer_d, buffer_q;
 
 always_comb begin
     internal_valid_d = internal_valid_q;

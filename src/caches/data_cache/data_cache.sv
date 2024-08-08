@@ -52,10 +52,48 @@ logic [CPU_DW-1:0] cpu_if_wdata_d, cpu_if_wdata_q;
 localparam unsigned SB_DW = 32;
 localparam unsigned SB_AW = 3;
 
+fifo_types #(.DW(SB_DW), .SEL_W(SB_DW/8), .AW(CPU_AW)) types_i ();
+typedef types_i.fifo_line_t fifo_line_t;
+
 logic sb_we, sb_re;
-logic [SB_DW-1:0] sb_wdata, sb_rdata;
+fifo_line_t sb_wdata, sb_rdata;
+req_addr_t sb_rdata_address;
+assign sb_rdata_address = sb_rdata.address;
 logic sb_empty, sb_full;
 logic [SB_AW:0] sb_fill_count;
+
+// -------------------- Skid Buffer --------------------
+
+// Pipe the wishbone cpu port through a skid buffer
+typedef struct packed {
+    logic we;
+    logic [$bits(cpu_if.addr)-1:0] addr;
+    logic [$bits(cpu_if.sel)-1:0] sel;
+    logic [$bits(cpu_if.wdata)-1:0] wdata;
+} wb_req_t;
+
+wb_req_t cpu_if_req, cpu_if_req_skid;
+assign cpu_if_req = '{we: cpu_if.we, addr: cpu_if.addr, sel: cpu_if.sel, wdata: cpu_if.wdata};
+logic skid_valid, cache_ready, skid_ready;
+
+logic new_req_accepted;
+assign new_req_accepted = skid_valid & cache_ready;
+
+skid_buffer
+#(.T(wb_req_t))
+skid_buffer_i
+(
+    .clk_i(clk_i),
+    .rstn_i(rstn_i | cpu_if.cyc), // FIXME: should we really reset when cyc is 0 ?
+
+    .valid_i(cpu_if.stb),
+    .data_i('{we: cpu_if.we, addr: cpu_if.addr, sel: cpu_if.sel, wdata: cpu_if.wdata}),
+    .ready_o(skid_ready),
+
+    .valid_o(skid_valid),
+    .data_o(cpu_if_req_skid),
+    .ready_i(cache_ready)
+);
 
 // -------------------- Memory Instantiations --------------------
 
@@ -66,11 +104,11 @@ always_comb begin
     cpu_if_wdata_d = cpu_if_wdata_q;
 
     // save the request when one is present
-    if (is_cpu_req_d) begin
-        cpu_if_we_d = cpu_if.we;
-        cpu_if_addr_d = cpu_if.addr;
-        cpu_if_sel_d = cpu_if.sel;
-        cpu_if_wdata_d = cpu_if.wdata;
+    if (new_req_accepted) begin
+        cpu_if_we_d = cpu_if_req_skid.we;
+        cpu_if_addr_d = cpu_if_req_skid.addr;
+        cpu_if_sel_d = cpu_if_req_skid.sel;
+        cpu_if_wdata_d = cpu_if_req_skid.wdata;
     end
 end
 
@@ -158,20 +196,24 @@ logic [$clog2(NUM_WAYS)-1:0] access_way_idx; // index pointing to the way that w
 logic [AGE_BITS-1:0] age_bits_next; // index pointing to the way that will get replaced
 logic [LINE_W-1:0] mem_if_rdata_q;
 
-// wb sigs
-assign is_cpu_req_d = cpu_if.cyc & cpu_if.stb & !cpu_if.stall;
+logic hold_req; // driven by the fsm
+
+always_comb begin
+    is_cpu_req_d = is_cpu_req_q;
+
+    if (!hold_req) begin
+        is_cpu_req_d = new_req_accepted;
+    end
+end
 
 logic read_stores; // this signals that the tag and data stores are to be read
-assign read_stores = is_cpu_req_d;
+assign read_stores = new_req_accepted;
 
-logic get_decision;
-assign get_decision = is_cpu_req_q;
-
-logic cpu_if_stall;
+// logic cpu_if_stall;
 logic fsm_stall_cpu_reqs;
 logic read_miss, read_hit;
 logic write_miss, write_hit;
-logic memory_send_req;
+logic memory_refill_req;
 logic memory_resp_valid;
 logic update_age_fill;
 logic update_age_hit;
@@ -184,14 +226,15 @@ logic write_into_cache_line;
 // detect when a read hits the word that was hit by a write in the previous cycle
 // we need to stall a cycle in this case since the read may get stale data
 logic data_hazard;
-assign data_hazard = is_cpu_req_q & write_hit & is_cpu_req_d & cpu_if_we_d & (cpu_if_addr_d == cpu_if_addr_q);
+// assign data_hazard = is_cpu_req_q & write_hit & is_cpu_req_d & cpu_if_we_d & (cpu_if_addr_d == cpu_if_addr_q);
+assign data_hazard = '0;
+logic sb_full_stall;
 
-assign cpu_if_stall = fsm_stall_cpu_reqs | data_hazard;
-
-assign sb_we = cpu_if_we_d & is_cpu_req_d;
+// TODO: even when sb_full_stall is one, the cpu gets the ack which it should not
+assign cache_ready = ~(fsm_stall_cpu_reqs | data_hazard);
 
 // cache FSM
-enum {RUNNING, WAIT_MEMORY, REFILL} state, next;
+enum {RUNNING, WAIT_MEMORY, REFILL, SB_FULL_WAIT} state, next;
 always_ff @(posedge clk_i)
     if (!rstn_i) state <= RUNNING;
     else         state <= next;
@@ -201,12 +244,11 @@ always_comb begin
 
     fsm_stall_cpu_reqs = '0;
     install_cache_line = '0;
-    memory_send_req = '0;
+    memory_refill_req = '0;
     update_age_fill = '0;
     restart = '0;
-
-    // sb_we = '0;
-    sb_wdata = '0;
+    write_into_cache_line = '0;
+    hold_req = '0;
 
     unique case (state)
         /*
@@ -215,21 +257,25 @@ always_comb begin
         changes to REFILL
         */
         RUNNING: begin
-            unique case (1'b1)
+            case (1'b1)
+                sb_full_stall: begin
+                    hold_req = 1'b1;
+                    fsm_stall_cpu_reqs = 1'b1; // can't access anymore requests
+                    next = SB_FULL_WAIT;
+                end
+
                 read_miss: begin
                     fsm_stall_cpu_reqs = 1'b1; // can't access anymore requests
-                    memory_send_req = 1'b1;
+                    memory_refill_req = 1'b1;
                     next = WAIT_MEMORY;
                 end
 
                 write_miss: begin
-                    // sb_we = 1'b1; // append to write buffer
                     // TODO: do we need to stall the interface ? we can keep going i think
                     // FIXME: need to stall if the write buffer is full 
                 end
 
                 write_hit: begin
-                    // sb_we = 1'b1; // append to write buffer
                     write_into_cache_line = 1'b1;
                     // update the cache line
                 end
@@ -257,9 +303,17 @@ always_comb begin
             update_age_fill = 1'b1;
             next = RUNNING;
         end
+
+        SB_FULL_WAIT: begin
+            hold_req = 1'b1;
+            fsm_stall_cpu_reqs = 1'b1;
+
+            if(!sb_full) begin
+                next = RUNNING;
+            end
+        end
     endcase
 end
-
 
 logic mem_if_cyc;
 logic mem_if_stb;
@@ -268,8 +322,9 @@ logic [$bits(mem_if.sel)-1:0] mem_if_sel;
 logic [$bits(mem_if.addr)-1:0] mem_if_addr;
 logic [LINE_W-1:0] mem_if_wdata;
 
+// this fsm is responsible for interacting with the memory, one hierarchy lower
 // memory wishbone fsm
-enum {IDLE, REQUEST} wbstate, wbnext;
+enum {IDLE, READ_REQUEST, WRITE_REQUEST} wbstate, wbnext;
 always_ff @(posedge clk_i)
     if (!rstn_i) wbstate <= IDLE;
     else         wbstate <= wbnext;
@@ -277,25 +332,45 @@ always_ff @(posedge clk_i)
 always_comb begin
     wbnext = wbstate;
 
+    mem_if_we = '0;
     mem_if_sel = '1;
     mem_if_addr = '0;
     mem_if_cyc = '0;
     mem_if_stb = '0;
+    mem_if_wdata = '0;
 
     memory_resp_valid = '0;
+
+    sb_re = '0;
 
     unique case (wbstate)
 
         IDLE: begin
-            if (memory_send_req) begin // FIXME: what is mem_if is stalled ?
-                mem_if_cyc = 1'b1;
-                mem_if_stb = 1'b1;
-                mem_if_addr = cpu_if_addr_q[CPU_AW-1 : 2]; // TODO: localparam this
-                wbnext = REQUEST;
+            // check if there are writes in the write buffer that need to be retired
+            // if a refill request comes in, it takes priority
+
+            if (!mem_if.stall) begin // don't do anything if the memory is stalled
+                if (memory_refill_req) begin
+                    mem_if_cyc = 1'b1;
+                    mem_if_stb = 1'b1;
+                    mem_if_addr = cpu_if_addr_q[CPU_AW-1 : 2]; // TODO: localparam this
+                    wbnext = READ_REQUEST;
+                end else if (!sb_empty) begin
+                    // pop write request from the write buffer and send it to memory
+                    sb_re = 1'b1;
+
+                    mem_if_cyc = 1'b1;
+                    mem_if_stb = 1'b1;
+                    mem_if_we = 1'b1;
+                    mem_if_sel = sb_rdata.sel << (sb_rdata_address.offset * CPU_DW/8 );
+                    mem_if_addr = sb_rdata.address[CPU_AW-1:2]; // TODO: localparam this
+                    mem_if_wdata = sb_rdata.data << (sb_rdata_address.offset * CPU_DW);
+                    wbnext = WRITE_REQUEST;
+                end
             end
         end
 
-        REQUEST: begin
+        READ_REQUEST: begin
             mem_if_cyc = 1'b1;
 
             if (mem_if.ack) begin
@@ -303,8 +378,22 @@ always_comb begin
                 wbnext = IDLE;
             end
         end
+
+        WRITE_REQUEST: begin
+            mem_if_cyc = 1'b1;
+
+            if(mem_if.ack) begin
+                wbnext = IDLE;
+            end
+        end
     endcase
 end
+
+logic is_read, is_write;
+// write to write buffer on every write, hit or miss
+assign sb_wdata = '{data: cpu_if_wdata_q, sel: cpu_if_sel_q, address: cpu_if_addr_q};
+assign sb_we = is_write & !hold_req;
+assign sb_full_stall = is_write & sb_full; // stall the request when the store buffer is full
 
 always_ff @(posedge clk_i) begin
     if (memory_resp_valid) begin // hold the loaded word
@@ -344,10 +433,10 @@ generate
     end
 endgenerate
 
-assign sb_check = is_cpu_req_d; // results are valid at the next posedge
+assign sb_check = new_req_accepted; // results are valid at the next posedge
 assign sb_check_address = cpu_if_addr_d;
 assign sb_check_sel = cpu_if_sel_d;
-assign sb_hit = get_decision & sb_match;
+assign sb_hit = is_cpu_req_q & sb_match;
 
 always_comb begin: calc_valid_index
     for (int i = 0 ; i < NUM_WAYS; ++i) begin
@@ -358,18 +447,22 @@ always_comb begin: calc_valid_index
     end
 end
 
+assign is_write = is_cpu_req_q & cpu_if_we_q;
+assign is_read = is_cpu_req_q & ~cpu_if_we_q;
+
 // TODO: refactor these
-assign cache_hit = get_decision & |cache_line_valid;
+assign cache_hit = is_cpu_req_q & |cache_line_valid;
 
 assign read_hit_cache = !cpu_if_we_q & (cache_hit);
 assign read_hit_sb = !cpu_if_we_q & (sb_hit);
 
 assign read_hit = read_hit_cache | read_hit_sb;
 assign write_hit = cpu_if_we_q & (cache_hit);
+
 assign update_age_hit = read_hit | write_hit;
 
-assign read_miss = get_decision & !cpu_if_we_q & !read_hit;
-assign write_miss = get_decision & cpu_if_we_q & !write_hit;
+assign read_miss = is_read & !read_hit;
+assign write_miss = is_write & !write_hit;
 
 assign read_word_cacheline = get_data_from_line(cpu_if_addr_q.offset, data_mem_rdata[cache_line_valid_idx]);
 
@@ -380,7 +473,7 @@ endfunction
 logic cpu_if_ack;
 logic [DATA_W-1:0] cpu_if_rdata;
 
-assign cpu_if_ack = restart | read_hit | write_hit | write_miss;
+assign cpu_if_ack = (restart | read_hit | write_hit | write_miss) & !hold_req;
 
 // cpu wishbone logic
 always_comb begin
@@ -458,8 +551,8 @@ always_comb begin
 
             // the written word is smaller than the cache line
             // position it correctly
-            data_mem_wdata = cpu_if_wdata_q << (8 * cpu_if_addr_q.offset);
-            data_mem_wsel = cpu_if_sel_q << (8 * cpu_if_addr_q.offset);
+            data_mem_wdata = cpu_if_wdata_q << (CPU_DW * cpu_if_addr_q.offset);
+            data_mem_wsel = cpu_if_sel_q << ((CPU_DW/8) * cpu_if_addr_q.offset);
         end
 
         default: begin end
@@ -506,15 +599,15 @@ write_buffer_i
 assign cpu_if.rdata = cpu_if_rdata;
 assign cpu_if.rty = '0;
 assign cpu_if.ack = cpu_if_ack;
-assign cpu_if.stall = cpu_if_stall;
+assign cpu_if.stall = ~skid_ready;
 assign cpu_if.err = '0;
 
 // assign memory wishbone outputs
 assign mem_if.cyc = mem_if_cyc;
 assign mem_if.stb = mem_if_stb;
-assign mem_if.we = '0;
+assign mem_if.we = mem_if_we;
 assign mem_if.addr = mem_if_addr;
 assign mem_if.sel = mem_if_sel;
-assign mem_if.wdata = '0;
+assign mem_if.wdata = mem_if_wdata;
 
 endmodule: data_cache

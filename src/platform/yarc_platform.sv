@@ -63,7 +63,7 @@ wishbone_if #(.ADDRESS_WIDTH(SEC_WB_AW), .DATA_WIDTH(SEC_WB_DW)) mem_instr_cache
 wishbone_if #(.ADDRESS_WIDTH(SEC_WB_AW), .DATA_WIDTH(SEC_WB_DW)) mem_data_cache_wb_if();
 
 // Instruction Cache for DDR3 Memory
-instruction_cache #(.NUM_SETS_LOG2(9)) // 512 sets => 1024 cache lines
+instruction_cache #(.NUM_SETS_LOG2(INSTR_CACHE_NUM_SETS_LOG2)) // 512 sets => 1024 cache lines
 instruction_cache_i
 (
     .clk_i(clk_i),
@@ -93,7 +93,7 @@ data_intercon data_intercon_i
     .main_mux_if(data_intercon_to_main_mux)
 );
 
-data_cache #(.NUM_SETS_LOG2(2))
+data_cache #(.NUM_SETS_LOG2(DATA_CACHE_NUM_SETS_LOG2))
 data_cache_i
 (
     .clk_i(clk_i),

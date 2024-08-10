@@ -115,7 +115,7 @@ always @(posedge clk_i) begin: handling_requests
             if (fetched_req.we) begin
                 for (int i = 0; i < DATA_WIDTH/8; ++i) begin: select_wise_write
                     if (fetched_req.sel[i])
-                        mem[fetched_req.addr][i*8 +: 8] = wdata_i[i*8 +: 8];
+                        mem[fetched_req.addr][i*8 +: 8] = fetched_req.wdata[i*8 +: 8];
                 end
                 ack_o = 1'b1;
             end else begin // handle read req

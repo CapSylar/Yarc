@@ -358,6 +358,7 @@ add wave ${DCACHE}/valid_bits;
 add wave ${DCACHE}/set_age;
 add wave ${DCACHE}/*;
 add wave ${DCACHE}/write_buffer_i/*;
+add wave ${DCACHE}/write_buffer_i/mem;
 add wave -divider {Skid Buffer}
 add wave ${DCACHE}/skid_buffer_i/*;
 

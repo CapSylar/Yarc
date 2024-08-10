@@ -28,6 +28,7 @@ localparam unsigned AGE_BITS = NUM_WAYS-1; // per set, for PLRU
 
 localparam unsigned CPU_AW = $bits(cpu_if.addr);
 localparam unsigned CPU_DW = $bits(cpu_if.wdata);
+localparam unsigned CPU_SEL_W = CPU_DW/8;
 
 localparam unsigned TAG_W = CPU_AW - INDEX_W - OFFSET_W;
 // tag store
@@ -35,7 +36,8 @@ logic valid_bits [NUM_WAYS-1:0][NUM_SETS-1:0];// indicates that the correspondin
 logic [AGE_BITS-1:0] set_age [NUM_SETS-1:0]; // a bit for each set for now
 
 localparam unsigned DATA_W = 32;
-localparam unsigned LINE_W = (2**OFFSET_W) * DATA_W;
+localparam unsigned LINE_DW = (2**OFFSET_W) * DATA_W;
+localparam unsigned LINE_SEL_W = LINE_DW/8;
 
 typedef struct packed {
     logic [TAG_W-1:0] tag;
@@ -46,19 +48,20 @@ typedef struct packed {
 logic is_cpu_req_d, is_cpu_req_q;
 logic cpu_if_we_d, cpu_if_we_q;
 req_addr_t cpu_if_addr_d, cpu_if_addr_q;
-logic [CPU_DW/8-1:0] cpu_if_sel_d, cpu_if_sel_q;
+logic [CPU_SEL_W-1:0] cpu_if_sel_d, cpu_if_sel_q;
 logic [CPU_DW-1:0] cpu_if_wdata_d, cpu_if_wdata_q;
 
-localparam unsigned SB_DW = 32;
 localparam unsigned SB_AW = 3;
+localparam unsigned SB_THRESHOLD = 2**3/2;
 
-fifo_types #(.DW(SB_DW), .SEL_W(SB_DW/8), .AW(CPU_AW)) types_i ();
+fifo_types #(.DW(LINE_DW), .SEL_W(LINE_SEL_W), .AW(CPU_AW - 2)) types_i ();
 typedef types_i.fifo_line_t fifo_line_t;
 
+fifo_line_t sb_rdata;
+logic [CPU_DW-1:0] sb_store_data;
+logic [CPU_SEL_W -1:0] sb_store_sel;
+logic [CPU_AW-1:0] sb_store_address;
 logic sb_we, sb_re;
-fifo_line_t sb_wdata, sb_rdata;
-req_addr_t sb_rdata_address;
-assign sb_rdata_address = sb_rdata.address;
 logic sb_empty, sb_full;
 logic [SB_AW:0] sb_fill_count;
 
@@ -164,15 +167,15 @@ endgenerate
 
 logic data_mem_re;
 logic data_mem_we [NUM_WAYS-1:0];
-logic [LINE_W-1:0] data_mem_rdata [NUM_WAYS-1:0];
-logic [LINE_W-1:0] data_mem_wdata;
-logic [LINE_W/8-1:0] data_mem_wsel;
+logic [LINE_DW-1:0] data_mem_rdata [NUM_WAYS-1:0];
+logic [LINE_DW-1:0] data_mem_wdata;
+logic [LINE_SEL_W-1:0] data_mem_wsel;
 logic [INDEX_W-1:0] data_mem_raddr;
 logic [INDEX_W-1:0] data_mem_waddr;
 
 generate
     for (genvar i = 0; i < NUM_WAYS; ++i) begin
-        sdp_mem_with_sel #(.DW(LINE_W), .AW(INDEX_W), .INIT_MEM('0)) data_mem
+        sdp_mem_with_sel #(.DW(LINE_DW), .AW(INDEX_W), .INIT_MEM('0)) data_mem
         (
             .clk_i(clk_i),
 
@@ -194,7 +197,7 @@ logic [$clog2(NUM_WAYS)-1:0] replace_way_idx; // index pointing to the way that 
 logic [$clog2(NUM_WAYS)-1:0] access_way_idx; // index pointing to the way that will get replaced
 
 logic [AGE_BITS-1:0] age_bits_next; // index pointing to the way that will get replaced
-logic [LINE_W-1:0] mem_if_rdata_q;
+logic [LINE_DW-1:0] mem_if_rdata_q;
 
 logic hold_req; // driven by the fsm
 
@@ -325,7 +328,7 @@ logic mem_if_stb;
 logic mem_if_we;
 logic [$bits(mem_if.sel)-1:0] mem_if_sel;
 logic [$bits(mem_if.addr)-1:0] mem_if_addr;
-logic [LINE_W-1:0] mem_if_wdata;
+logic [LINE_DW-1:0] mem_if_wdata;
 
 // this fsm is responsible for interacting with the memory, one hierarchy lower
 // memory wishbone fsm
@@ -360,16 +363,21 @@ always_comb begin
                     mem_if_stb = 1'b1;
                     mem_if_addr = cpu_if_addr_q[CPU_AW-1 : 2]; // TODO: localparam this
                     wbnext = READ_REQUEST;
-                end else if (!sb_empty) begin
+
+                /*
+                    don't immediately empty the store buffer, it's wise to keep some entries in it
+                    which will make it possible to merge more entries
+                */
+                end else if (sb_fill_count > SB_THRESHOLD) begin
                     // pop write request from the write buffer and send it to memory
                     sb_re = 1'b1;
 
                     mem_if_cyc = 1'b1;
                     mem_if_stb = 1'b1;
                     mem_if_we = 1'b1;
-                    mem_if_sel = sb_rdata.sel << (sb_rdata_address.offset * CPU_DW/8 );
-                    mem_if_addr = sb_rdata.address[CPU_AW-1:2]; // TODO: localparam this
-                    mem_if_wdata = sb_rdata.data << (sb_rdata_address.offset * CPU_DW);
+                    mem_if_sel = sb_rdata.sel;
+                    mem_if_addr = sb_rdata.address;
+                    mem_if_wdata = sb_rdata.data;
                     wbnext = WRITE_REQUEST;
                 end
             end
@@ -395,7 +403,10 @@ always_comb begin
 end
 
 // write to write buffer on every write, hit or miss
-assign sb_wdata = '{data: cpu_if_wdata_q, sel: cpu_if_sel_q, address: cpu_if_addr_q};
+assign sb_store_data = cpu_if_wdata_q;
+assign sb_store_sel = cpu_if_sel_q;
+assign sb_store_address = cpu_if_addr_q;
+
 assign sb_we = is_write & !hold_req;
 assign sb_full_stall = is_write & sb_full; // stall the request when the store buffer is full
 
@@ -423,10 +434,10 @@ logic [DATA_W-1:0] read_word_cacheline; // the word requested by the cpu
 
 logic sb_check;
 logic [CPU_AW-1:0] sb_check_address;
-logic [CPU_DW/8-1:0] sb_check_sel;
+logic [CPU_SEL_W-1:0] sb_check_sel;
 
 logic sb_match;
-logic [SB_DW-1:0] sb_match_data;
+logic [DATA_W-1:0] sb_match_data;
 
 // read hit = hit in cache line | hit in write buffer
 // write hit = hit in cache line only (we don't check the write buffer)
@@ -470,7 +481,7 @@ assign write_miss = is_write & !write_hit;
 
 assign read_word_cacheline = get_data_from_line(cpu_if_addr_q.offset, data_mem_rdata[cache_line_valid_idx]);
 
-function [DATA_W-1:0] get_data_from_line (logic [OFFSET_W-1:0] offset, logic [LINE_W-1:0] line_data);
+function [DATA_W-1:0] get_data_from_line (logic [OFFSET_W-1:0] offset, logic [LINE_DW-1:0] line_data);
     get_data_from_line = DATA_W'(line_data >> (DATA_W * offset));
 endfunction
 
@@ -556,7 +567,7 @@ always_comb begin
             // the written word is smaller than the cache line
             // position it correctly
             data_mem_wdata = cpu_if_wdata_q << (CPU_DW * cpu_if_addr_q.offset);
-            data_mem_wsel = cpu_if_sel_q << ((CPU_DW/8) * cpu_if_addr_q.offset);
+            data_mem_wsel = cpu_if_sel_q << ((CPU_SEL_W) * cpu_if_addr_q.offset);
         end
 
         default: begin end
@@ -566,8 +577,9 @@ end
 // --------------------- Write Buffer ---------------------
 write_buffer 
 #(
-    .STORED_DATA_WIDTH(SB_DW),
-    .STORED_ADDRESS_WIDTH(CPU_AW),
+    .LINE_DW(LINE_DW),
+    .DATA_W(DATA_W),
+    .ADDRESS_WIDTH(CPU_AW),
     .DEPTH_LOG2(SB_AW)
 )
 write_buffer_i 
@@ -577,9 +589,9 @@ write_buffer_i
 
     // write side
     .we_i(sb_we),
-    .store_data_i(sb_wdata.data),
-    .store_sel_i(sb_wdata.sel),
-    .store_address_i(sb_wdata.address),
+    .store_data_i(sb_store_data),
+    .store_sel_i(sb_store_sel),
+    .store_address_i(sb_store_address),
 
     // read side
     .re_i(sb_re),

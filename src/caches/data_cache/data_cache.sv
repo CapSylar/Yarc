@@ -285,6 +285,7 @@ always_comb begin
 
         // request the missing cache line from the backing storage
         WAIT_MEMORY: begin
+            memory_refill_req = 1'b1; // we'll keep it high until we get a resp_valid signal
             fsm_stall_cpu_reqs = 1'b1; // can't accept anymore requests
             if (memory_resp_valid) begin
                 next = REFILL;

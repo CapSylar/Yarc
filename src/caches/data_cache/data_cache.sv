@@ -222,12 +222,16 @@ logic restart;
 logic install_cache_line;
 logic write_into_cache_line;
 
+logic is_read, is_write;
 // data hazard detection
 // detect when a read hits the word that was hit by a write in the previous cycle
+// or a read hits a word that was written into the store buffer (write miss)
 // we need to stall a cycle in this case since the read may get stale data
+// we don't check for the sizes, which means we could sometimes stall when we shouldn't
+// but this doesn't matter since optimal code won't read something that was written to memory right away
+
 logic data_hazard;
-// assign data_hazard = is_cpu_req_q & write_hit & is_cpu_req_d & cpu_if_we_d & (cpu_if_addr_d == cpu_if_addr_q);
-assign data_hazard = '0;
+assign data_hazard = is_write & skid_valid & ~(fsm_stall_cpu_reqs) & ~cpu_if_req_skid.we & (cpu_if_req_skid.addr == cpu_if_addr_q); // TODO: clean this shit up
 logic sb_full_stall;
 
 // TODO: even when sb_full_stall is one, the cpu gets the ack which it should not
@@ -390,7 +394,6 @@ always_comb begin
     endcase
 end
 
-logic is_read, is_write;
 // write to write buffer on every write, hit or miss
 assign sb_wdata = '{data: cpu_if_wdata_q, sel: cpu_if_sel_q, address: cpu_if_addr_q};
 assign sb_we = is_write & !hold_req;

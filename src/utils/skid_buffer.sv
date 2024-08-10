@@ -21,6 +21,8 @@ module skid_buffer
 logic internal_valid_d, internal_valid_q;
 T buffer_d, buffer_q;
 
+assign buffer_d = internal_valid_q ? buffer_q : data_i;
+
 always_comb begin
     internal_valid_d = internal_valid_q;
 

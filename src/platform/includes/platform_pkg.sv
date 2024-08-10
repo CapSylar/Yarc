@@ -157,7 +157,7 @@ localparam PERIPH_XBAR_OPT_LOWPOWER = 0;
 localparam INSTR_CACHE_NUM_SETS_LOG2 = 9;
 
 // ********************* Data Cache *********************
-localparam DATA_CACHE_NUM_SETS_LOG2 = 9;
+localparam DATA_CACHE_NUM_SETS_LOG2 = 8;
 
 // wbuart32 config register
 typedef struct packed

@@ -577,9 +577,9 @@ write_buffer_i
 
     // write side
     .we_i(sb_we),
-    .store_data_i(cpu_if_wdata_d),
-    .store_sel_i(cpu_if_sel_d),
-    .store_address_i(cpu_if_addr_d),
+    .store_data_i(sb_wdata.data),
+    .store_sel_i(sb_wdata.sel),
+    .store_address_i(sb_wdata.address),
 
     // read side
     .re_i(sb_re),

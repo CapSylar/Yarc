@@ -145,19 +145,7 @@ sp_mem_wb #(.MEMFILE(DMEMFILE), .SIZE_POT_WORDS(DMEM_SIZE_WORDS_POT), .DATA_WIDT
 (
     .clk_i(sys_clk),
 
-    .cyc_i(dmem_wb_if.cyc),
-    .stb_i(dmem_wb_if.stb),
-
-    .we_i(dmem_wb_if.we),
-    .addr_i(dmem_wb_if.addr[DMEM_SIZE_WORDS_POT-1:0]), // 4-byte addressable
-    .sel_i(dmem_wb_if.sel),
-    .wdata_i(dmem_wb_if.wdata),
-
-    .rdata_o(dmem_wb_if.rdata),
-    .rty_o(dmem_wb_if.rty),
-    .ack_o(dmem_wb_if.ack),
-    .stall_o(dmem_wb_if.stall),
-    .err_o(dmem_wb_if.err)
+    .wb_if(dmem_wb_if)
 );
 
 // DDR3 memory

@@ -163,7 +163,7 @@ logic [NUM_ELEMS-1:0] check_address_match;
 logic [NUM_ELEMS-1:0] check_line_hit;
 logic [NUM_ELE_W-1:0] check_line_hit_idx;
 logic hit_d, hit_q;
-logic [DATA_W-1:0] hit_data_d, hit_data_q;
+logic [LINE_DW-1:0] hit_data_d, hit_data_q;
 
 always_comb begin
     check_address_match = '0;
@@ -200,21 +200,25 @@ always_comb begin
     end
 end
 
+logic [ADDRESS_WIDTH-1:0] check_addr_q;
+
 assign hit_d = |check_line_hit; // is any line hit
-assign hit_data_d = (mem[check_line_hit_idx].data) >> (check_address_i[OFFSET_BITS-1:0]);
+assign hit_data_d = (mem[check_line_hit_idx].data) ;
 
 always_ff @(posedge clk_i) begin
     if (!rstn_i) begin
         hit_q <= '0;
         hit_data_q <= '0;
+        check_addr_q <= '0;
     end else begin
         hit_q <= hit_d;
         hit_data_q <= hit_data_d;
+        check_addr_q <= check_address_i;
     end
 end
 
 assign hit_o = hit_q;
-assign hit_data_o = hit_data_q;
+assign hit_data_o = hit_data_q >> (check_addr_q[OFFSET_BITS-1:0]);
 
 // coalescing part
 logic [NUM_ELEMS-1:0] merge_line_match;

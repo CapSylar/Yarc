@@ -7,7 +7,8 @@
 
 module data_cache
 #(
-    parameter unsigned NUM_SETS_LOG2 = 0
+    parameter unsigned NUM_SETS_LOG2 = 0,
+    parameter unsigned WRITE_BUFFER_DEPTH_LOG2 = 0
 )
 (
     input wire clk_i,
@@ -39,6 +40,9 @@ localparam unsigned DATA_W = 32;
 localparam unsigned LINE_DW = (2**OFFSET_W) * DATA_W;
 localparam unsigned LINE_SEL_W = LINE_DW/8;
 
+localparam SB_AW = WRITE_BUFFER_DEPTH_LOG2;
+localparam unsigned SB_THRESHOLD = (2**SB_AW)/2;
+
 typedef struct packed {
     logic [TAG_W-1:0] tag;
     logic [INDEX_W-1:0] index;
@@ -50,9 +54,6 @@ logic cpu_if_we_d, cpu_if_we_q;
 req_addr_t cpu_if_addr_d, cpu_if_addr_q;
 logic [CPU_SEL_W-1:0] cpu_if_sel_d, cpu_if_sel_q;
 logic [CPU_DW-1:0] cpu_if_wdata_d, cpu_if_wdata_q;
-
-localparam unsigned SB_AW = 3;
-localparam unsigned SB_THRESHOLD = 2**3/2;
 
 fifo_types #(.DW(LINE_DW), .SEL_W(LINE_SEL_W), .AW(CPU_AW - 2)) types_i ();
 typedef types_i.fifo_line_t fifo_line_t;

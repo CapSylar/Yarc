@@ -93,7 +93,7 @@ data_intercon data_intercon_i
     .main_mux_if(data_intercon_to_main_mux)
 );
 
-data_cache #(.NUM_SETS_LOG2(DATA_CACHE_NUM_SETS_LOG2))
+data_cache #(.NUM_SETS_LOG2(DATA_CACHE_NUM_SETS_LOG2) ,.WRITE_BUFFER_DEPTH_LOG2(WRITE_BUFFER_DEPTH_LOG2))
 data_cache_i
 (
     .clk_i(clk_i),
